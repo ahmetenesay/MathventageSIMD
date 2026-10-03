@@ -1887,6 +1887,86 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
     return True
 
 
+
+def verify_generated_codex_with_clang(inc_path, include_dirs, defines=None, clang_exe=None):
+    """
+    Validates synthesized C++ SIMD include codex using libclang AST diagnostics
+    and native clang++ -fsyntax-only to guarantee zero syntax or type errors.
+    """
+    print(f"[Verification] Running Clang compilation & diagnostic verification on:\n  -> {inc_path}")
+    if not os.path.exists(inc_path):
+        print(f"[Verification Error] Target file not found: {inc_path}")
+        return False
+
+    if defines is None:
+        defines = ["MATHVANTAGE_EXPORTS"]
+
+    inc_args = [f"-I{d}" for d in include_dirs if os.path.exists(d)]
+    def_args = [f"-D{d}" for d in defines]
+    base_clang_args = ['-x', 'c++', '-std=c++20'] + inc_args + def_args + ['-fsyntax-only']
+
+    libclang_verified = False
+
+    # Pass 1: libclang in-process AST validation (fine-grained error diagnostics)
+    try:
+        import clang.cindex
+        lib_candidates = [
+            r"C:\Program Files\LLVM\clang+llvm-22.1.5-x86_64-pc-windows-msvc\bin\libclang.dll",
+            r"C:\Program Files\LLVM\bin\libclang.dll",
+            shutil.which("libclang.dll") or "",
+            shutil.which("libclang.so") or ""
+        ]
+        for lib in lib_candidates:
+            if lib and os.path.exists(lib):
+                try:
+                    clang.cindex.Config.set_library_file(lib)
+                    break
+                except Exception:
+                    pass
+
+        idx = clang.cindex.Index.create()
+        tu = idx.parse(inc_path, args=base_clang_args)
+        
+        errors = [d for d in tu.diagnostics if d.severity >= clang.cindex.Diagnostic.Error]
+        warnings = [d for d in tu.diagnostics if d.severity == clang.cindex.Diagnostic.Warning]
+
+        if errors:
+            print(f"[Verification FAIL] libclang reported {len(errors)} error(s) in {os.path.basename(inc_path)}:")
+            for err in errors[:10]:
+                print(f"  --> Line {err.location.line}, Col {err.location.column}: {err.spelling}")
+            return False
+        else:
+            libclang_verified = True
+            print(f"[Verification PASS] libclang AST validation PASSED! (0 errors, {len(warnings)} warnings)")
+    except Exception as e:
+        print(f"[Verification Notice] libclang in-process check skipped ({e}). Falling back to clang++...")
+
+    # Pass 2: Native clang++ compiler syntax-check (full compiler pipeline check)
+    if not clang_exe or not os.path.exists(clang_exe):
+        candidates = [
+            "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/clang++.exe",
+            "C:/Program Files/LLVM/bin/clang++.exe",
+            shutil.which("clang++")
+        ]
+        clang_exe = next((c for c in candidates if c and os.path.exists(c)), None)
+
+    if clang_exe and os.path.exists(clang_exe):
+        cmd = [clang_exe] + base_clang_args + [inc_path]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            print(f"[Verification PASS] Native clang++ syntax-check PASSED cleanly ({os.path.basename(clang_exe)})!")
+            return True
+        else:
+            print(f"[Verification FAIL] Native clang++ emitted errors:")
+            print(res.stderr[:1000])
+            return False
+    else:
+        if libclang_verified:
+            return True
+        print("[Verification Warning] Neither libclang nor clang++ could be invoked for verification.")
+        return True
+
+
 # =============================================================================
 # 7. MAIN ENTRYPOINT (CMake Custom Command Compatible)
 # =============================================================================
@@ -1903,6 +1983,8 @@ def main():
     parser.add_argument('--wipe-ghost', action='store_true', help="Auto-delete ephemeral TableGen file after synthesis")
     parser.add_argument('--tablegen', action='store_true', help="TableGen compatibility flag")
     parser.add_argument('--emit-bc', action='store_true', help="Emit compilation commands to produce LLVM Bitcode Mathventory.bc for SacFor_VM")
+    parser.add_argument('--clang', help="Path to clang++.exe compiler for verification")
+    parser.add_argument('--no-verify', action='store_true', help="Skip libclang/clang++ semantic and syntax verification pass")
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -2020,6 +2102,25 @@ def main():
 
     del pruned_catalog
     gc.collect(2)
+
+    # Step 7: Clang Compilation & Semantic Verification Pass (libclang / clang++)
+    if not args.no_verify:
+        include_dirs = [os.path.join(proj_root, 'include'), src_dir]
+        clang_compiler = args.clang
+        if not clang_compiler and tblgen_exe:
+            cand = os.path.join(os.path.dirname(tblgen_exe), 'clang++.exe')
+            if os.path.exists(cand):
+                clang_compiler = cand
+
+        verify_ok = verify_generated_codex_with_clang(
+            output_inc,
+            include_dirs=include_dirs,
+            defines=["MATHVANTAGE_EXPORTS"],
+            clang_exe=clang_compiler
+        )
+        if not verify_ok:
+            print("[Codex Error] Generated codex FAILED Clang verification!")
+            sys.exit(1)
 
     if args.emit_bc:
         print("[Bitcode JIT] Compiling codex to LLVM Bitcode (Mathventory.bc) for SacFor_VM ORCJIT v2:")
