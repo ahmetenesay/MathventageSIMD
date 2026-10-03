@@ -1,5 +1,6 @@
 #include "MathventageSIMD.h"
 #include "SacculusForge.h"
+#include "sacfor_internal.h"
 
 #include <cstdint>
 #include <cstddef>

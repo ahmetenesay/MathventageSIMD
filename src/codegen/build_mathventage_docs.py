@@ -62,9 +62,8 @@ assembled.append("""#ifdef __cplusplus
 } /* extern "C" */
 #endif
 
+#endif /* MATHVANTAGE_SIMD_C_API_H */
 """)
-assembled.append(docs_cpp_runtime.CPP_RUNTIME_DOCS)
-assembled.append("\n\n#endif /* MATHVANTAGE_SIMD_C_API_H */\n")
 
 final_content = "".join(assembled)
 

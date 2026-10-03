@@ -1,5 +1,6 @@
 
 #include "MathventageSIMD.h"
+#include "msimd_internal.h"
 #include <cmath>
 #include <cstring>
 #include <cstdlib>
