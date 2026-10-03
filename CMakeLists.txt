@@ -591,5 +591,41 @@ add_custom_target(generate_java_bindings
     COMMENT "Regenerating Java Panama FFM Bindings via jextract-25..."
 )
 
+# =========================================================================
+# BARE-METAL EMBEDDED FIRMWARE TARGET (INTEL HEX STUB)
+# Activated via CLI option: cmake -B build -DBUILD_EMBEDDED_HEX=ON (Default: OFF)
+# =========================================================================
+option(BUILD_EMBEDDED_HEX "Build embedded bare-metal firmware stub producing Intel HEX image" OFF)
+
+if(BUILD_EMBEDDED_HEX)
+    message(STATUS "Configuring Embedded Bare-Metal Firmware Stub (.hex output enabled)...")
+
+    # Locate llvm-objcopy in default LLVM dir or system PATH
+    find_program(LLVM_OBJCOPY_BIN
+        NAMES llvm-objcopy llvm-objcopy.exe
+        PATHS "${DEFAULT_LLVM_DIR}/bin" "C:/Program Files/LLVM/bin"
+    )
+
+    add_executable(sf_firmware_stub
+        src/embedded/firmware_main.cpp
+    )
+    target_include_directories(sf_firmware_stub PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_link_libraries(sf_firmware_stub PRIVATE mathvantage)
+
+    if(LLVM_OBJCOPY_BIN)
+        add_custom_command(TARGET sf_firmware_stub POST_BUILD
+            COMMAND "${LLVM_OBJCOPY_BIN}" -O ihex $<TARGET_FILE:sf_firmware_stub> "${CMAKE_BINARY_DIR}/sf_firmware_stub.hex"
+            COMMENT "Converting firmware binary to Intel HEX image: ${CMAKE_BINARY_DIR}/sf_firmware_stub.hex"
+            VERBATIM
+        )
+        message(STATUS "Intel HEX post-build conversion configured via: ${LLVM_OBJCOPY_BIN}")
+    else()
+        message(WARNING "llvm-objcopy not found! Skipping post-build .hex conversion.")
+    endif()
+endif()
+
 message(STATUS "Configured for ${MSIMD_OS}-${MSIMD_ARCH}. Output -> ${NATIVES_OUT_DIR}")
 
