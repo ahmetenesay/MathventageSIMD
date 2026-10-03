@@ -396,6 +396,10 @@ struct sf_anonymous_pagefile_t {
                                   (DWORD)(mapped_capacity & 0xFFFFFFFF), NULL);
         if (!hMap) return false;
         mapped_base = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, mapped_capacity);
+        if (!mapped_base) {
+            CloseHandle(hMap);
+            hMap = NULL;
+        }
         return mapped_base != nullptr;
 #else
         mapped_base = mmap(nullptr, mapped_capacity, PROT_READ | PROT_WRITE,
@@ -1526,14 +1530,14 @@ struct SACFOR_ALIGN_CL SF_custominiVm_emptybox_header_t {
     }
 
     inline uint8_t* hole_body(void) {
-        size_t hdr_sz = (sizeof(SF_custominiVm_emptybox_header_t) + SACFOR_CACHE_LINE - 1) & ~(SACFOR_CACHE_LINE - 1);
+        size_t hdr_sz = (sizeof(SF_custominiVm_live_header_t) + SACFOR_CACHE_LINE - 1) & ~(SACFOR_CACHE_LINE - 1);
         return reinterpret_cast<uint8_t*>(this) + hdr_sz;
     }
 
     static inline SF_custominiVm_emptybox_header_t* from_body(void* body_ptr) {
         if (!body_ptr) return nullptr;
 
-        size_t hdr_sz = (sizeof(SF_custominiVm_emptybox_header_t) + SACFOR_CACHE_LINE - 1) & ~(SACFOR_CACHE_LINE - 1);
+        size_t hdr_sz = (sizeof(SF_custominiVm_live_header_t) + SACFOR_CACHE_LINE - 1) & ~(SACFOR_CACHE_LINE - 1);
         auto* eb = reinterpret_cast<SF_custominiVm_emptybox_header_t*>(static_cast<uint8_t*>(body_ptr) - hdr_sz);
         if (eb->sfMN != SF_EMPTYBOX_MAGIC && eb->_magic != 0xEB) return nullptr;
         return eb;
@@ -1629,6 +1633,7 @@ struct sf_arena_storage_t {
     std::atomic<size_t>   used{0};
     sf_ticket_lock_t      grow_lock;
     bool                  always_pretouch = false;
+    std::vector<std::pair<uint8_t*, size_t>> old_bases;
 
     bool init(size_t initial_bytes, bool pretouch = false) {
         always_pretouch = pretouch;
@@ -1685,11 +1690,15 @@ struct sf_arena_storage_t {
 
         base.store(new_b, std::memory_order_release);
         capacity.store(new_cap, std::memory_order_release);
-        sf_os_release_memory(old_b, old_cap);
+        old_bases.push_back({old_b, old_cap});
         return true;
     }
 
     void destroy(void) {
+        for (auto& old : old_bases) {
+            sf_os_release_memory(old.first, old.second);
+        }
+        old_bases.clear();
         uint8_t* b = base.load(std::memory_order_acquire);
         if (!b) return;
         sf_os_release_memory(b, capacity.load(std::memory_order_relaxed));
@@ -2285,7 +2294,11 @@ struct sacculus_falline_t {
             }
 
             if (candidate) {
-
+                if (candidate->is_decommitted) {
+                    sf_os_commit_memory(candidate, candidate->aligned_hole_size);
+                    candidate->is_decommitted = 0;
+                    candidate->decommitted_kb = 0;
+                }
                 if (rem >= 128) {
                     candidate->aligned_hole_size = needed_aligned;
 
@@ -2814,7 +2827,7 @@ struct sacculus_runway_t {
         SF_custominiVm_live_header_t* obj = nullptr;
         if (eb) {
 
-            obj = reinterpret_cast<SF_custominiVm_live_header_t*>(eb);
+            obj = new (eb) SF_custominiVm_live_header_t();
             obj->init(fn_id, 0, name ? name : "snatched_tensor");
             obj->memory_footprint.store(body_bytes, std::memory_order_relaxed);
             obj->total_cell_bytes = cell_sz;
@@ -2823,7 +2836,7 @@ struct sacculus_runway_t {
 
             void* raw = allocator.allocate(cell_sz, SACFOR_CACHE_LINE);
             if (!raw) return nullptr;
-            obj = reinterpret_cast<SF_custominiVm_live_header_t*>(raw);
+            obj = new (raw) SF_custominiVm_live_header_t();
             obj->init(fn_id, 0, name ? name : "runway_tensor");
             obj->memory_footprint.store(body_bytes, std::memory_order_relaxed);
             obj->total_cell_bytes = cell_sz;
@@ -3159,7 +3172,8 @@ struct sacculus_folder_tree_t {
 
     void list_dir(const char* path, void (*cb)(const char*, int, size_t, void*), void* user) {
         if (!path || !cb) return;
-        sf_folder_node_t* node = find_node(path);
+        std::lock_guard<std::mutex> g(tree_lock);
+        sf_folder_node_t* node = _find_node_unlocked(path);
         if (!node) return;
 
         for (auto* child : node->children) {
@@ -3573,6 +3587,8 @@ struct sacculus_gc_t {
                 obj->parent_header.store(nullptr, std::memory_order_release);
             }
 
+            obj->~SF_custominiVm_live_header_t();
+
             if (fp > 0) {
                 sf_critical_clear_memory(obj->body(), fp);
             }
@@ -3800,6 +3816,7 @@ struct sacculus_gc_t {
                         _mm256_storeu_ps(decayed, v_res);
                         for (size_t b = 0; b < 8; ++b) {
                             batch[b]->heat_score.store(decayed[b], std::memory_order_relaxed);
+                            batch[b]->gc_sweep_count++;
                         }
                     } else {
                         for (size_t b = 0; b < count; ++b) batch[b]->decay_heat();
@@ -3819,6 +3836,7 @@ struct sacculus_gc_t {
                             vst1q_f32(raw_h, v_h);
                             for (size_t k = 0; k < 4; ++k) {
                                 batch[b+k]->heat_score.store(raw_h[k], std::memory_order_relaxed);
+                                batch[b+k]->gc_sweep_count++;
                             }
                         }
                         for (size_t b = (count & ~3ULL); b < count; ++b) batch[b]->decay_heat();
@@ -4798,10 +4816,10 @@ static void sf_parse_smbios(sf_hardware_topology_t* topo) {
             uint16_t speed = 0;
             uint16_t conf_speed = 0;
             if (len >= 0x17) {
-                speed = *(const uint16_t*)(data + 0x15);
+                memcpy(&speed, data + 0x15, sizeof(speed));
             }
             if (len >= 0x22) {
-                conf_speed = *(const uint16_t*)(data + 0x20);
+                memcpy(&conf_speed, data + 0x20, sizeof(conf_speed));
             }
             uint32_t eff_mhz = conf_speed > 0 ? conf_speed : speed;
             if (eff_mhz > topo->dram_mhz) {
@@ -7431,40 +7449,39 @@ MSIMD_API int SF_custominiVm_call(uint32_t fn_id,
         }
     }
 
-    SF_custominiVm_tensor_t resolved_inputs[16];
-    SF_custominiVm_tensor_t resolved_outputs[16];
+    std::vector<SF_custominiVm_tensor_t> dyn_in, dyn_out;
+    SF_custominiVm_tensor_t resolved_inputs_buf[16];
+    SF_custominiVm_tensor_t resolved_outputs_buf[16];
     const SF_custominiVm_tensor_t* call_inputs = inputs;
     SF_custominiVm_tensor_t* call_outputs = outputs;
 
-    if (inputs && n_in > 0 && n_in <= 16) {
+    if (inputs && n_in > 0) {
+        SF_custominiVm_tensor_t* r_in = resolved_inputs_buf;
+        if (n_in > 16) { dyn_in.resize(n_in); r_in = dyn_in.data(); }
         for (int i = 0; i < n_in; ++i) {
-            resolved_inputs[i] = inputs[i];
+            r_in[i] = inputs[i];
             void* orig_ptr = inputs[i].data;
-            resolved_inputs[i].data = SF_custominiVm_tensor_resolve_ptr(&inputs[i]);
-            if (resolved_inputs[i].data != orig_ptr) {
-                resolved_inputs[i].status |= SF_TENSOR_STATUS_FORWARDED;
-            }
-            auto* obj = SF_custominiVm_live_header_t::from_body(resolved_inputs[i].data);
-            if (obj) {
-                if (obj->parent_header.load(std::memory_order_relaxed)) {
-                    resolved_inputs[i].status |= SF_TENSOR_STATUS_VIEW_SLICE;
-                }
-            }
+            r_in[i].data = SF_custominiVm_tensor_resolve_ptr(&inputs[i]);
+            if (r_in[i].data != orig_ptr) r_in[i].status |= SF_TENSOR_STATUS_FORWARDED;
+            auto* obj = SF_custominiVm_live_header_t::from_body(r_in[i].data);
+            if (obj && obj->parent_header.load(std::memory_order_relaxed)) r_in[i].status |= SF_TENSOR_STATUS_VIEW_SLICE;
         }
-        call_inputs = resolved_inputs;
+        call_inputs = r_in;
     }
-    if (outputs && n_out > 0 && n_out <= 16) {
+    if (outputs && n_out > 0) {
+        SF_custominiVm_tensor_t* r_out = resolved_outputs_buf;
+        if (n_out > 16) { dyn_out.resize(n_out); r_out = dyn_out.data(); }
         for (int i = 0; i < n_out; ++i) {
-            resolved_outputs[i] = outputs[i];
+            r_out[i] = outputs[i];
             void* orig_ptr = outputs[i].data;
-            resolved_outputs[i].data = SF_custominiVm_tensor_resolve_ptr(&outputs[i]);
-            if (resolved_outputs[i].data != orig_ptr) {
-                resolved_outputs[i].status |= SF_TENSOR_STATUS_FORWARDED;
-                outputs[i].data = resolved_outputs[i].data;
+            r_out[i].data = SF_custominiVm_tensor_resolve_ptr(&outputs[i]);
+            if (r_out[i].data != orig_ptr) {
+                r_out[i].status |= SF_TENSOR_STATUS_FORWARDED;
+                outputs[i].data = r_out[i].data;
                 outputs[i].status |= SF_TENSOR_STATUS_FORWARDED;
             }
         }
-        call_outputs = resolved_outputs;
+        call_outputs = r_out;
     }
 
     uint64_t t0 = sacculus_rdtsc();
@@ -7617,8 +7634,12 @@ MSIMD_API int SacFor_Gearkit_NORMAX(void) {
     g_forge.config.disable_jit_deopt = false;
     g_forge.gc.config.is_safety_critical = false;
     g_forge.gc.runway.allocator.forbid_dynamic_expansion = false;
-    g_forge.gc.start();
-    g_forge.sandbox.start();
+    if (!g_forge.gc.running.load(std::memory_order_acquire)) {
+        g_forge.gc.start();
+    }
+    if (!g_forge.sandbox.running.load(std::memory_order_acquire)) {
+        g_forge.sandbox.start();
+    }
     return 0;
 }
 
@@ -7693,6 +7714,11 @@ MSIMD_API SF_custominiVm_scgc_type_t SF_custominiVm_get_scgc_type(void) {
 MSIMD_API void* SF_primitiva_alloc(size_t bytes, size_t align) {
     if (!bytes || !g_forge.gc.config.strings.no_sfgc_overwrite_mode) return nullptr;
     if (align < 1) align = 64;
+    if ((align & (align - 1)) != 0) {
+        size_t next_pow2 = 1;
+        while (next_pow2 < align) next_pow2 <<= 1;
+        align = next_pow2;
+    }
 
     uint8_t* base = g_forge.gc.runway.allocator.runway_heap_base;
     size_t   cap  = g_forge.gc.runway.allocator.runway_capacity;
@@ -8182,7 +8208,7 @@ MSIMD_API size_t SF_custominiVm_pacing_stalls(void) {
 
 static SF_custominiVm_gpio_desc_t g_sf_gpio_desc{};
 static std::atomic<bool>          g_sf_gpio_ready{false};
-static std::atomic<uint32_t>      g_sf_gpio_simulated_pins{0};
+static std::atomic<uint64_t>      g_sf_gpio_simulated_pins{0};
 
 MSIMD_API int SF_custominiVm_sbc_detect_board(SF_custominiVm_gpio_desc_t* out_desc) {
     if (!out_desc) return -1;
@@ -8361,7 +8387,8 @@ MSIMD_API size_t SF_custominiVm_sensor_poll_stream(SF_custominiVm_tensor_t* stre
         if (slot.active.load(std::memory_order_relaxed) && slot.stream_tensor.data == stream_tensor->data) {
             float* buf = static_cast<float*>(stream_tensor->data);
             size_t cap = slot.stream_tensor.shape[0];
-            size_t to_sample = (max_samples > 0 && max_samples < cap) ? max_samples : 64;
+            size_t to_sample = (max_samples > 0) ? max_samples : 64;
+            if (to_sample > cap) to_sample = cap;
 
             size_t cur = slot.write_cursor.load(std::memory_order_relaxed);
             for (size_t s = 0; s < to_sample; ++s) {
