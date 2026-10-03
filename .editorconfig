@@ -1,0 +1,46 @@
+root = true
+
+# ==============================================================================
+# 1. GRUP: Klasik Rasterization & Compute (Roi Mordechay - GLSL Plugin)
+# ==============================================================================
+[*.{vert,frag,comp,geom,tesc,tese,glsl}]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ==============================================================================
+# 2. GRUP: Mesh Shading & Ray Tracing (Foundation - GLSL Support Plugin)
+# ==============================================================================
+[*.{mesh,task,ampl,rgen,rchit,rmiss,rahit,rint,rcall}]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ==============================================================================
+# 3. GRUP: LLVM TableGen & Target Descriptions (*.td - LLVM ProgRef Standard)
+# ==============================================================================
+[*.{td}]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+tab_width = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ==============================================================================
+# 4. GRUP: C/C++ & Pure Algorithmic Kernels (*.cpp, *.h, *.c)
+# ==============================================================================
+[*.{cpp,h,hpp,c,inc}]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true

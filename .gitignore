@@ -1,0 +1,37 @@
+# Build and binary outputs
+build/
+bin/
+out/
+CMakeFiles/
+CMakeCache.txt
+*.dir/
+
+# Visual Studio temporary files & caches
+.vs/
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.sln.ide
+*.ipch
+
+# Compiled Object files & Libraries
+*.obj
+*.o
+*.lib
+*.a
+*.dll
+*.so
+*.dylib
+*.exp
+*.pdb
+*.ilk
+
+# VS Code & JetBrains IDEs
+.vscode/*
+!.vscode/settings.json
+.idea/
+
+# Large binaries & reference PDFs
+source_docs/*.pdf
+src/codegen/instructions.xml

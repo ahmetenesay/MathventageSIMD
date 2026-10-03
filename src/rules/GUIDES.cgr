@@ -1,0 +1,383 @@
+# =============================================================================
+# MathventageSIMD — GUIDES.cgr
+# Comprehensive Hardware Scoping, Global Silicon Matrix & Pruning Policy Codex
+# =============================================================================
+# Architectures: Intel, AMD, Chinese Silicon (Loongson, Zhaoxin, Phytium, T-Head,
+# Hygon, Sunway), Japanese Silicon (Fujitsu A64FX, NEC SX-Aurora, Renesas),
+# Apple Silicon (M1-M4), Qualcomm (Oryon), and DIY SBCs (RPi, Rockchip, Allwinner).
+# =============================================================================
+
+[POLICY_METADATA]
+Version              = 3.0.0
+Codename             = "GlobalSiliconCompute"
+TargetDomain         = "Pure-CPU-Mathematical-SIMD-Acceleration"
+PrimaryLanguage      = "C++20"
+OutputArtifact       = "Mathventory.bc"
+
+# =============================================================================
+# SECTION 1: TEMPORAL FILTER & ARCHITECTURAL FOUNDATION (2011 - 2026)
+# =============================================================================
+# ARCHITECTURAL ASSESSMENT: WHY 2011 IS THE SCIENTIFIC MINIMUM BOUNDARY:
+#
+# 1. Vector FPU Pipeline Execution:
+#    Pre-2011 architectures (Intel Core 2 Penryn 2007-2008, AMD Phenom II 2008,
+#    Pentium 4 NetBurst 2000-2006) lack pipelined 256-bit AVX execution units and
+#    FMA (Fused Multiply-Add). Every multiply-accumulate requires separate FMUL +
+#    FADD instructions, doubling execution latency and register pressure.
+#
+# 2. Unaligned Vector Memory Penalty:
+#    Pre-2011 microarchitectures incur severe 2-3 split load micro-op penalties
+#    and pipeline stalls whenever memory operands cross cache line boundaries.
+#    Sandy Bridge (2011) introduced hardware unaligned load buffers that eliminated
+#    this penalty for streaming mathematical stencils.
+#
+# 3. Cache & Memory Bandwidth Floor:
+#    Mathematical solvers (FDTD wave equations, Maxwell Yee, LBM fluid steps)
+#    require continuous memory throughput exceeding 12.8 GB/s (DDR3-1600+).
+#    DDR2 and early DDR3 bus architectures saturate instantly, starving vector ALUs.
+#
+# 4. Modern OoO Schedulers:
+#    2011 marks the advent of Sandy Bridge, AMD Bulldozer, and ARM Cortex-A15,
+#    introducing wide out-of-order schedulers, decoupled load/store queues, and
+#    non-temporal write-combining streaming buffers.
+# =============================================================================
+
+[TEMPORAL_FILTER]
+MinReleaseYear       = 2011
+MaxReleaseYear       = 2026
+RequireHardwareFPU   = true
+Require64BitAddress  = true
+MinimumVectorBits    = 128
+MemoryBandwidthFloorGBs = 12.8
+
+# =============================================================================
+# SECTION 2: INTEL PENTIUM, CELERON & ATOM SPECIFICATION
+# =============================================================================
+# Intel manufactured and actively evolved Pentium, Celeron, and Atom processors
+# through late 2023. Archaic pre-2011 models (NetBurst, P54C, P55C, Coppermine,
+# Northwood, Prescott, Conroe-L) are strictly excluded.
+# Modern low-power and budget cores found in DIY SBCs, NAS devices, and budget PCs
+# (2013-2023) are explicitly supported.
+# =============================================================================
+
+[ATOM_CELERON_PENTIUM_SCOPE]
+IncludeSilvermont    = true   # Bay Trail (2013, SSE4.2, Out-of-Order)
+IncludeGoldmont      = true   # Apollo Lake (2016, GLM in uops.info)
+IncludeGoldmontPlus  = true   # Gemini Lake / Pentium Silver J5005 (2017)
+IncludeTremont       = true   # Jasper Lake / Celeron N5105 (2020, TRM in uops.info)
+IncludeGracemont     = true   # Alder Lake-N / Intel Processor N100 / N200 (2023, ADL-E in uops.info)
+IncludePentiumGold   = true   # Kaby Lake / Comet Lake / Alder Lake Pentium Gold G7400 (2017-2023)
+
+# =============================================================================
+# SECTION 3: AUTONOMOUS x86 ARCHITECTURE SCRUTINY & REJECTION ENGINE
+# =============================================================================
+# Instead of hardcoding which x86 CPUs are qualified, codegen.py autonomously
+# evaluates every microarchitecture discovered in instructions.xml against a
+# rigorous vector compute SLA.
+#
+# Compute Efficiency Metric:
+#   Score = (VectorWidthBits / 128) * (1.0 / (Throughput_FMA * Latency_FMA * (1 + PortPenalty)))
+#
+# If a CPU lacks hardware FMA, has severe port contention (> 0.85), or scores
+# below AutoQualificationThreshold, codegen.py autonomously rejects it with an
+# explicit diagnostic log and prunes it from the final synthesis codex!
+# =============================================================================
+
+[AUTONOMOUS_X86_EVALUATION_SLA]
+EnableAutonomousX86Scrutiny   = true
+AutoQualificationThreshold    = 1.15
+MaxAllowablePortPressure      = 0.85
+RequireHardwareFMA            = true
+StrictDiagnosticLogging       = true
+
+# =============================================================================
+# SECTION 4: GLOBAL TARGET MICROARCHITECTURE MATRIX
+# =============================================================================
+
+[TARGET_ARCHITECTURES_INTEL]
+# Desktop, Mobile & Hybrid Architectures
+ARL-P                = { Year: 2024, Vendor: "Intel", Core: "LionCove",       ISA: ["AVX2", "FMA3", "AVX_VNNI", "SHA"], Tier: 1 }
+ARL-E                = { Year: 2024, Vendor: "Intel", Core: "Skymont",        ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+LNL                  = { Year: 2024, Vendor: "Intel", Core: "LionCove+Skymont",ISA: ["AVX2", "FMA3", "AVX_VNNI"],       Tier: 1 }
+MTL-P                = { Year: 2023, Vendor: "Intel", Core: "RedwoodCove",    ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+MTL-E                = { Year: 2023, Vendor: "Intel", Core: "Crestmont",      ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+RPL-P                = { Year: 2022, Vendor: "Intel", Core: "RaptorCove",     ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+ADL-P                = { Year: 2021, Vendor: "Intel", Core: "GoldenCove",     ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+ADL-E                = { Year: 2021, Vendor: "Intel", Core: "Gracemont",      ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+RKL                  = { Year: 2021, Vendor: "Intel", Core: "CypressCove",    ISA: ["AVX512F", "AVX512VL", "FMA3"],     Tier: 1 }
+TGL                  = { Year: 2020, Vendor: "Intel", Core: "WillowCove",     ISA: ["AVX512F", "AVX512VL", "FMA3"],     Tier: 1 }
+ICL                  = { Year: 2019, Vendor: "Intel", Core: "SunnyCove",      ISA: ["AVX512F", "AVX512VL", "FMA3"],     Tier: 1 }
+SKL                  = { Year: 2015, Vendor: "Intel", Core: "Skylake",        ISA: ["AVX2", "FMA3"],                    Tier: 1 }
+BDW                  = { Year: 2014, Vendor: "Intel", Core: "Broadwell",      ISA: ["AVX2", "FMA3"],                    Tier: 1 }
+HSW                  = { Year: 2013, Vendor: "Intel", Core: "Haswell",        ISA: ["AVX2", "FMA3", "BMI2"],            Tier: 1 }
+SNB                  = { Year: 2011, Vendor: "Intel", Core: "SandyBridge",    ISA: ["AVX"],                             Tier: 1 }
+
+# Server, Workstation & High-Performance Computing (HPC)
+GNR                  = { Year: 2024, Vendor: "Intel", Core: "GraniteRapids",  ISA: ["AVX512F", "AMX", "AVX512_FP16"],   Tier: 3 }
+EMR                  = { Year: 2023, Vendor: "Intel", Core: "EmeraldRapids",  ISA: ["AVX512F", "AMX", "AVX512_BF16"],   Tier: 3 }
+SPR                  = { Year: 2023, Vendor: "Intel", Core: "SapphireRapids", ISA: ["AVX512F", "AMX", "AVX512_FP16"],   Tier: 3 }
+ICX                  = { Year: 2021, Vendor: "Intel", Core: "IceLakeSP",      ISA: ["AVX512F", "AVX512_VNNI"],          Tier: 3 }
+CLX                  = { Year: 2019, Vendor: "Intel", Core: "CascadeLake",    ISA: ["AVX512F", "AVX512_VNNI"],          Tier: 3 }
+SKX                  = { Year: 2017, Vendor: "Intel", Core: "SkylakeX",       ISA: ["AVX512F", "AVX512DQ", "AVX512CD"], Tier: 3 }
+
+# Embedded & Low-Power Atom / Celeron Lines
+TRM                  = { Year: 2020, Vendor: "Intel", Core: "Tremont",        ISA: ["SSE4_2", "POPCNT", "AES"],         Tier: 1 }
+GLM                  = { Year: 2016, Vendor: "Intel", Core: "Goldmont",       ISA: ["SSE4_2", "POPCNT", "SHA"],         Tier: 1 }
+
+[TARGET_ARCHITECTURES_AMD]
+ZEN6                 = { Year: 2025, Vendor: "AMD",   Core: "Morpheus",       ISA: ["AVX512F", "AVX512_FP16", "AMX_V"], Tier: 1 }
+ZEN5                 = { Year: 2024, Vendor: "AMD",   Core: "Nirvana",        ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "AVX512_VNNI"], Tier: 1 }
+ZEN4                 = { Year: 2022, Vendor: "AMD",   Core: "Persephone",     ISA: ["AVX512F", "AVX512VL", "AVX512_BF16"],                Tier: 1 }
+ZEN3                 = { Year: 2020, Vendor: "AMD",   Core: "Vermeer",        ISA: ["AVX2", "FMA3", "BMI2", "VAES"],                       Tier: 1 }
+ZEN2                 = { Year: 2019, Vendor: "AMD",   Core: "Renoir",         ISA: ["AVX2", "FMA3", "BMI2"],                               Tier: 1 }
+ZEN+                 = { Year: 2018, Vendor: "AMD",   Core: "PinnacleRidge",  ISA: ["AVX2", "FMA3"],                                       Tier: 1 }
+ZEN1                 = { Year: 2017, Vendor: "AMD",   Core: "SummitRidge",    ISA: ["AVX2", "FMA3"],                                       Tier: 1 }
+EXCAVATOR            = { Year: 2015, Vendor: "AMD",   Core: "Excavator",      ISA: ["AVX2", "FMA3", "BMI2"],                               Tier: 1 }
+STEAMROLLER          = { Year: 2014, Vendor: "AMD",   Core: "Steamroller",    ISA: ["AVX", "FMA4"],                                        Tier: 1 }
+PILEDRIVER           = { Year: 2012, Vendor: "AMD",   Core: "Piledriver",     ISA: ["AVX", "FMA4"],                                        Tier: 1 }
+BULLDOZER            = { Year: 2011, Vendor: "AMD",   Core: "Bulldozer",      ISA: ["AVX", "FMA4"],                                        Tier: 1 }
+
+[TARGET_ARCHITECTURES_CHINESE_SILICON]
+# Loongson (LoongArch Instruction Set Architecture)
+LOONGSON_LA464       = { Year: 2021, Vendor: "Loongson", Core: "LA464",       ISA: ["LOONGARCH_LSX_128"],                  Tier: 1, Cacheline: 64 }
+LOONGSON_LA664       = { Year: 2023, Vendor: "Loongson", Core: "LA664",       ISA: ["LOONGARCH_LASX_256", "LSX_128"],      Tier: 1, Cacheline: 64 }
+
+# Zhaoxin (x86_64 Compatible Domestic Silicon)
+ZHAOXIN_KX6000       = { Year: 2019, Vendor: "Zhaoxin",  Core: "LuJiaZui",    ISA: ["AVX", "SSE4_2", "AES"],               Tier: 1, Cacheline: 64 }
+ZHAOXIN_KX7000       = { Year: 2023, Vendor: "Zhaoxin",  Core: "YongFeng",    ISA: ["AVX2", "FMA3", "BMI2"],               Tier: 1, Cacheline: 64 }
+
+# Phytium (ARMv8 Enterprise & HPC)
+PHYTIUM_D2000        = { Year: 2021, Vendor: "Phytium",  Core: "FTC663",      ISA: ["ARM_NEON", "ARM_FP16"],               Tier: 1, Cacheline: 64 }
+PHYTIUM_S2500        = { Year: 2020, Vendor: "Phytium",  Core: "FTC662",      ISA: ["ARM_NEON", "ARM_FP"],                 Tier: 3, Cacheline: 64 }
+
+# Huawei / HiSilicon (ARM Server Architecture)
+HUAWEI_KUNPENG920    = { Year: 2019, Vendor: "Huawei",   Core: "TaiShan_v110",ISA: ["ARM_NEON", "ARM_DOTPROD", "ARM_FP16"],Tier: 3, Cacheline: 64 }
+
+# Alibaba T-Head (RISC-V High-Performance Vector Cores)
+THEAD_XUANTIE_C906   = { Year: 2020, Vendor: "T-Head",   Core: "C906",        ISA: ["RISCV_VECTOR_0_7_1"],                 Tier: 1, Cacheline: 64 }
+THEAD_XUANTIE_C910   = { Year: 2021, Vendor: "T-Head",   Core: "C910",        ISA: ["RISCV_VECTOR_0_7_1"],                 Tier: 1, Cacheline: 64 }
+THEAD_XUANTIE_C920   = { Year: 2023, Vendor: "T-Head",   Core: "C920",        ISA: ["RISCV_VECTOR_1_0"],                   Tier: 1, Cacheline: 64 }
+
+# Hygon (Zen-derived x86_64 Domestic Server)
+HYGON_DHYANA         = { Year: 2018, Vendor: "Hygon",    Core: "Dhyana",      ISA: ["AVX2", "FMA3", "BMI2"],               Tier: 3, Cacheline: 64 }
+
+# Sunway (Exascale Custom RISC / Manycore)
+SUNWAY_SW26010_PRO   = { Year: 2021, Vendor: "Sunway",   Core: "SW64_CPE",    ISA: ["SW64_SIMD_512"],                      Tier: 3, Cacheline: 128 }
+
+[TARGET_ARCHITECTURES_JAPANESE_SILICON]
+# Fujitsu Supercomputer Fugaku Architecture
+FUJITSU_A64FX        = { Year: 2020, Vendor: "Fujitsu",  Core: "A64FX",       ISA: ["ARM_SVE_512", "ARM_FP16"],            Tier: 3, Cacheline: 256 }
+
+# NEC SX-Aurora TSUBASA Vector Supercomputer
+NEC_SX_AURORA_T20    = { Year: 2020, Vendor: "NEC",      Core: "Type20B",     ISA: ["NEC_VECTOR_ENGINE_256D"],             Tier: 3, Cacheline: 128 }
+
+# Renesas Automotive & Edge AI Silicon
+RENESAS_RCAR_V4H     = { Year: 2022, Vendor: "Renesas",  Core: "Cortex-A76",  ISA: ["ARM_NEON", "ARM_DOTPROD"],            Tier: 1, Cacheline: 64 }
+
+[TARGET_ARCHITECTURES_ARM_APPLE_QUALCOMM]
+# Apple Silicon (Mac, iPad, iPhone Compute)
+APPL_M1              = { Year: 2020, Vendor: "Apple",    Core: "Firestorm",   ISA: ["ARM_NEON", "ARM_FP16", "ARM_DOTPROD"], Tier: 2, Cacheline: 128 }
+APPL_M2              = { Year: 2022, Vendor: "Apple",    Core: "Avalanche",   ISA: ["ARM_NEON", "ARM_FP16", "ARM_DOTPROD"], Tier: 2, Cacheline: 128 }
+APPL_M3              = { Year: 2023, Vendor: "Apple",    Core: "Anopha",      ISA: ["ARM_NEON", "ARM_FP16", "ARM_DOTPROD"], Tier: 2, Cacheline: 128 }
+APPL_M4              = { Year: 2024, Vendor: "Apple",    Core: "Donan",       ISA: ["ARM_NEON", "ARM_SME", "ARM_DOTPROD"],  Tier: 2, Cacheline: 128 }
+
+# Qualcomm Snapdragon & Custom Oryon CPU
+QCOM_8CX_G3          = { Year: 2021, Vendor: "Qualcomm", Core: "Kryo",        ISA: ["ARM_NEON", "ARM_DOTPROD"],             Tier: 1, Cacheline: 64 }
+QCOM_ORYON           = { Year: 2024, Vendor: "Qualcomm", Core: "Oryon",       ISA: ["ARM_NEON", "ARM_SVE2", "ARM_FP16"],     Tier: 2, Cacheline: 64 }
+
+[TARGET_ARCHITECTURES_DIY_AND_SBC]
+# Broadcom Raspberry Pi Series
+BCM2835              = { Year: 2012, Vendor: "Broadcom", Board: "RPi1_Zero",   Core: "ARM1176JZF-S",ISA: ["ARM_VFPv2"],                       Tier: 4, Cacheline: 32 }
+BCM2836              = { Year: 2015, Vendor: "Broadcom", Board: "RPi2_v1.1",   Core: "Cortex-A7",   ISA: ["ARM_NEON", "ARM_VFPv4"],           Tier: 2, Cacheline: 64 }
+BCM2837              = { Year: 2016, Vendor: "Broadcom", Board: "RPi3",        Core: "Cortex-A53",  ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+BCM2711              = { Year: 2019, Vendor: "Broadcom", Board: "RPi4",        Core: "Cortex-A72",  ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+BCM2712              = { Year: 2023, Vendor: "Broadcom", Board: "RPi5",        Core: "Cortex-A76",  ISA: ["ARM_NEON", "ARM_DOTPROD"],         Tier: 2, Cacheline: 64 }
+
+# Rockchip SBCs (Orange Pi, Radxa, FriendlyElec, Firefly)
+RK3288               = { Year: 2014, Vendor: "Rockchip", Board: "TinkerBoard", Core: "Cortex-A17",  ISA: ["ARM_NEON", "ARM_VFPv4"],           Tier: 2, Cacheline: 64 }
+RK3399               = { Year: 2016, Vendor: "Rockchip", Board: "OPi4",        Core: "A72+A53",     ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+RK3566               = { Year: 2021, Vendor: "Rockchip", Board: "RadxaZero3",  Core: "Cortex-A55",  ISA: ["ARM_NEON", "ARM_FP16", "ARM_DOTPROD"], Tier: 2, Cacheline: 64 }
+RK3576               = { Year: 2024, Vendor: "Rockchip", Board: "BPI-M5Pro",   Core: "A72+A53",     ISA: ["ARM_NEON", "ARM_DOTPROD"],         Tier: 2, Cacheline: 64 }
+RK3588               = { Year: 2022, Vendor: "Rockchip", Board: "OPi5",        Core: "A76+A55",     ISA: ["ARM_NEON", "ARM_DOTPROD"],         Tier: 2, Cacheline: 64 }
+
+# Allwinner Open-Source Boards
+ALLWINNER_A20        = { Year: 2013, Vendor: "Allwinner",Board: "BananaPi",    Core: "Cortex-A7",   ISA: ["ARM_NEON", "ARM_VFPv4"],           Tier: 2, Cacheline: 64 }
+ALLWINNER_A64        = { Year: 2015, Vendor: "Allwinner",Board: "Pine64",      Core: "Cortex-A53",  ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+ALLWINNER_H616       = { Year: 2020, Vendor: "Allwinner",Board: "BPi-M2",      Core: "Cortex-A53",  ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+ALLWINNER_H618       = { Year: 2023, Vendor: "Allwinner",Board: "OPiZero3",    Core: "Cortex-A53",  ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+
+# Amlogic Open-Source Boards
+AMLOGIC_S905X4       = { Year: 2020, Vendor: "Amlogic",  Board: "BPI-M2S",     Core: "Cortex-A55",  ISA: ["ARM_NEON", "ARM_DOTPROD"],         Tier: 2, Cacheline: 64 }
+AMLOGIC_S922X        = { Year: 2019, Vendor: "Amlogic",  Board: "Odroid-N2+",  Core: "A73+A53",     ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+AMLOGIC_A311D        = { Year: 2019, Vendor: "Amlogic",  Board: "KhadasVIM3",  Core: "A73+A53",     ISA: ["ARM_NEON", "ARM_FP"],              Tier: 2, Cacheline: 64 }
+
+# Arduino Industrial Edge AI & Robotics Hybrid Flagship (Qualcomm Dragonwing IQ8 + STM32H5)
+ARDUINO_VENTUNO_Q    = { Year: 2025, Vendor: "Qualcomm_Arduino", Board: "Ventuno_Q", Core: "Dragonwing_IQ8275_8c_Kryo+STM32H5", ISA: ["ARM_NEON", "ARM_DOTPROD", "ARM_FP16"], Tier: 2, Cacheline: 64 }
+
+# Arduino Edge Computing & Maker Hybrid (Qualcomm Dragonwing QRB2210 + STM32U5)
+ARDUINO_UNO_Q        = { Year: 2025, Vendor: "Qualcomm_Arduino", Board: "Uno_Q", Core: "Dragonwing_QRB2210_4c_A53+STM32U5", ISA: ["ARM_NEON", "ARM_FP"], Tier: 2, Cacheline: 64 }
+
+[TARGET_ARCHITECTURES_ENTERPRISE_ARM]
+# Cloud Server, Hyperscaler & HPC ARMv8/ARMv9 Cores
+AMPERE_ALTRA         = { Year: 2020, Vendor: "Ampere",   Core: "Neoverse-N1",  ISA: ["ARM_NEON", "ARM_DOTPROD", "ARM_FP16"], Tier: 2, Cacheline: 64 }
+AMPERE_ONE           = { Year: 2023, Vendor: "Ampere",   Core: "AmpereCustom", ISA: ["ARM_NEON", "ARM_FP16", "ARM_BF16"],    Tier: 2, Cacheline: 64 }
+AWS_GRAVITON2        = { Year: 2019, Vendor: "AWS",      Core: "Neoverse-N1",  ISA: ["ARM_NEON", "ARM_DOTPROD"],             Tier: 2, Cacheline: 64 }
+AWS_GRAVITON3        = { Year: 2022, Vendor: "AWS",      Core: "Neoverse-V1",  ISA: ["ARM_SVE_256", "ARM_BF16", "ARM_FP16"],  Tier: 1, Cacheline: 64 }
+AWS_GRAVITON4        = { Year: 2024, Vendor: "AWS",      Core: "Neoverse-V2",  ISA: ["ARM_SVE2_256", "ARM_BF16", "ARM_DOTPROD"],Tier: 1, Cacheline: 64 }
+PHYTIUM_S5000        = { Year: 2023, Vendor: "Phytium",  Core: "FTC860",       ISA: ["ARM_NEON", "ARM_FP16", "ARM_DOTPROD"], Tier: 2, Cacheline: 64 }
+
+[TARGET_ARCHITECTURES_SOVEREIGN_ELBRUS]
+# MCST Russia (E2K VLIW Explicitly Parallel Architecture)
+MCST_ELBRUS_4C       = { Year: 2014, Vendor: "MCST",     Core: "Elbrus-v3",    ISA: ["E2K_VLIW_V3"],                         Tier: 2, Cacheline: 64 }
+MCST_ELBRUS_8S       = { Year: 2016, Vendor: "MCST",     Core: "Elbrus-v4",    ISA: ["E2K_VLIW_V4"],                         Tier: 2, Cacheline: 64 }
+MCST_ELBRUS_8SV      = { Year: 2020, Vendor: "MCST",     Core: "Elbrus-v5",    ISA: ["E2K_VLIW_V5", "E2K_SIMD_128"],         Tier: 2, Cacheline: 64 }
+MCST_ELBRUS_16C      = { Year: 2021, Vendor: "MCST",     Core: "Elbrus-v6",    ISA: ["E2K_VLIW_V6", "E2K_SIMD_128"],         Tier: 2, Cacheline: 64 }
+
+[TARGET_ARCHITECTURES_RISCV_AND_MANYCORE]
+# High-Performance RISC-V Vector 1.0 & Many-Core Accelerators
+SPACEMIT_K1          = { Year: 2024, Vendor: "SpacemiT", Board: "BPI-F3",      Core: "X60_RVA22",   ISA: ["RISCV_VECTOR_1_0_256"],           Tier: 1, Cacheline: 64 }
+STARFIVE_JH7110      = { Year: 2022, Vendor: "StarFive", Board: "VisionFive2", Core: "SiFive_U74",  ISA: ["RISCV_64GC"],                     Tier: 4, Cacheline: 64 }
+SOPHGO_SG2042        = { Year: 2023, Vendor: "Sophgo",   Board: "Pioneer",     Core: "64c_C920",    ISA: ["RISCV_VECTOR_0_7_1"],             Tier: 2, Cacheline: 64 }
+SIFIVE_P870          = { Year: 2024, Vendor: "SiFive",   Core: "P870",         ISA: ["RISCV_VECTOR_1_0", "RVA23"],           Tier: 1, Cacheline: 64 }
+ESPERANTO_ET_SOC_1   = { Year: 2021, Vendor: "Esperanto",Core: "1088x_Minion", ISA: ["RISCV_VECTOR_512"],                   Tier: 1, Cacheline: 64 }
+TENSTORRENT_WORMHOLE = { Year: 2023, Vendor: "Tenstorrent",Core: "80x_Tensix", ISA: ["TENSIX_SIMD_FP16_BF16"],               Tier: 1, Cacheline: 64 }
+TENSTORRENT_BLACKHOLE= { Year: 2024, Vendor: "Tenstorrent",Core: "120x_Tensix+16x_SiFive", ISA: ["TENSIX_SIMD_FP8_FP16", "RISCV_VECTOR_1_0"], Tier: 0, Cacheline: 64 }
+
+[TARGET_ARCHITECTURES_EMBEDDED_MCU]
+# STMicroelectronics High-Performance & Analog Coprocessor MCUs
+STM32H747XI          = { Year: 2019, Vendor: "STMicroelectronics", Board: "Arduino_Giga_R1", Core: "Dual_M7_480M_M4_240M", ISA: ["ARM_VFPv5_DP", "ARM_DSP", "ST_CORDIC", "ST_FMAC"], Tier: 3, Cacheline: 32 }
+STM32H5F5            = { Year: 2023, Vendor: "STMicroelectronics", Board: "Ventuno_Q_MCU",   Core: "Cortex-M33_250M",        ISA: ["ARM_VFPv5_SP", "ARM_DSP"],                          Tier: 3, Cacheline: 32 }
+STM32U585            = { Year: 2022, Vendor: "STMicroelectronics", Board: "Uno_Q_MCU",       Core: "Cortex-M33_160M",        ISA: ["ARM_VFPv5_SP", "ARM_DSP"],                          Tier: 3, Cacheline: 32 }
+STM32G474            = { Year: 2019, Vendor: "STMicroelectronics", Board: "NUCLEO-G474RE",   Core: "Cortex-M4F_170M",        ISA: ["ARM_VFPv4_SP", "ST_CORDIC", "ST_FMAC"],             Tier: 3, Cacheline: 32 }
+STM32F407            = { Year: 2011, Vendor: "STMicroelectronics", Board: "STM32F4-DISCO",   Core: "Cortex-M4F_168M",        ISA: ["ARM_VFPv4_SP", "ARM_DSP"],                          Tier: 4, Cacheline: 32 }
+
+# Raspberry Pi Microcontrollers
+RP2040               = { Year: 2021, Vendor: "RaspberryPi", Board: "Pico",     Core: "Dual_M0plus_133M",       ISA: ["ARM_THUMB2", "BOOTROM_SOFTFLOAT"],                 Tier: 5, Cacheline: 32 }
+RP2350               = { Year: 2024, Vendor: "RaspberryPi", Board: "Pico2",    Core: "Dual_M33F_Hazard3_150M", ISA: ["ARM_VFPv5_DP_COPROC", "ARM_DSP", "RISCV_RV32IMAF"],Tier: 3, Cacheline: 32 }
+
+# Espressif Wireless AI & Vector SoCs
+ESP8266              = { Year: 2014, Vendor: "Espressif",   Board: "NodeMCU",  Core: "Xtensa_L106_80M",        ISA: ["XTENSA_SOFTFLOAT"],                                Tier: 5, Cacheline: 16 }
+ESP32                = { Year: 2016, Vendor: "Espressif",   Board: "ESP32-DevKit", Core: "Dual_LX6_240M",      ISA: ["XTENSA_FPU_SP"],                                   Tier: 4, Cacheline: 32 }
+ESP32_S3             = { Year: 2021, Vendor: "Espressif",   Board: "ESP32-S3", Core: "Dual_LX7_240M",          ISA: ["XTENSA_PIE_128BIT_VECTOR"],                        Tier: 3, Cacheline: 32 }
+ESP32_P4             = { Year: 2024, Vendor: "Espressif",   Board: "ESP32-P4", Core: "Dual_RISCV_400M",        ISA: ["RISCV_VECTOR_EXT", "H264_ACCEL"],                  Tier: 3, Cacheline: 64 }
+
+# Microchip / Atmel Classic & High-End Cortex MCUs
+ATMEGA328P           = { Year: 2011, Vendor: "MicrochipAtmel", Board: "Arduino_Uno", Core: "AVR_8BIT_16M",     ISA: ["AVR_SOFTFLOAT_Q31"],                               Tier: 5, Cacheline: 0 }
+SAMD21               = { Year: 2014, Vendor: "MicrochipAtmel", Board: "Arduino_Zero",Core: "Cortex-M0plus_48M",ISA: ["ARM_THUMB2_SOFTFLOAT"],                            Tier: 5, Cacheline: 32 }
+SAME54               = { Year: 2017, Vendor: "MicrochipAtmel", Board: "SAME54-XPRO", Core: "Cortex-M4F_120M",  ISA: ["ARM_VFPv4_SP", "ARM_DSP"],                          Tier: 3, Cacheline: 32 }
+SAMV71               = { Year: 2015, Vendor: "MicrochipAtmel", Board: "SAMV71-XULT", Core: "Cortex-M7_300M",   ISA: ["ARM_VFPv5_DP", "ARM_DSP"],                          Tier: 3, Cacheline: 32 }
+
+# Texas Instruments Real-Time Control Digital Signal Controllers
+TI_TMS320F28379D     = { Year: 2015, Vendor: "TexasInstruments", Board: "LAUNCHXL-F28379D", Core: "Dual_C28x_200M", ISA: ["TI_TMU_TRIG_COPROC", "TI_VCU2_COMPLEX"],     Tier: 3, Cacheline: 32 }
+
+# =============================================================================
+# SECTION 5: EMBEDDED MEMORY HIERARCHY, 100MB+ FOOTPRINT & XiP POLICY
+# =============================================================================
+# Embedded target reality: Microcontrollers lack gigabytes of volatile RAM.
+# Storing 100+ MB of complete mathematical SIMD/coprocessor machine code
+# (libsfmathventagesimd.img) requires a structured multi-tiered memory architecture.
+# =============================================================================
+
+[EMBEDDED_MEMORY_HIERARCHY_AND_XIP_POLICY]
+# 1. Physical Target Flash Specification (QSPI / OctoSPI NOR)
+TargetFlashCapacityBytes      = 134217728            # 128 MegaBytes (1024 MBit) minimum for 100MB+ image
+TargetFlashMaxCapacityBytes   = 268435456            # 256 MegaBytes (2048 MBit) maximum density
+TargetFlashPageSizeBytes      = 256                  # Standard page programming boundary
+TargetFlashSectorSizeBytes    = 4096                 # 4 KB subsector erase granularity
+TargetFlashBlockSizeBytes     = 65536                # 64 KB block erase granularity
+TargetFlashOperatingVoltage   = 3.3                  # 3.3V logic supply
+TargetFlashFootprint          = "WSON-8 (8x6mm)"     # Pin-compatible 8-pad DFN footprint
+
+# 2. Qualified High-Density 1Gb / 2Gb Silicon Targets
+TargetPart_128MB_Winbond      = "W25Q01JVZEIQ"       # JEDEC 0xEF4021, WSON-8, 3.3V, 133MHz
+TargetPart_256MB_Winbond      = "W25Q02JVZEIQ"       # JEDEC 0xEF4022, WSON-8, 3.3V, 133MHz
+TargetPart_128MB_Macronix     = "MX66L1G45GZ4I-08G"  # JEDEC 0xC2201B, WSON-8, 3.3V, 133MHz
+TargetPart_256MB_Macronix     = "MX66L2G45GZ4I-08G"  # JEDEC 0xC2201C, WSON-8, 3.3V, 133MHz
+
+# 3. Direct Memory-Mapped XiP (eXecute-In-Place) Configuration
+XiP_MemoryMappedBaseAddress   = "0x90000000"         # STM32H7 QSPI/OctoSPI Bank 1 linear address
+XiP_BusInterfaceClockMaxMHz   = 133                  # DDR mode achieves ~66-100 MB/s bandwidth
+XiP_ZeroCopyInstructionFetch  = true                 # CPU pipeline fetches opcodes directly over QSPI
+
+# 4. On-Demand Chunked Block Decompression Overlay Policy
+ChunkDecompressionAlgorithm   = "Zstandard / LZ4"
+TargetTCMBufferAddress        = "0x00000000"         # 64 KB ITCM (0-wait-state CPU tightly-coupled memory)
+TargetAXISRAMBufferAddress    = "0x24000000"         # 512 KB AXI SRAM
+TargetExternalSDRAMAddress    = "0xC0000000"         # 16 MB IS42S16160J SDRAM onboard Giga R1
+
+# 5. Mass Storage Streaming Overlay (Zero-Soldering Drop-In Alternative)
+EnableUSBAHostStreaming       = true                 # Read libsfmathventagesimd.img from USB-A Flash drive
+EnableMicroSDIOStreaming      = true                 # Read libsfmathventagesimd.img from 4-bit SDIO SD card
+
+# =============================================================================
+# SECTION 6: MSC2020 DISCIPLINE TO SILICON RESOURCE MAPPING
+# =============================================================================
+
+[MSC2020_DISCIPLINE_SILICON_MAPPING]
+MSC_11_NumberTheory           = { Codes: ["11-XX", "14-XX"], Silicon: ["MultiLimb_ADCX_ADOX", "PADDQ_256", "Montgomery_ALU"] }
+MSC_15_LinearAlgebra          = { Codes: ["15-XX", "65Fxx"], Silicon: ["BLIS_5Level_Cache_Blocking", "FMA3_Pipelined", "AMX_SME_Tiles"] }
+MSC_33_SpecialFunctions       = { Codes: ["33-XX", "41-XX"], Silicon: ["Minimax_Polynomial", "CORDIC_Q31", "TMU_Hardware", "DoubleDouble"] }
+MSC_34_DifferentialEquations  = { Codes: ["34-XX", "35-XX"], Silicon: ["LBM_D2Q9_D3Q19", "FDTD_Yee_Cell", "NonTemporal_Stores"] }
+MSC_05_CombinatoricsGraph     = { Codes: ["05-XX", "68Rxx"], Silicon: ["BMI1_BMI2_BitOps", "POPCNT", "PEXT_PDEP", "SIMD_Bitmask"] }
+MSC_60_ProbabilityStochastics = { Codes: ["60-XX", "65Cxx"], Silicon: ["MersenneTwister_AVX2", "BoxMuller_SIMD", "MonteCarlo_FMA"] }
+MSC_94_Cryptology             = { Codes: ["94A60"],         Silicon: ["ConstantTime_CMOV", "VPBLENDVB", "AESNI_CLMUL", "SideChannel_Resistant"] }
+MSC_00_EmbeddedSoftFloat      = { Codes: ["00-XX"],         Silicon: ["SoftFloat_IEEE754", "FixedPoint_Q15_Q31", "ITCM_Overlay"] }
+
+# =============================================================================
+# SECTION 7: 6-TIER EXECUTION LADDER POLICY (Tiers 0 to 5)
+# =============================================================================
+
+[SIX_TIER_EXECUTION_LADDER_POLICY]
+Tier0_MatrixTiles             = { Priority: 0, WidthBits: 2048, ISAs: ["AMX_TILE", "ARM_SME", "APPLE_AMX"] }
+Tier1_WideVectorSIMD          = { Priority: 1, WidthBits: 512,  ISAs: ["AVX512F", "ARM_SVE2", "RISCV_VECTOR_1_0", "LOONGARCH_LASX"] }
+Tier2_BasicVectorSIMD         = { Priority: 2, WidthBits: 256,  ISAs: ["AVX2_FMA", "ARM_NEON", "RISCV_VECTOR_0_7_1", "LOONGARCH_LSX", "E2K_VLIW"] }
+Tier3_HardwareCoprocessors    = { Priority: 3, WidthBits: 128,  ISAs: ["ST_CORDIC", "ST_FMAC", "TI_TMU", "TI_VCU", "ARM_DSP", "XTENSA_PIE"] }
+Tier4_ScalarHardwareFPU       = { Priority: 4, WidthBits: 64,   ISAs: ["IEEE754_FP32_FP64_STANDARD_FPU"] }
+Tier5_IntegerSoftFloatALU     = { Priority: 5, WidthBits: 32,   ISAs: ["SOFTFLOAT_IEEE754", "FIXEDPOINT_Q15_Q31", "AVR_ALU"] }
+
+# =============================================================================
+# SECTION 8: ADAPTIVE MEMORY SAFETY & MICRO-GC CONTROL POLICY
+# =============================================================================
+# Large-scale Cartesian expansions over hundreds of thousands of LOC risk memory
+# exhaustion. codegen.py enforces bounded chunk processing and explicit micro-GC.
+# =============================================================================
+
+[MEMORY_AND_GC_SAFETY]
+MaxMemoryBudgetMB            = 512
+BatchProcessingChunkSize     = 32
+EnableMicroManualGC          = true
+PurgePhantomBuffersImmediately = true
+
+# =============================================================================
+# SECTION 9: PRUNING & SCORING HEURISTIC ENGINE (Karar & Budama Parametreleri)
+# =============================================================================
+
+[HEURISTIC_WEIGHTS]
+WeightReciprocalThroughput   = 0.45
+WeightLatency                = 0.25
+WeightPortContention         = 0.20
+WeightRegisterSpillRisk      = 0.10
+
+# Dynamic Fallback Ladder Bounds
+LadderMinSteps               = 3
+LadderMaxSteps               = 8
+ContentionPenaltyThreshold   = 0.80
+StreamingStoreThresholdBytes = 262144  # 256 KB (Bypass L2 cache threshold)
+
+# =============================================================================
+# SECTION 10: SAFETY-CRITICAL SPECIFICATION (SFVM-SC / Khronos SC Model)
+# =============================================================================
+# Aligned with Khronos Vulkan SC & ISO 26262 / DO-178C avionics & automotive:
+# - Zero runtime dynamic allocations after initialization (Pre-allocated arenas)
+# - Pure AOT (Ahead-of-Time) compilation (Zero JIT latency jitter during flight)
+# - Hard bounded Worst-Case Execution Time (WCET) on all SIMD loops
+# - Deterministic polling windows (sf_gc_safepoint_poll <= 100 microseconds)
+# =============================================================================
+
+[SAFETY_CRITICAL_PROFILE_SFVM_SC]
+EnableSafetyCriticalMode      = false  # Default to Standard; set true for ASIL-D / DAL-A builds
+ForbidRuntimeHeapAllocations  = true   # Zero malloc/free/mmap during mission execution loop
+PreallocateStaticArenasOnly   = true   # Static memory reservation at boot
+DisableRuntimeJITDeopt        = true   # Pure AOT pre-baked codex; eliminate de-optimization stalls
+MaxBoundedIterationLimit      = 1000000# Enforced ceiling on all numerical stencils
+EnforceMISRACompliantFallback = true   # Fail-safe state transition on hardware fault

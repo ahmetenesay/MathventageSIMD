@@ -1,0 +1,1 @@
+It automatically converts C++ headers with JNI bindings into Java code; do not modify these parts!
