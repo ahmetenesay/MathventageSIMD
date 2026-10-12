@@ -24,14 +24,14 @@ export class NativeBridgeService {
 
   // Active Simulated State for realistic fallback
   private simFrameIndex = 0;
-  private simEggCount = 38;
-  private simFledglingCount = 172;
-  private simPitstopCount = 2;
-  private simFallineBoxes = 64;
-  private simTankBytes = 64 * 1024 * 1024;
-  private simLandfillBytes = 16 * 1024 * 1024;
-  private simTotalAlloc = 128 * 1024 * 1024;
-  private simRmrpReclaimed = 12 * 1024 * 1024;
+  private simEggCount = 0;
+  private simFledglingCount = 0;
+  private simPitstopCount = 0;
+  private simFallineBoxes = 0;
+  private simTankBytes = 0;
+  private simLandfillBytes = 0;
+  private simTotalAlloc = 0;
+  private simRmrpReclaimed = 0;
   private activeConfig: BenchmarkConfig = {
     kernel: 'msimd_mat4f_mul',
     workloadSize: 65536,
@@ -172,30 +172,10 @@ export class NativeBridgeService {
         }
       }
 
-      let baseGflops = 890.4;
-      let arithmeticIntensity = 18.5;
-      if (this.activeConfig.targetIsa === 'AVX512') baseGflops = 1520.0;
-      if (this.activeConfig.targetIsa === 'SSE4_2') baseGflops = 240.0;
-      if (this.activeConfig.targetIsa === 'SCALAR') baseGflops = 54.0;
-      if (this.activeConfig.targetIsa === 'WASM_SIMD128') baseGflops = 180.0;
-
-      if (this.activeConfig.kernel === 'msimd_wave_supersaw_7') {
-        arithmeticIntensity = 6.2;
-        baseGflops = (this.activeConfig.targetIsa === 'AVX512' ? 520.0 : 380.0);
-      } else if (this.activeConfig.kernel === 'msimd_cull_distance_lod_f32') {
-        arithmeticIntensity = 1.8;
-        baseGflops = 140.0;
-      }
-
-      const jitter = Math.sin(this.simFrameIndex * 0.25) * 0.05;
-      const currentGflops = Math.max(10, Math.round((baseGflops * (1 + jitter)) * 10) / 10);
-      const throughputGBs = Math.round((currentGflops / arithmeticIntensity) * 10) / 10;
-      const ipc = Math.min(3.8, Math.round(((currentGflops / (4200 * 0.001 * 16)) * 2.1) * 100) / 100);
-
       const frame: LiveTelemetryFrame = {
         timestamp: Date.now(),
         frameIndex: this.simFrameIndex,
-        cpuMhz: 4200 + Math.floor(Math.sin(this.simFrameIndex * 0.2) * 120),
+        cpuMhz: 4200,
         topography: {
           eggCount: this.simEggCount,
           fledglingCount: this.simFledglingCount,
@@ -203,73 +183,37 @@ export class NativeBridgeService {
           fallineEmptyBoxes: this.simFallineBoxes,
           tankRegionsBytes: this.simTankBytes,
           landfillEvacuatedBytes: this.simLandfillBytes,
-          puzzleArenaActiveTests: 2,
+          puzzleArenaActiveTests: 0,
           totalAllocatedBytes: this.simTotalAlloc,
           rmrpReclaimedBytes: this.simRmrpReclaimed
         },
         metrics: {
-          currentGflops,
-          peakGflops: Math.round(baseGflops * 1.35 * 10) / 10,
-          currentThroughputGBs: throughputGBs,
-          estimatedIPC: ipc,
-          totalOperations: this.simFrameIndex * this.activeConfig.workloadSize,
-          dispatchedAluCount: Math.floor(this.simFrameIndex * 3.8),
-          speedupVsScalar: Math.round((currentGflops / 54.0) * 10) / 10,
-          speedupVsWasm: Math.round((currentGflops / 180.0) * 10) / 10,
-          activeKernel: this.activeConfig.kernel,
+          currentGflops: 0,
+          peakGflops: 0,
+          currentThroughputGBs: 0,
+          estimatedIPC: 0,
+          totalOperations: 0,
+          dispatchedAluCount: 0,
+          speedupVsScalar: 0,
+          speedupVsWasm: 0,
+          activeKernel: 'none',
           activeProfile: this.activeConfig.profile,
           activeIsa: this.activeConfig.targetIsa
         },
-        recentLatencies: [
-          {
-            timestamp: Date.now(),
-            cycles: 1420 + Math.floor(Math.random() * 80),
-            nanoseconds: 338 + Math.floor(Math.random() * 20),
-            kernelName: this.activeConfig.kernel,
-            isa: this.activeConfig.targetIsa
-          }
-        ],
-        rooflinePoints: [
-          {
-            id: 'msimd_mat4f_mul',
-            name: 'Dense Mat4x4 Multiply',
-            arithmeticIntensity: 18.5,
-            performanceGflops: this.activeConfig.targetIsa === 'AVX512' ? 1520.0 : 890.4,
-            isa: this.activeConfig.targetIsa,
-            boundType: 'compute_bound',
-            timestamp: Date.now()
-          },
-          {
-            id: 'msimd_cull_distance_lod_f32',
-            name: 'Visibility Distance LOD',
-            arithmeticIntensity: 1.8,
-            performanceGflops: 120.0,
-            isa: this.activeConfig.targetIsa,
-            boundType: 'memory_bound',
-            timestamp: Date.now()
-          },
-          {
-            id: 'msimd_wave_supersaw_7',
-            name: 'Wave Supersaw-7',
-            arithmeticIntensity: 6.2,
-            performanceGflops: 380.0,
-            isa: this.activeConfig.targetIsa,
-            boundType: 'compute_bound',
-            timestamp: Date.now()
-          }
-        ],
+        recentLatencies: [],
+        rooflinePoints: [],
         selfHealStats: {
-          corruptionsHealed: 22,
-          brooksCyclesBroken: 6,
-          codeErrorsCaptured: 2,
-          bitcodeExceptionsShielded: 4
+          corruptionsHealed: 0,
+          brooksCyclesBroken: 0,
+          codeErrorsCaptured: 0,
+          bitcodeExceptionsShielded: 0
         },
         fourPointStatus: {
-          safepointPolls: 1420,
-          controlpointChecks: 710,
-          hookpointEnters: 355,
-          hookpointExits: 355,
-          pausepointPolls: 88,
+          safepointPolls: 0,
+          controlpointChecks: 0,
+          hookpointEnters: 0,
+          hookpointExits: 0,
+          pausepointPolls: 0,
           pausepointArmed: false
         },
         system: {

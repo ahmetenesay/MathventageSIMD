@@ -35,22 +35,26 @@ if (process.platform === 'win32') {
   process.env.PATH = `${winDllDir};${tbbDir};${process.env.PATH}`;
 }
 
-// Server State & Live Log Queue (Declared prior to native loading)
+// Server State & Live Metrics (Strict Zero Baseline: No Hardcoded Mock / Fake Numbers)
 let frameIndex = 0;
-let eggCount = 34;
-let fledglingCount = 158;
-let pitstopCount = 2;
-let totalReclaimed = 12 * 1024 * 1024;
-let activeKernel = 'msimd_mat4f_mul';
+let eggCount = 0;
+let fledglingCount = 0;
+let pitstopCount = 0;
+let totalReclaimed = 0;
+let activeKernel = 'none';
 let activeIsa = 'AVX2';
 let activeProfile = 'NORMAX';
-let activeWorkloadSize = 65536;
-let corruptionsHealed = 24;
-let brooksCyclesBroken = 7;
-let bitcodeShielded = 5;
-let lastRealBenchmarkGflops = 890.4;
-let lastRealLatencyNs = 340;
-let lastRealCycles = 1420;
+let activeWorkloadSize = 0;
+let corruptionsHealed = 0;
+let brooksCyclesBroken = 0;
+let bitcodeShielded = 0;
+let lastRealBenchmarkGflops = 0;
+let lastRealLatencyNs = 0;
+let lastRealCycles = 0;
+let totalOperationsRun = 0;
+let totalAllocatedTensorsBytes = 0;
+const liveRooflinePoints = [];
+const liveRecentLatencies = [];
 
 // Host System Hardware Telemetry State
 let latestSystemMetrics = {
@@ -407,9 +411,9 @@ process.on('SIGINT', () => {
 function runNativeBenchmarkPass(kernelName, count = 65536) {
   if (!nativeLoaded || !nativeFunctions) {
     return {
-      gflops: activeIsa === 'AVX512' ? 1480.0 : 880.0,
-      latencyNs: 350,
-      cycles: 1470,
+      gflops: 0,
+      latencyNs: 0,
+      cycles: 0,
       elements: count
     };
   }
@@ -449,6 +453,13 @@ function runNativeBenchmarkPass(kernelName, count = 65536) {
     const camPos = new Float32Array([0, 0, 0]);
     const lodOut = new Uint8Array(count);
     nativeFunctions.msimd_cull_distance_lod_f32(objPos, camPos, 10.0, 100.0, 2.0, count, lodOut);
+  } else if (nativeFunctions[kernelName]) {
+    try {
+      const a = new Float32Array(count);
+      const b = new Float32Array(count);
+      const c = new Float32Array(count);
+      nativeFunctions[kernelName](a, b, c);
+    } catch {}
   }
 
   const t1 = process.hrtime.bigint();
@@ -461,6 +472,42 @@ function runNativeBenchmarkPass(kernelName, count = 65536) {
   lastRealBenchmarkGflops = gflops;
   lastRealLatencyNs = latencyNs;
   lastRealCycles = cycles;
+  totalOperationsRun += ops;
+  activeKernel = kernelName;
+
+  // Record real RDTSC latency point
+  liveRecentLatencies.push({
+    timestamp: Date.now(),
+    cycles: cycles,
+    nanoseconds: latencyNs,
+    kernelName: kernelName,
+    isa: activeIsa
+  });
+  if (liveRecentLatencies.length > 50) {
+    liveRecentLatencies.shift();
+  }
+
+  // Record real Roofline point
+  let ai = 18.5; // FLOP/Byte
+  if (kernelName.includes('wave')) ai = 6.2;
+  else if (kernelName.includes('cull')) ai = 1.8;
+  const boundType = ai > 10 ? 'compute_bound' : 'memory_bound';
+
+  const existingIdx = liveRooflinePoints.findIndex(p => p.id === kernelName);
+  const rPt = {
+    id: kernelName,
+    name: kernelName,
+    arithmeticIntensity: ai,
+    performanceGflops: gflops,
+    isa: activeIsa,
+    boundType: boundType,
+    timestamp: Date.now()
+  };
+  if (existingIdx >= 0) {
+    liveRooflinePoints[existingIdx] = rPt;
+  } else {
+    liveRooflinePoints.push(rPt);
+  }
 
   return { gflops, latencyNs, cycles, elements: count };
 }
@@ -476,31 +523,23 @@ function buildTelemetryFrame() {
       fledglingCount = Number(fOut[0]) || 0;
       pitstopCount = Number(pOut[0]) || 0;
     } catch {}
-  } else {
-    // Dynamic lifecycle: Newborn objects arrive periodically, get validated and promoted
-    if (frameIndex % 8 === 0) {
-      if (eggCount > 10) {
-        eggCount -= 2;
-        fledglingCount += 2;
-      } else {
-        // Replenish new unoptimized workload bursts
-        eggCount += 16;
-      }
+
+    if (nativeFunctions.SF_custominiVm_self_heal_query_stats) {
+      try {
+        const sh = {};
+        nativeFunctions.SF_custominiVm_self_heal_query_stats(sh);
+        corruptionsHealed = Number(sh.heap_corruptions_healed) || 0;
+        brooksCyclesBroken = Number(sh.brooks_cycles_broken) || 0;
+        bitcodeShielded = Number(sh.bitcode_exceptions_shielded) || 0;
+      } catch {}
     }
   }
 
-  // When idle, keep telemetry rock-solid and stable (no chaotic random jitter)
-  let baseGflops = lastRealBenchmarkGflops;
-  let arithmeticIntensity = 18.5;
-  if (activeKernel === 'msimd_wave_supersaw_7') {
-    arithmeticIntensity = 6.2;
-  } else if (activeKernel === 'msimd_cull_distance_lod_f32') {
-    arithmeticIntensity = 1.8;
-  }
-
-  const currentGflops = baseGflops;
-  const throughputGBs = Math.round((currentGflops / arithmeticIntensity) * 10) / 10;
-  const ipc = Math.min(3.85, Math.round(((currentGflops / (4200 * 0.001 * 16)) * 2.1) * 100) / 100);
+  const currentGflops = lastRealBenchmarkGflops;
+  const throughputGBs = currentGflops > 0 ? Math.round((currentGflops / 18.5) * 10) / 10 : 0;
+  const ipc = currentGflops > 0 ? Math.min(3.85, Math.round(((currentGflops / (4200 * 0.001 * 16)) * 2.1) * 100) / 100) : 0;
+  const aluDispatched = (nativeLoaded && nativeFunctions?.SF_custominiVm_get_alu_dispatched_count) ?
+    Number(nativeFunctions.SF_custominiVm_get_alu_dispatched_count()) || 0 : 0;
 
   return {
     timestamp: Date.now(),
@@ -508,75 +547,39 @@ function buildTelemetryFrame() {
     cpuMhz: 4200,
     nativeBackend: {
       isNative: nativeLoaded,
-      libraryPath: nativePath || 'Built-in High-Fidelity Simulation Engine',
+      libraryPath: nativePath || 'None',
       abiInterface: 'C-ABI 64-bit Direct Symbol Dispatch'
     },
     topography: {
       eggCount: eggCount,
       fledglingCount: fledglingCount,
       pitstopCount: pitstopCount,
-      fallineEmptyBoxes: 64,
-      tankRegionsBytes: 48 * 1024 * 1024,
-      landfillEvacuatedBytes: 16 * 1024 * 1024,
-      puzzleArenaActiveTests: 3,
-      totalAllocatedBytes: 128 * 1024 * 1024,
+      fallineEmptyBoxes: 0,
+      tankRegionsBytes: 0,
+      landfillEvacuatedBytes: 0,
+      puzzleArenaActiveTests: 0,
+      totalAllocatedBytes: totalAllocatedTensorsBytes,
       rmrpReclaimedBytes: totalReclaimed
     },
     metrics: {
       currentGflops: currentGflops,
-      peakGflops: Math.round(baseGflops * 1.32 * 10) / 10,
+      peakGflops: lastRealBenchmarkGflops,
       currentThroughputGBs: throughputGBs,
       estimatedIPC: ipc,
-      totalOperations: frameIndex * activeWorkloadSize,
-      dispatchedAluCount: Math.floor(frameIndex * 4.2),
-      speedupVsScalar: Math.round((currentGflops / 52.0) * 10) / 10,
-      speedupVsWasm: Math.round((currentGflops / 165.0) * 10) / 10,
+      totalOperations: totalOperationsRun,
+      dispatchedAluCount: aluDispatched,
+      speedupVsScalar: currentGflops > 0 ? Math.round((currentGflops / 52.0) * 10) / 10 : 0,
+      speedupVsWasm: currentGflops > 0 ? Math.round((currentGflops / 165.0) * 10) / 10 : 0,
       activeKernel: activeKernel,
       activeProfile: activeProfile,
       activeIsa: activeIsa
     },
-    recentLatencies: [
-      {
-        timestamp: Date.now(),
-        cycles: lastRealCycles,
-        nanoseconds: lastRealLatencyNs,
-        kernelName: activeKernel,
-        isa: activeIsa
-      }
-    ],
-    rooflinePoints: [
-      {
-        id: 'msimd_mat4f_mul',
-        name: 'Dense Mat4x4 Multiply',
-        arithmeticIntensity: 18.5,
-        performanceGflops: activeIsa === 'AVX512' ? 1520.0 : 890.4,
-        isa: activeIsa,
-        boundType: 'compute_bound',
-        timestamp: Date.now()
-      },
-      {
-        id: 'msimd_cull_distance_lod_f32',
-        name: 'Visibility Distance LOD',
-        arithmeticIntensity: 1.8,
-        performanceGflops: 124.0,
-        isa: activeIsa,
-        boundType: 'memory_bound',
-        timestamp: Date.now()
-      },
-      {
-        id: 'msimd_wave_supersaw_7',
-        name: 'Wave Supersaw-7',
-        arithmeticIntensity: 6.2,
-        performanceGflops: 460.0,
-        isa: activeIsa,
-        boundType: 'compute_bound',
-        timestamp: Date.now()
-      }
-    ],
+    recentLatencies: liveRecentLatencies,
+    rooflinePoints: liveRooflinePoints,
     selfHealStats: {
       corruptionsHealed: corruptionsHealed,
       brooksCyclesBroken: brooksCyclesBroken,
-      codeErrorsCaptured: 2,
+      codeErrorsCaptured: 0,
       bitcodeExceptionsShielded: bitcodeShielded
     },
     fourPointStatus: (() => {
@@ -593,17 +596,14 @@ function buildTelemetryFrame() {
             pausepointPolls: Number(stats.pausepoint_polls) || 0,
             pausepointArmed: armed
           };
-        } catch {
-          // fallback to baseline if query throws
-        }
+        } catch {}
       }
-      // Stable simulated baseline when idle (does NOT tick to infinity unless operations run)
       return {
-        safepointPolls: 1420 + Math.floor(frameIndex * 0),
-        controlpointChecks: 710,
-        hookpointEnters: 355,
-        hookpointExits: 355,
-        pausepointPolls: 88,
+        safepointPolls: 0,
+        controlpointChecks: 0,
+        hookpointEnters: 0,
+        hookpointExits: 0,
+        pausepointPolls: 0,
         pausepointArmed: false
       };
     })(),
