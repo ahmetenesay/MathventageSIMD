@@ -30,10 +30,6 @@ include_directories(
 add_executable(sf_bench_main bench_main.cpp)
 target_link_libraries(sf_bench_main PRIVATE "${SFMSIMD_LIB}")
 
-# Bridge Server Executable
-add_executable(sf_bridge_server bridge_server.cpp)
-target_link_libraries(sf_bridge_server PRIVATE "${SFMSIMD_LIB}" ws2_32)
-
 # Copy runtime DLLs next to binaries
 if(WIN32)
     add_custom_command(TARGET sf_bench_main POST_BUILD
@@ -43,13 +39,5 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${JINGZERO_NATIVES}/tbb12.dll"
         $<TARGET_FILE_DIR:sf_bench_main>
-    )
-    add_custom_command(TARGET sf_bridge_server POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${JINGZERO_NATIVES}/libsfmsimd.dll"
-        $<TARGET_FILE_DIR:sf_bridge_server>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${JINGZERO_NATIVES}/tbb12.dll"
-        $<TARGET_FILE_DIR:sf_bridge_server>
     )
 endif()

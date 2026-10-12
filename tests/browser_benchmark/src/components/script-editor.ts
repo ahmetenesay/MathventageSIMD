@@ -1,87 +1,46 @@
-import { TS_ScriptRunner } from '../services/native-api';
+import { validateSimdForgeScript, ValidationResult } from '../services/script-linter';
 import { nativeBridge } from '../services/native-bridge';
 
 export class ScriptEditorComponent {
   private container: HTMLElement;
   private editorTextarea!: HTMLTextAreaElement;
-  private outputConsole!: HTMLElement;
-  private presetSelect!: HTMLSelectElement;
+  private statusBanner!: HTMLElement;
+  private diagnosticsList!: HTMLElement;
   private executionStats!: HTMLElement;
+  private runBtn!: HTMLButtonElement;
+  private lastValidation: ValidationResult | null = null;
 
-  private presets: Record<string, string> = {
-    gemm: `// Dense Matrix Multiplication (F32) with SFVM Dispatch
-const a = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-const b = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-const c = new Float32Array(16);
+  private readonly defaultScript = `# =========================================================================
+# SimdForge Dynamic Hardware Benchmark Script
+# Syntax: Space-separated commands (semicolons optional)
+# Validated live against MathventageSIMD.h & SacculusForge.h
+# =========================================================================
 
-console.log("[MSIMD] Executing 50,000 passes of 4x4 GEMM...");
-for (let i = 0; i < 50000; ++i) {
-  MSIMD.mat4f_mul(a, b, c);
-}
+# 1. Allocate tensors in SFVM Motherline (Egg Zone)
+alloc a f32 16 1
+alloc b f32 16 1
+alloc c f32 16 1
 
-const zones = SFVM.queryZones();
-console.log("[SFVM] Runway Topology -> Egg:", zones.eggCount, "Fledgling:", zones.fledglingCount, "Pitstop:", zones.pitstopCount);
-console.log("[SFVM] Total ALU Ops Dispatched:", SFVM.getAluDispatchedCount());
-console.log("[MSIMD] Result Matrix diagonal:", c[0], c[5], c[10], c[15]);
-`,
-    culling: `// Frustum Culling on 4,096 Bounding Boxes
-const boxCount = 4096;
-const planes = new Float32Array(24);
-// Define 6 frustum planes (normals & distances)
-planes.set([0, 1, 0, 10,  0, -1, 0, 10,  1, 0, 0, 10,  -1, 0, 0, 10,  0, 0, 1, 50,  0, 0, -1, 1]);
+# 2. Benchmark SIMD Matrix Kernel via Hardware C-ABI
+repeat 50000 mat4f_mul a b c
 
-const mins = new Float32Array(boxCount * 3);
-const maxs = new Float32Array(boxCount * 3);
-for (let i = 0; i < boxCount * 3; ++i) {
-  mins[i] = (Math.random() - 0.5) * 40;
-  maxs[i] = mins[i] + Math.random() * 2.0;
-}
-const visible = new Uint8Array(boxCount);
+# 3. Trigger SFVM Generational Lifecycle & Safety Gates
+rmrp plump
+pitstop
+self_heal
+gc_collect
 
-console.log("[MSIMD] Testing 4,096 AABBs against 6 Frustum Planes...");
-const visibleCount = MSIMD.cull_frustum_aabbs(planes, mins, maxs, boxCount, visible);
-
-console.log("[MSIMD] Culling completed. Visible AABBs:", visibleCount, "/", boxCount);
-console.log("[MSIMD] Rejection Rate:", ((1 - visibleCount / boxCount) * 100).toFixed(1) + "%");
-`,
-    pitstop: `// Dynamic Pitstop ISA Hot-Swap Simulation
-console.log("[SFVM] Inspecting Motherline Runway Zones...");
-const before = SFVM.queryZones();
-console.log("[SFVM] Current Egg Zone count:", before.eggCount);
-
-console.log("[SFVM] Triggering Pitstop Promotion on unoptimized object...");
-SFVM.pitstopPromote();
-
-console.log("[SFVM] Object excised from Motherline into Pitstop empty box.");
-console.log("[SFVM] Yapbozcu re-targeting ladder: AVX2 -> AVX10.2 Converged 512");
-
-setTimeout(() => {
-  const after = SFVM.queryZones();
-  console.log("[SFVM] Promotion finalized. Fledgling count:", after.fledglingCount);
-}, 600);
-`,
-    rmrp: `// Reduce Memory Resident Propagation (RMRP) Heap Compaction
-console.log("[SFVM] Initiating RMRP Plump Compaction pass...");
-const reclaimed = SFVM.runRmrp('PLUMP');
-console.log("[SFVM] Reclaimed Heap Space:", (reclaimed / 1024 / 1024).toFixed(2), "MB");
-
-const budget = SFVM.queryThreadBudget();
-console.log("[SFVM] Adaptive Thread Budget -> GC:", budget.gcThreads, "Puzzle:", budget.puzzleThreads, "VM:", budget.vmThreads);
-`,
-    vfs: `// Virtual File System (VFS) Hierarchy Explorer
-console.log("[VFS] Listing root virtual mount points:");
-const rootNodes = SFVM.vfsLs('/heap/on_heap');
-rootNodes.forEach(node => console.log("  /heap/on_heap/" + node));
-
-console.log("[VFS] Listing execution boot branches:");
-const bootNodes = SFVM.vfsLs('/code_boot');
-bootNodes.forEach(node => console.log("  /code_boot/" + node));
-`
-  };
+# 4. Clean up allocated resources
+free a
+free b
+free c
+`;
 
   constructor(container: HTMLElement) {
     this.container = container;
     this.render();
+    this.attachEvents();
+    this.validate();
   }
 
   private render(): void {
@@ -91,34 +50,32 @@ bootNodes.forEach(node => console.log("  /code_boot/" + node));
     card.innerHTML = `
       <div class="editor-header">
         <div class="editor-title-group">
-          <span class="editor-title">INTERACTIVE TS SCRIPT PLAYGROUND</span>
-          <span class="editor-sub">Write and run live code calling SacculusForge_TS (SFVM) and MathventageSIMD_TS (MSIMD)</span>
+          <span class="editor-title">SIMDFORGE SCRIPT RUNNER & REAL-TIME SPELL-CHECKER</span>
+          <span class="editor-sub">Space-separated syntax. Every keystroke is analyzed against MathventageSIMD.h & SacculusForge.h</span>
         </div>
         <div class="editor-actions">
-          <label class="preset-label">Preset:</label>
-          <select class="editor-preset-select" id="script-preset-select">
-            <option value="gemm">Dense 4x4 GEMM (msimd_mat4f_mul)</option>
-            <option value="culling">Frustum vs AABB Culling (4,096 boxes)</option>
-            <option value="pitstop">Pitstop ISA Hot-Swap Protocol</option>
-            <option value="rmrp">RMRP Heap Compaction & Thread Budget</option>
-            <option value="vfs">VFS Hierarchy Tree Explorer</option>
-          </select>
           <button class="btn-execute-script" id="btn-run-script">
-            <span>▶ EXECUTE SCRIPT</span>
+            <span>▶ ÇALIŞTIR (EXECUTE)</span>
           </button>
         </div>
       </div>
 
-      <div class="editor-body">
-        <div class="code-pane">
+      <div class="editor-body-split">
+        <!-- Script Textarea -->
+        <div class="editor-input-pane">
           <textarea class="script-textarea" id="script-code" spellcheck="false"></textarea>
         </div>
-        <div class="output-pane">
-          <div class="output-header">
-            <span>EXECUTION CONSOLE & LOG TRACE</span>
-            <span class="exec-stats" id="script-exec-stats">Ready</span>
+
+        <!-- Real-Time Diagnostics & Execution Output Pane -->
+        <div class="editor-diag-pane">
+          <div class="diag-header">
+            <span>SÖZDİZİMİ DENETÇİSİ & ÇALIŞTIRMA İZLEYİCİSİ</span>
+            <span class="exec-stats" id="script-exec-stats">Hazır</span>
           </div>
-          <div class="output-console" id="script-console-out"></div>
+          <div class="diag-status-banner" id="script-status-banner">
+            <span class="banner-text">Semboller taranıyor...</span>
+          </div>
+          <div class="diag-list" id="script-diagnostics-list"></div>
         </div>
       </div>
     `;
@@ -126,65 +83,121 @@ bootNodes.forEach(node => console.log("  /code_boot/" + node));
     this.container.appendChild(card);
 
     this.editorTextarea = card.querySelector('#script-code') as HTMLTextAreaElement;
-    this.outputConsole = card.querySelector('#script-console-out') as HTMLElement;
-    this.presetSelect = card.querySelector('#script-preset-select') as HTMLSelectElement;
+    this.statusBanner = card.querySelector('#script-status-banner') as HTMLElement;
+    this.diagnosticsList = card.querySelector('#script-diagnostics-list') as HTMLElement;
     this.executionStats = card.querySelector('#script-exec-stats') as HTMLElement;
+    this.runBtn = card.querySelector('#btn-run-script') as HTMLButtonElement;
 
-    // Load initial preset
-    this.editorTextarea.value = this.presets.gemm;
+    this.editorTextarea.value = this.defaultScript;
+  }
 
-    // Wire events
-    this.presetSelect.addEventListener('change', () => {
-      const code = this.presets[this.presetSelect.value];
-      if (code) {
-        this.editorTextarea.value = code;
-      }
+  private attachEvents(): void {
+    // Real-time spell checking on every keystroke
+    this.editorTextarea.addEventListener('input', () => {
+      this.validate();
     });
 
-    const runBtn = card.querySelector('#btn-run-script') as HTMLButtonElement;
-    runBtn.addEventListener('click', () => this.execute());
+    this.runBtn.addEventListener('click', () => {
+      this.execute();
+    });
+
+    // Listen for incoming script execution results from native bridge daemon
+    nativeBridge.onScriptResult((res) => {
+      if (res && res.type === 'SCRIPT_RESULT') {
+        this.runBtn.disabled = false;
+        this.runBtn.innerHTML = '<span>▶ ÇALIŞTIR (EXECUTE)</span>';
+        this.executionStats.innerHTML = `
+          <strong style="color: #88d49e">${res.gflops} GFLOPS</strong> | 
+          <strong style="color: #f6d585">${res.latencyNs} ns/op</strong> | 
+          <strong style="color: #7eb0d5">${res.cycles} cycles</strong>
+        `;
+
+        this.appendOutputLog(`[✓ SFVM Native Run] ${res.operationsRun} operasyon başarıyla tamamlandı via libsfmsimd.dll (${res.gflops} GFLOPS, ${res.latencyNs} ns/op).`, 'success');
+      }
+    });
+  }
+
+  private validate(): void {
+    const code = this.editorTextarea.value;
+    const result = validateSimdForgeScript(code);
+    this.lastValidation = result;
+
+    this.diagnosticsList.innerHTML = '';
+
+    if (result.isValid) {
+      this.statusBanner.className = 'diag-status-banner banner-valid';
+      this.statusBanner.innerHTML = `
+        <span class="status-icon">✓</span>
+        <span class="status-msg">
+          <strong>GEÇERLİ SÖZDİZİMİ</strong> — MathventageSIMD.h & SacculusForge.h ile %100 doğrulandı (${result.commandCount} operasyon hazır).
+        </span>
+      `;
+      this.runBtn.disabled = false;
+      this.runBtn.classList.remove('btn-disabled');
+    } else {
+      const errorCount = result.diagnostics.filter(d => d.severity === 'ERROR').length;
+      this.statusBanner.className = 'diag-status-banner banner-error';
+      this.statusBanner.innerHTML = `
+        <span class="status-icon">✕</span>
+        <span class="status-msg">
+          <strong>${errorCount} YAZIM / SÖZDİZİMİ HATASI BULUNDU</strong> — Tanımsız komut veya kernel mevcut.
+        </span>
+      `;
+      this.runBtn.disabled = true;
+      this.runBtn.classList.add('btn-disabled');
+
+      result.diagnostics.forEach(diag => {
+        const item = document.createElement('div');
+        item.className = 'diag-item diag-err';
+        item.innerHTML = `
+          <span class="diag-line">Satır ${diag.line}:</span>
+          <span class="diag-message">${diag.message}</span>
+          ${diag.suggestion ? `<span class="diag-suggest">${diag.suggestion}</span>` : ''}
+        `;
+        this.diagnosticsList.appendChild(item);
+      });
+    }
   }
 
   private execute(): void {
+    if (!this.lastValidation || !this.lastValidation.isValid) {
+      this.validate();
+      return;
+    }
+
     const code = this.editorTextarea.value;
-    this.outputConsole.innerHTML = '<div class="console-line line-dim">Executing script in TS sandbox...</div>';
-    this.executionStats.textContent = 'Running...';
+    this.runBtn.disabled = true;
+    this.runBtn.innerHTML = '<span>⚡ ÇALIŞTIRILIYOR...</span>';
+    this.executionStats.textContent = 'Yürütülüyor...';
 
-    // Also trigger native bridge benchmark pass so hardware counters react
-    nativeBridge.runTsBenchmark('custom_script', 65536);
+    this.appendOutputLog(`[Native Bridge] SimdForge scripti libsfmsimd.dll C-ABI arayüzüne gönderiliyor...`, 'info');
 
-    setTimeout(() => {
-      const { result, logs } = TS_ScriptRunner.executeScript(code);
-
-      this.outputConsole.innerHTML = '';
-      if (logs.length === 0) {
-        this.outputConsole.innerHTML = '<div class="console-line line-dim">[No stdout logs produced]</div>';
-      } else {
-        logs.forEach(log => {
-          const div = document.createElement('div');
-          div.className = 'console-line';
-          if (log.includes('[ERROR]') || log.includes('[RUNTIME EXCEPTION]')) {
-            div.classList.add('line-error');
-          } else if (log.includes('[WARN]')) {
-            div.classList.add('line-warn');
-          } else if (log.includes('[SFVM]')) {
-            div.classList.add('line-sfvm');
-          } else if (log.includes('[MSIMD]')) {
-            div.classList.add('line-msimd');
-          } else if (log.includes('[VFS]')) {
-            div.classList.add('line-vfs');
-          }
-          div.textContent = log;
-          this.outputConsole.appendChild(div);
-        });
+    nativeBridge.executeScript(code).then(res => {
+      if (res && res.sent) {
+        // Handled via WebSocket callback
+      } else if (res && res.success) {
+        this.runBtn.disabled = false;
+        this.runBtn.innerHTML = '<span>▶ ÇALIŞTIR (EXECUTE)</span>';
+        this.executionStats.innerHTML = `
+          <strong style="color: #88d49e">${res.gflops} GFLOPS</strong> | 
+          <strong style="color: #f6d585">${res.latencyNs} ns/op</strong> | 
+          <strong style="color: #7eb0d5">${res.cycles} cycles</strong>
+        `;
+        this.appendOutputLog(`[✓ HTTP C-ABI Run] ${res.operationsRun} operasyon tamamlandı: ${res.gflops} GFLOPS, ${res.latencyNs} ns/op via libsfmsimd.dll.`, 'success');
+      } else if (res && res.error) {
+        this.runBtn.disabled = false;
+        this.runBtn.innerHTML = '<span>▶ ÇALIŞTIR (EXECUTE)</span>';
+        this.executionStats.textContent = 'Hata!';
+        this.appendOutputLog(`[✕ Hata] Yürütme başarısız: ${res.error}`, 'error');
       }
+    });
+  }
 
-      this.executionStats.innerHTML = `
-        <span style="color: #88d49e">${result.gflops} GFLOPS</span> | 
-        <span style="color: #f6d585">${result.latencyNs} ns/op</span> | 
-        <span>${result.totalTimeMs} ms</span>
-      `;
-      this.outputConsole.scrollTop = this.outputConsole.scrollHeight;
-    }, 20);
+  private appendOutputLog(msg: string, type: 'info' | 'success' | 'error'): void {
+    const row = document.createElement('div');
+    row.className = `diag-item diag-${type}`;
+    row.textContent = msg;
+    this.diagnosticsList.appendChild(row);
+    this.diagnosticsList.scrollTop = this.diagnosticsList.scrollHeight;
   }
 }

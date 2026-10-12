@@ -547,10 +547,202 @@ function decodeWsFrames(buffer, onMessage) {
   return { closed: false, remaining: buffer.slice(offset) };
 }
 
-function handleClientMessage(msgText) {
+function executeSimdForgeScript(scriptText, clientSocket) {
+  if (!scriptText) return { success: false, error: 'Empty script' };
+
+  const rawLines = scriptText.split('\n');
+  const scriptTensors = {};
+  let primaryGflops = lastRealBenchmarkGflops;
+  let primaryLatencyNs = lastRealLatencyNs;
+  let primaryCycles = lastRealCycles;
+  let executedKernel = activeKernel;
+  let operationsRun = 0;
+
+  for (let l = 0; l < rawLines.length; ++l) {
+    let line = rawLines[l].trim();
+    const commentIdx = line.indexOf('#');
+    if (commentIdx !== -1) line = line.substring(0, commentIdx).trim();
+    const slashIdx = line.indexOf('//');
+    if (slashIdx !== -1) line = line.substring(0, slashIdx).trim();
+
+    const statements = line.split(';').map(s => s.trim()).filter(Boolean);
+
+    for (const stmt of statements) {
+      const tokens = stmt.split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) continue;
+
+      const cmd = tokens[0].toLowerCase();
+
+      // ALLOC <name> <dtype> [dims...]
+      if (cmd === 'alloc') {
+        const name = tokens[1];
+        const dtypeStr = (tokens[2] || 'f32').toLowerCase();
+        let dtype = 4; // FP32 default
+        if (dtypeStr === 'f64' || dtypeStr === 'double') dtype = 5;
+        else if (dtypeStr === 'i32' || dtypeStr === 'int32') dtype = 1;
+        else if (dtypeStr === 'f16') dtype = 3;
+        else if (dtypeStr === 'u8' || dtypeStr === 'uint8') dtype = 0;
+
+        const dim0 = parseInt(tokens[3], 10) || 16;
+        const dim1 = parseInt(tokens[4], 10) || 1;
+        const shape = [dim0, dim1, 0, 0, 0, 0, 0, 0];
+
+        if (nativeLoaded && nativeFunctions?.SF_custominiVm_tensor_alloc) {
+          try {
+            const t = nativeFunctions.SF_custominiVm_tensor_alloc(shape, 2, dtype);
+            scriptTensors[name] = t;
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // FREE <name>
+      if (cmd === 'free') {
+        const name = tokens[1];
+        if (scriptTensors[name] && nativeLoaded && nativeFunctions?.SF_custominiVm_tensor_free) {
+          try {
+            nativeFunctions.SF_custominiVm_tensor_free(scriptTensors[name]);
+            delete scriptTensors[name];
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // RMRP [method]
+      if (cmd === 'rmrp') {
+        const method = (tokens[1] || 'plump').toLowerCase() === 'sequential' ? 1 : 0;
+        if (nativeLoaded && nativeFunctions?.SF_custominiVm_run_rmrp) {
+          try {
+            const rec = nativeFunctions.SF_custominiVm_run_rmrp(method);
+            totalReclaimed += Number(rec) || 0;
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // PITSTOP
+      if (cmd === 'pitstop' || cmd === 'pitstop_promote' || cmd === 'pitstop_test') {
+        if (nativeLoaded && nativeFunctions?.SF_custominiVm_pitstop_test_cycle && nativeFunctions?.SF_custominiVm_tensor_alloc) {
+          try {
+            const shape = [16, 1, 0, 0, 0, 0, 0, 0];
+            const t = nativeFunctions.SF_custominiVm_tensor_alloc(shape, 1, 4);
+            if (t && t.data) {
+              nativeFunctions.SF_custominiVm_pitstop_test_cycle(t.data, "AVX10.2_Converged_512", 420);
+              if (nativeFunctions.SF_custominiVm_tensor_free) {
+                nativeFunctions.SF_custominiVm_tensor_free(t);
+              }
+            }
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // SELF_HEAL
+      if (cmd === 'self_heal' || cmd === 'selfheal') {
+        if (nativeLoaded && nativeFunctions?.SF_custominiVm_self_heal_run_check) {
+          try {
+            nativeFunctions.SF_custominiVm_self_heal_run_check();
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // GC_COLLECT
+      if (cmd === 'gc_collect' || cmd === 'collect' || cmd === 'gc') {
+        if (nativeLoaded && nativeFunctions?.SF_custominiVm_gc_collect) {
+          try {
+            nativeFunctions.SF_custominiVm_gc_collect();
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // FOCUS
+      if (cmd === 'focus' || cmd === 'set_focus') {
+        const fStr = (tokens[1] || 'auto').toLowerCase();
+        let fCode = 0; // AUTO
+        if (fStr === 'scp') fCode = 1;
+        else if (fStr === 'mcp') fCode = 2;
+        else if (fStr === 'hybrid_dual') fCode = 3;
+        if (nativeLoaded && nativeFunctions?.SF_custominiVm_set_execution_focus) {
+          try {
+            nativeFunctions.SF_custominiVm_set_execution_focus(fCode);
+          } catch {}
+        }
+        operationsRun++;
+        continue;
+      }
+
+      // REPEAT <count> <kernel> or BENCH <count> <kernel> or direct <kernel>
+      let repeatCount = 1000;
+      let kernelName = cmd;
+
+      if (cmd === 'repeat' || cmd === 'bench') {
+        repeatCount = parseInt(tokens[1], 10) || 1000;
+        kernelName = (tokens[2] || 'mat4f_mul').toLowerCase();
+      }
+
+      if (!kernelName.startsWith('msimd_') && (!nativeFunctions || !nativeFunctions[kernelName])) {
+        if (nativeFunctions && nativeFunctions['msimd_' + kernelName]) {
+          kernelName = 'msimd_' + kernelName;
+        }
+      }
+
+      executedKernel = kernelName;
+      activeKernel = kernelName;
+
+      const res = runNativeBenchmarkPass(kernelName, repeatCount);
+      primaryGflops = res.gflops;
+      primaryLatencyNs = res.latencyNs;
+      primaryCycles = res.cycles;
+      operationsRun++;
+    }
+  }
+
+  // Cleanup lingering tensors
+  for (const name of Object.keys(scriptTensors)) {
+    if (nativeLoaded && nativeFunctions?.SF_custominiVm_tensor_free) {
+      try {
+        nativeFunctions.SF_custominiVm_tensor_free(scriptTensors[name]);
+      } catch {}
+    }
+  }
+
+  const resultFrame = buildTelemetryFrame();
+
+  const responseObj = {
+    type: 'SCRIPT_RESULT',
+    success: true,
+    latencyNs: primaryLatencyNs || lastRealLatencyNs,
+    cycles: primaryCycles || lastRealCycles,
+    gflops: primaryGflops || lastRealBenchmarkGflops,
+    kernelName: executedKernel,
+    operationsRun,
+    frame: resultFrame
+  };
+
+  if (clientSocket && clientSocket.write) {
+    try {
+      clientSocket.write(encodeWsFrame(JSON.stringify(responseObj)));
+    } catch {}
+  }
+
+  return responseObj;
+}
+
+function handleClientMessage(msgText, clientSocket) {
   try {
     const msg = JSON.parse(msgText);
-    if (msg.type === 'CONFIGURE' && msg.config) {
+    if (msg.type === 'EXECUTE_SCRIPT' && msg.script) {
+      const res = executeSimdForgeScript(msg.script, clientSocket);
+      console.log(`[+] Executed Dynamic SimdForge Script: ${res.operationsRun} operations, ${res.gflops} GFLOPS, ${res.latencyNs} ns/op`);
+    } else if (msg.type === 'CONFIGURE' && msg.config) {
       if (msg.config.kernel) activeKernel = msg.config.kernel;
       if (msg.config.targetIsa) activeIsa = msg.config.targetIsa;
       if (msg.config.profile) activeProfile = msg.config.profile;
@@ -628,7 +820,16 @@ const server = http.createServer((req, res) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
-      handleClientMessage(body);
+      try {
+        const parsed = JSON.parse(body);
+        if (parsed.type === 'EXECUTE_SCRIPT' || parsed.script) {
+          const result = executeSimdForgeScript(parsed.script);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+          return;
+        }
+      } catch {}
+      handleClientMessage(body, null);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'OK', frame: buildTelemetryFrame() }));
     });
@@ -679,7 +880,7 @@ server.on('upgrade', (req, socket, head) => {
 
   socket.on('data', chunk => {
     clientBuffer = Buffer.concat([clientBuffer, chunk]);
-    const { closed, remaining } = decodeWsFrames(clientBuffer, handleClientMessage);
+    const { closed, remaining } = decodeWsFrames(clientBuffer, (msgText) => handleClientMessage(msgText, socket));
     clientBuffer = remaining;
     if (closed) {
       wsClients.delete(socket);

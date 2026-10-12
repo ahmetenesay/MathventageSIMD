@@ -5,7 +5,6 @@ import { LatencyHistogramComponent } from './components/latency-histogram';
 import { ThroughputMeterComponent } from './components/throughput-meter';
 import { MemoryTopographyComponent } from './components/memory-topography';
 import { TelemetryStreamComponent } from './components/telemetry-stream';
-import { BenchmarkControllerComponent } from './components/benchmark-controller';
 import { ScriptEditorComponent } from './components/script-editor';
 import { TerminalConsoleComponent } from './components/terminal-console';
 import { SiliconTopologyComponent } from './components/silicon-topology';
@@ -18,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const containerTopology = document.getElementById('silicon-topology-container');
   const containerTopography = document.getElementById('topography-container');
   const containerScriptEditor = document.getElementById('script-editor-container');
-  const containerController = document.getElementById('controller-container');
   const containerTerminal = document.getElementById('terminal-console-container');
   const containerTelemetry = document.getElementById('telemetry-container');
 
@@ -29,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     !containerTopology ||
     !containerTopography ||
     !containerScriptEditor ||
-    !containerController ||
     !containerTerminal ||
     !containerTelemetry
   ) {
@@ -44,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   new SiliconTopologyComponent(containerTopology);
   const topographyComponent = new MemoryTopographyComponent(containerTopography);
   new ScriptEditorComponent(containerScriptEditor);
-  new BenchmarkControllerComponent(containerController);
   const terminalComponent = new TerminalConsoleComponent(containerTerminal);
   const telemetryComponent = new TelemetryStreamComponent(containerTelemetry);
 

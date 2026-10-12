@@ -16,6 +16,7 @@ export class NativeBridgeService {
   private frameCallbacks: Set<FrameCallback> = new Set();
   private statusCallbacks: Set<(status: ConnectionStatus) => void> = new Set();
   private logCallbacks: Set<(entry: LogEntry) => void> = new Set();
+  private scriptResultCallbacks: Set<(result: any) => void> = new Set();
   private status: ConnectionStatus = 'DISCONNECTED';
   private simulationInterval: number | null = null;
   private httpPollingInterval: number | null = null;
@@ -84,6 +85,13 @@ export class NativeBridgeService {
           const msg = JSON.parse(event.data);
           if (msg && msg.type === 'NATIVE_LOG' && msg.entry) {
             this.notifyLog(msg.entry);
+            return;
+          }
+          if (msg && msg.type === 'SCRIPT_RESULT') {
+            if (msg.frame) {
+              this.notifyFrame(msg.frame);
+            }
+            this.notifyScriptResult(msg);
             return;
           }
           this.notifyFrame(msg as LiveTelemetryFrame);
@@ -316,6 +324,44 @@ export class NativeBridgeService {
     for (const cb of this.logCallbacks) {
       cb(entry);
     }
+  }
+
+  public onScriptResult(cb: (result: any) => void): () => void {
+    this.scriptResultCallbacks.add(cb);
+    return () => this.scriptResultCallbacks.delete(cb);
+  }
+
+  private notifyScriptResult(result: any): void {
+    for (const cb of this.scriptResultCallbacks) {
+      cb(result);
+    }
+  }
+
+  public executeScript(sourceCode: string): Promise<any> {
+    const payload = JSON.stringify({
+      type: 'EXECUTE_SCRIPT',
+      script: sourceCode
+    });
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(payload);
+      return Promise.resolve({ sent: true, method: 'WS' });
+    }
+
+    return fetch('http://localhost:9099/script/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ script: sourceCode })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.frame) {
+          this.notifyFrame(data.frame);
+        }
+        this.notifyScriptResult(data);
+        return data;
+      })
+      .catch(() => ({ success: false, error: 'Connection failed' }));
   }
 
   public sendConfig(config: BenchmarkConfig): void {
