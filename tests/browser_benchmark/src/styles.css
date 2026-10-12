@@ -1063,6 +1063,26 @@ body {
 .lvl-warn .term-msg { color: var(--pastel-amber); }
 .lvl-success .term-msg { color: #f1f5f9; }
 
+.term-raw-content {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
+
+.ansi-bold { font-weight: 700; }
+.ansi-bright-green, .ansi-green { color: #88d49e; }
+.ansi-bright-blue, .ansi-blue { color: #7eb0d5; }
+.ansi-bright-cyan, .ansi-cyan { color: #a8dadc; }
+.ansi-bright-red, .ansi-red { color: #e5989b; }
+.ansi-bright-yellow, .ansi-yellow { color: #f6d585; }
+.ansi-bright-magenta, .ansi-magenta { color: #b5a6c9; }
+.ansi-bright-white, .ansi-white { color: #f1faee; }
+.ansi-bright-black, .ansi-black { color: #64748b; }
+
+
 /* =========================================================================
    8. SILICON TOPOLOGY CARD
    ========================================================================= */

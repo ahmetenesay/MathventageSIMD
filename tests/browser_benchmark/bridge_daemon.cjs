@@ -99,17 +99,24 @@ function pushLiveNativeLog(rawText) {
   if (!rawText) return;
   const entry = parseNativeLogEntry(rawText);
   liveLogQueue.push(entry);
-  if (liveLogQueue.length > 300) {
+  if (liveLogQueue.length > 500) {
     liveLogQueue.shift();
   }
+  if (wsClients.size > 0) {
+    const packet = JSON.stringify({
+      type: 'NATIVE_LOG',
+      entry: entry
+    });
+    const wsBuffer = encodeWsFrame(packet);
+    for (const client of wsClients) {
+      try {
+        client.write(wsBuffer);
+      } catch {
+        wsClients.delete(client);
+      }
+    }
+  }
 }
-
-// Initial bootstrap logs from native initialization
-pushLiveNativeLog("\x1B[1;32m[0x00A1] [SFVM SysCore]\x1B[0m Native C-ABI runtime linked to libsfmsimd.dll (x86_64)");
-pushLiveNativeLog("\x1B[1;34m[0x00B1] [SFVM Motherline]\x1B[0m Split topology active: Egg zone & Fledgling zone partitioned with empty box protocol");
-pushLiveNativeLog("\x1B[1;36m[0x00C1] [SFVM Telemetry]\x1B[0m HotLog 64MB lock-free ring buffer online, Off-heap cacheline isolated");
-pushLiveNativeLog("\x1B[1;33m[0x00D1] [SFVM Scheduler]\x1B[0m Execution focus: AUTO. SMT/HT thread budgeting configured (GC <= 6, Puzzle <= 3)");
-pushLiveNativeLog("\x1B[1;35m[0x00E1] [SFVM Pitstop]\x1B[0m In-place fallback ladder armed for dynamic microarchitecture re-targeting");
 
 // Attempt loading Koffi FFI and native shared library
 let koffi = null;
@@ -199,6 +206,10 @@ try {
     const SF_custominiVm_register_raw_log_stream = nativeLib.func('void SF_custominiVm_register_raw_log_stream(rawLogStreamCb *stream_fn, void *user_data)');
     const SF_custominiVm_set_console_mirroring = nativeLib.func('void SF_custominiVm_set_console_mirroring(int enable)');
 
+    // Bind real pitstop & self-heal APIs
+    const SF_custominiVm_pitstop_test_cycle = nativeLib.func('int SF_custominiVm_pitstop_test_cycle(void *tensor_payload, const char *new_isa_name, uint64_t cycles_saved)');
+    const SF_custominiVm_self_heal_run_check = nativeLib.func('int SF_custominiVm_self_heal_run_check()');
+
     nativeFunctions = {
       SF_custominiVm_init,
       SF_custominiVm_shutdown,
@@ -216,6 +227,8 @@ try {
       SF_custominiVm_gc_collect,
       SF_custominiVm_register_raw_log_stream,
       SF_custominiVm_set_console_mirroring,
+      SF_custominiVm_pitstop_test_cycle,
+      SF_custominiVm_self_heal_run_check,
       msimd_mat4f_mul,
       msimd_mat4d_mul,
       msimd_cull_frustum_aabbs_f32,
@@ -323,16 +336,14 @@ function buildTelemetryFrame() {
     try {
       const eOut = [0], fOut = [0], pOut = [0];
       nativeFunctions.SF_custominiVm_runway_query_zones(eOut, fOut, pOut);
-      if (eOut[0] > 0 || fOut[0] > 0 || pOut[0] > 0) {
-        eggCount = eOut[0];
-        fledglingCount = fOut[0];
-        pitstopCount = pOut[0];
-      }
+      eggCount = Number(eOut[0]) || 0;
+      fledglingCount = Number(fOut[0]) || 0;
+      pitstopCount = Number(pOut[0]) || 0;
     } catch {}
   } else {
     // Dynamic lifecycle: Newborn objects arrive periodically, get validated and promoted
     if (frameIndex % 8 === 0) {
-      if (eggCount > 12) {
+      if (eggCount > 10) {
         eggCount -= 2;
         fledglingCount += 2;
       } else {
@@ -460,7 +471,7 @@ function buildTelemetryFrame() {
         pausepointArmed: false
       };
     })(),
-    recentLogs: liveLogQueue.slice(-15)
+    recentLogs: []
   };
 }
 
@@ -545,11 +556,9 @@ function handleClientMessage(msgText) {
       if (msg.config.profile) activeProfile = msg.config.profile;
       if (msg.config.workloadSize) activeWorkloadSize = msg.config.workloadSize;
       runNativeBenchmarkPass(activeKernel, activeWorkloadSize);
-      pushLiveNativeLog(`\x1B[1;36m[0x00A4] [SFVM Reconfig]\x1B[0m Microarchitecture steered: kernel=${activeKernel}, ISA=${activeIsa}, profile=${activeProfile}`);
       console.log(`[+] Reconfigured: kernel=${activeKernel}, isa=${activeIsa}, profile=${activeProfile}`);
     } else if (msg.type === 'TRIGGER_BENCHMARK') {
       const result = runNativeBenchmarkPass(msg.kernel || activeKernel, msg.count || activeWorkloadSize);
-      pushLiveNativeLog(`\x1B[1;32m[0x00B5] [SFVM Dispatch]\x1B[0m Kernel '${msg.kernel || activeKernel}' evaluated: ${result.gflops} GFLOPS, ${result.latencyNs} ns/op, ${result.cycles} cycles via ${activeIsa}`);
       console.log(`[+] Real Native Benchmark Executed: ${result.gflops} GFLOPS, ${result.latencyNs} ns/op`);
     } else if (msg.type === 'TRIGGER_RMRP') {
       let reclaimedBytes = 4 * 1024 * 1024;
@@ -564,24 +573,38 @@ function handleClientMessage(msgText) {
       } else {
         totalReclaimed += reclaimedBytes;
       }
-      pushLiveNativeLog(`\x1B[1;35m[0x00C4] [SFVM RMRP Compaction]\x1B[0m Heap compaction executed: ${(reclaimedBytes / 1024 / 1024).toFixed(2)} MB reclaimed, total reclaimed: ${(totalReclaimed / 1024 / 1024).toFixed(2)} MB`);
       console.log(`[+] RMRP Compaction Triggered: total=${totalReclaimed} bytes`);
     } else if (msg.type === 'TRIGGER_PITSTOP') {
-      if (eggCount > 0) {
-        eggCount--;
-        pitstopCount++;
-        pushLiveNativeLog(`\x1B[1;33m[0x00D2] [SFVM Pitstop Excision]\x1B[0m Object unhooked from Motherline (Egg zone) into Pitstop empty box. Ladder candidate: AVX10.2`);
-        setTimeout(() => {
-          pitstopCount = Math.max(0, pitstopCount - 1);
-          fledglingCount++;
-          pushLiveNativeLog(`\x1B[1;32m[0x00D3] [SFVM Pitstop Promotion]\x1B[0m Object ISA modernized and linked to Motherline (Fledgling zone). No compaction stall incurred.`);
-        }, 700);
+      if (nativeLoaded && nativeFunctions?.SF_custominiVm_pitstop_test_cycle && nativeFunctions?.SF_custominiVm_tensor_alloc) {
+        try {
+          const shape = [16, 1, 0, 0, 0, 0, 0, 0];
+          const t = nativeFunctions.SF_custominiVm_tensor_alloc(shape, 1, 4);
+          if (t && t.data) {
+            nativeFunctions.SF_custominiVm_pitstop_test_cycle(t.data, "AVX10.2_Converged_512", 420);
+            if (nativeFunctions.SF_custominiVm_tensor_free) {
+              nativeFunctions.SF_custominiVm_tensor_free(t);
+            }
+          }
+        } catch {}
+      } else {
+        if (eggCount > 0) {
+          eggCount--;
+          pitstopCount++;
+          setTimeout(() => {
+            pitstopCount = Math.max(0, pitstopCount - 1);
+            fledglingCount++;
+          }, 700);
+        }
       }
       console.log('[+] Pitstop In-Place ISA Migration Triggered');
     } else if (msg.type === 'TRIGGER_SELF_HEAL') {
       corruptionsHealed += 2;
       brooksCyclesBroken += 1;
-      pushLiveNativeLog(`\x1B[1;31m[0x00F1] [SFVM SelfHeal Recovery]\x1B[0m Fixed 2 corrupted header canary guards, broke 1 cyclic Brooks forwarding pointer loop`);
+      if (nativeLoaded && nativeFunctions?.SF_custominiVm_self_heal_run_check) {
+        try {
+          nativeFunctions.SF_custominiVm_self_heal_run_check();
+        } catch {}
+      }
       console.log('[+] Self-Heal Sweep Triggered');
     }
   } catch (err) {
@@ -641,6 +664,13 @@ server.on('upgrade', (req, socket, head) => {
   socket.write(headers.join('\r\n'));
   wsClients.add(socket);
   console.log(`[+] WebSocket client connected (Total: ${wsClients.size})`);
+
+  // Replay existing native startup logs (if any were emitted during SFVM init) once
+  for (const entry of liveLogQueue) {
+    try {
+      socket.write(encodeWsFrame(JSON.stringify({ type: 'NATIVE_LOG', entry })));
+    } catch {}
+  }
 
   let clientBuffer = Buffer.alloc(0);
   if (head && head.length > 0) {

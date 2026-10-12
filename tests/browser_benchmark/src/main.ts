@@ -51,18 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Status updates (Connected Native vs Simulation)
   nativeBridge.onStatusChange((status) => {
     telemetryComponent.updateStatus(status);
-    const isConnected = status === 'CONNECTED_NATIVE';
-    terminalComponent.addLog({
-      timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
-      category: 'SYS',
-      level: isConnected ? 'SUCCESS' : 'WARN',
-      message: isConnected
-        ? 'Connected to native bridge daemon on ws://localhost:9099/stream (Native C-ABI Direct)'
-        : `Connection status changed: ${status}. Running high-precision in-browser client simulation.`
-    });
   });
 
-  // Wire live telemetry frames
+  // Event-driven live log streaming: ONLY print when a real signal/log arrives from SFVM C-ABI
+  nativeBridge.onLog((entry) => {
+    terminalComponent.addLog(entry);
+  });
+
+  // Wire live telemetry frames (pure numerical metrics, no log sampling)
   nativeBridge.onFrame((frame: LiveTelemetryFrame) => {
     // 1. Throughput & tensor meters
     metersComponent.update(
@@ -87,13 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Telemetry log stream & 4-point coordination
     telemetryComponent.update(frame);
-
-    // 6. Push real native logs into Diagnostic Terminal
-    if (frame.recentLogs && frame.recentLogs.length > 0) {
-      frame.recentLogs.forEach(entry => {
-        terminalComponent.addLog(entry);
-      });
-    }
 
     // Update Header Badges
     const elTier = document.getElementById('header-tier-badge');

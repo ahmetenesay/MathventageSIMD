@@ -4,6 +4,7 @@ import {
   HardwareCeilings
 } from '../types/telemetry';
 import { TS_BenchmarkRunner, TS_BenchmarkResult } from './native-api';
+import { LogEntry } from '../components/terminal-console';
 
 export type FrameCallback = (frame: LiveTelemetryFrame) => void;
 export type ConnectionStatus = 'CONNECTED_NATIVE' | 'CONNECTING' | 'SIMULATION_MODE' | 'DISCONNECTED';
@@ -14,6 +15,7 @@ export class NativeBridgeService {
   private httpUrl: string = 'http://localhost:9099/telemetry';
   private frameCallbacks: Set<FrameCallback> = new Set();
   private statusCallbacks: Set<(status: ConnectionStatus) => void> = new Set();
+  private logCallbacks: Set<(entry: LogEntry) => void> = new Set();
   private status: ConnectionStatus = 'DISCONNECTED';
   private simulationInterval: number | null = null;
   private httpPollingInterval: number | null = null;
@@ -79,8 +81,12 @@ export class NativeBridgeService {
 
       this.ws.onmessage = (event) => {
         try {
-          const frame: LiveTelemetryFrame = JSON.parse(event.data);
-          this.notifyFrame(frame);
+          const msg = JSON.parse(event.data);
+          if (msg && msg.type === 'NATIVE_LOG' && msg.entry) {
+            this.notifyLog(msg.entry);
+            return;
+          }
+          this.notifyFrame(msg as LiveTelemetryFrame);
         } catch (e) {
           console.error('Failed to parse telemetry frame from native daemon:', e);
         }
@@ -149,9 +155,13 @@ export class NativeBridgeService {
     this.simulationInterval = window.setInterval(() => {
       this.simFrameIndex++;
 
-      if (this.simFrameIndex % 6 === 0 && this.simEggCount > 5) {
-        this.simEggCount--;
-        this.simFledglingCount++;
+      if (this.simFrameIndex % 6 === 0) {
+        if (this.simEggCount > 10) {
+          this.simEggCount -= 2;
+          this.simFledglingCount += 2;
+        } else {
+          this.simEggCount += 16;
+        }
       }
 
       let baseGflops = 890.4;
@@ -253,15 +263,7 @@ export class NativeBridgeService {
           hookpointExits: 355,
           pausepointPolls: 88,
           pausepointArmed: false
-        },
-        recentLogs: [
-          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'SYS', level: 'SUCCESS', message: 'SFVM runtime initialized via C-ABI at 64-bit boundary' },
-          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'RUNWAY', level: 'INFO', message: 'Motherline partitioned: Egg zone active (34 tensors), Fledgling zone ready (158 tensors)' },
-          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'PITSTOP', level: 'INFO', message: 'Pitstop buffer armed. Empty box protocol ready for non-compacting ISA retargeting' },
-          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'GC', level: 'SUCCESS', message: 'sfGC Generational Collector ready. RMRP Plump compaction initialized' },
-          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'HEAL', level: 'SUCCESS', message: 'Self-Healing Engine online. Canary guards armed against Brooks cycles' },
-          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'VFS', level: 'INFO', message: 'VFS mount /heap/on_heap mounted with strict fail-fast validation' }
-        ]
+        }
       };
 
       this.notifyFrame(frame);
@@ -293,6 +295,11 @@ export class NativeBridgeService {
     return () => this.frameCallbacks.delete(cb);
   }
 
+  public onLog(cb: (entry: LogEntry) => void): () => void {
+    this.logCallbacks.add(cb);
+    return () => this.logCallbacks.delete(cb);
+  }
+
   public onStatusChange(cb: (status: ConnectionStatus) => void): () => void {
     this.statusCallbacks.add(cb);
     cb(this.status);
@@ -302,6 +309,12 @@ export class NativeBridgeService {
   private notifyFrame(frame: LiveTelemetryFrame): void {
     for (const cb of this.frameCallbacks) {
       cb(frame);
+    }
+  }
+
+  private notifyLog(entry: LogEntry): void {
+    for (const cb of this.logCallbacks) {
+      cb(entry);
     }
   }
 

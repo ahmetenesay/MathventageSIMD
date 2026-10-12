@@ -9141,9 +9141,8 @@ struct sacculus_gc_t {
                 }
                 uint64_t t0 = sacculus_now_ns();
 
-                sweep_motherline();
-
-                drain_falline();
+                size_t evicted = sweep_motherline();
+                size_t drained = drain_falline();
 
                 uint64_t current_sweep = sweep_count.fetch_add(1, std::memory_order_relaxed) + 1;
 
@@ -9172,9 +9171,12 @@ struct sacculus_gc_t {
                 current_phase.store(SF_GC_PHASE_IDLE, std::memory_order_relaxed);
 
                 uint32_t heap_kb = (uint32_t)(total_heap_bytes.load(std::memory_order_relaxed) / 1024);
-                sacculus_hotlog_write(hotlog, SF_Ebin0_GC_SWEEP, SF_Ebin1_TRACE,
-                    0, 0, 0, 0, 0, current_sweep, heap_kb,
-                    "gc_heartbeat");
+                if (evicted > 0 || drained > 0) {
+                    char hb_msg[64];
+                    snprintf(hb_msg, sizeof(hb_msg), "gc_sweep evict=%zu drain=%zu", evicted, drained);
+                    sacculus_hotlog_write(hotlog, SF_Ebin0_GC_SWEEP, SF_Ebin1_INFO,
+                        0, 0, 0, 0, 0, current_sweep, heap_kb, hb_msg);
+                }
 
                 if (current_sweep % 1000 == 0) {
                     char msg[16];

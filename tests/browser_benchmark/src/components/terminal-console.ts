@@ -3,6 +3,56 @@ export interface LogEntry {
   category: 'SYS' | 'GC' | 'RUNWAY' | 'PITSTOP' | 'HEAL' | 'VFS' | 'BENCH';
   level: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
   message: string;
+  rawAnsi?: string;
+}
+
+function ansiToHtml(raw: string): string {
+  let escaped = raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  const colorMap: Record<string, string> = {
+    '1;30': 'ansi-bold ansi-bright-black',
+    '1;31': 'ansi-bold ansi-bright-red',
+    '1;32': 'ansi-bold ansi-bright-green',
+    '1;33': 'ansi-bold ansi-bright-yellow',
+    '1;34': 'ansi-bold ansi-bright-blue',
+    '1;35': 'ansi-bold ansi-bright-magenta',
+    '1;36': 'ansi-bold ansi-bright-cyan',
+    '1;37': 'ansi-bold ansi-bright-white',
+    '30': 'ansi-black',
+    '31': 'ansi-red',
+    '32': 'ansi-green',
+    '33': 'ansi-yellow',
+    '34': 'ansi-blue',
+    '35': 'ansi-magenta',
+    '36': 'ansi-cyan',
+    '37': 'ansi-white',
+    '1': 'ansi-bold'
+  };
+
+  let openSpans = 0;
+  escaped = escaped.replace(/\x1B\[([0-9;]+)m/g, (_match, code) => {
+    if (code === '0') {
+      let close = '';
+      while (openSpans > 0) {
+        close += '</span>';
+        openSpans--;
+      }
+      return close;
+    }
+    const cls = colorMap[code] || 'ansi-styled';
+    openSpans++;
+    return `<span class="${cls}">`;
+  });
+
+  while (openSpans > 0) {
+    escaped += '</span>';
+    openSpans--;
+  }
+
+  return escaped;
 }
 
 export class TerminalConsoleComponent {
@@ -10,13 +60,12 @@ export class TerminalConsoleComponent {
   private logListElement!: HTMLElement;
   private categoryFilter: string = 'ALL';
   private logs: LogEntry[] = [];
-  private readonly maxLogs = 250;
+  private readonly maxLogs = 500;
   private autoScroll: boolean = true;
 
   constructor(container: HTMLElement) {
     this.container = container;
     this.render();
-    this.seedInitialLogs();
   }
 
   private render(): void {
@@ -65,49 +114,17 @@ export class TerminalConsoleComponent {
 
     const copyBtn = card.querySelector('#btn-copy-terminal') as HTMLButtonElement;
     copyBtn.addEventListener('click', () => {
-      const text = this.logs.map(l => `[${l.timestamp}] [${l.category}] [${l.level}] ${l.message}`).join('\n');
+      const text = this.logs.map(l => l.rawAnsi || `[${l.timestamp}] [${l.category}] [${l.level}] ${l.message}`).join('\n');
       navigator.clipboard.writeText(text);
       copyBtn.textContent = 'Copied!';
       setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
     });
   }
 
-  private seedInitialLogs(): void {
-    const now = () => new Date().toLocaleTimeString('en-US', { hour12: false });
-    this.addLog({
-      timestamp: now(),
-      category: 'SYS',
-      level: 'INFO',
-      message: 'SacculusForge SFVM runtime initialized via C-ABI at 64-bit boundary.'
-    });
-    this.addLog({
-      timestamp: now(),
-      category: 'SYS',
-      level: 'INFO',
-      message: 'Discovered hardware profile: AMD/Intel Hybrid with AVX2 & AVX512 capability.'
-    });
-    this.addLog({
-      timestamp: now(),
-      category: 'RUNWAY',
-      level: 'SUCCESS',
-      message: 'Motherline split initialized: Egg zone allocated, Fledgling zone ready.'
-    });
-    this.addLog({
-      timestamp: now(),
-      category: 'PITSTOP',
-      level: 'INFO',
-      message: 'Pitstop buffer armed. Empty box protocol ready for non-compacting migrations.'
-    });
-    this.addLog({
-      timestamp: now(),
-      category: 'VFS',
-      level: 'INFO',
-      message: 'Virtual hierarchy /heap/on_heap mounted with strict fail-fast validation.'
-    });
-  }
-
   public addLog(entry: LogEntry): void {
-    // Avoid spamming exact duplicate consecutive lines
+    if (!entry) return;
+
+    // Deduplicate exact consecutive duplicates
     if (this.logs.length > 0) {
       const last = this.logs[this.logs.length - 1];
       if (last.message === entry.message && last.category === entry.category && last.timestamp === entry.timestamp) {
@@ -133,23 +150,30 @@ export class TerminalConsoleComponent {
     const timeSpan = document.createElement('span');
     timeSpan.className = 'term-time';
     timeSpan.textContent = `[${entry.timestamp}]`;
-
-    const catSpan = document.createElement('span');
-    catSpan.className = `term-cat badge-${entry.category.toLowerCase()}`;
-    catSpan.textContent = `[${entry.category}]`;
-
-    const lvlSpan = document.createElement('span');
-    lvlSpan.className = `term-lvl lvl-badge-${entry.level.toLowerCase()}`;
-    lvlSpan.textContent = `[${entry.level}]`;
-
-    const msgSpan = document.createElement('span');
-    msgSpan.className = 'term-msg';
-    msgSpan.textContent = entry.message;
-
     row.appendChild(timeSpan);
-    row.appendChild(catSpan);
-    row.appendChild(lvlSpan);
-    row.appendChild(msgSpan);
+
+    if (entry.rawAnsi) {
+      const rawSpan = document.createElement('span');
+      rawSpan.className = 'term-raw-content';
+      rawSpan.innerHTML = ansiToHtml(entry.rawAnsi);
+      row.appendChild(rawSpan);
+    } else {
+      const catSpan = document.createElement('span');
+      catSpan.className = `term-cat badge-${entry.category.toLowerCase()}`;
+      catSpan.textContent = `[${entry.category}]`;
+
+      const lvlSpan = document.createElement('span');
+      lvlSpan.className = `term-lvl lvl-badge-${entry.level.toLowerCase()}`;
+      lvlSpan.textContent = `[${entry.level}]`;
+
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'term-msg';
+      msgSpan.textContent = entry.message;
+
+      row.appendChild(catSpan);
+      row.appendChild(lvlSpan);
+      row.appendChild(msgSpan);
+    }
 
     this.logListElement.appendChild(row);
 
