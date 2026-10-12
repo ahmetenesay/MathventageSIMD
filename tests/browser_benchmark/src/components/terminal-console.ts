@@ -107,6 +107,14 @@ export class TerminalConsoleComponent {
   }
 
   public addLog(entry: LogEntry): void {
+    // Avoid spamming exact duplicate consecutive lines
+    if (this.logs.length > 0) {
+      const last = this.logs[this.logs.length - 1];
+      if (last.message === entry.message && Math.abs(Number(new Date(last.timestamp)) - Number(new Date(entry.timestamp))) < 1000) {
+        return;
+      }
+    }
+
     this.logs.push(entry);
     if (this.logs.length > this.maxLogs) {
       this.logs.shift();
@@ -130,12 +138,17 @@ export class TerminalConsoleComponent {
     catSpan.className = `term-cat badge-${entry.category.toLowerCase()}`;
     catSpan.textContent = `[${entry.category}]`;
 
+    const lvlSpan = document.createElement('span');
+    lvlSpan.className = `term-lvl lvl-badge-${entry.level.toLowerCase()}`;
+    lvlSpan.textContent = `[${entry.level}]`;
+
     const msgSpan = document.createElement('span');
     msgSpan.className = 'term-msg';
     msgSpan.textContent = entry.message;
 
     row.appendChild(timeSpan);
     row.appendChild(catSpan);
+    row.appendChild(lvlSpan);
     row.appendChild(msgSpan);
 
     this.logListElement.appendChild(row);

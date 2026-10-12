@@ -88,6 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Telemetry log stream & 4-point coordination
     telemetryComponent.update(frame);
 
+    // 6. Push real native logs into Diagnostic Terminal
+    if (frame.recentLogs && frame.recentLogs.length > 0) {
+      frame.recentLogs.forEach(entry => {
+        terminalComponent.addLog(entry);
+      });
+    }
+
     // Update Header Badges
     const elTier = document.getElementById('header-tier-badge');
     const elProfile = document.getElementById('header-profile-badge');

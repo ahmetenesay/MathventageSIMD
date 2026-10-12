@@ -109,6 +109,13 @@ export interface LiveTelemetryFrame {
     pausepointPolls: number;
     pausepointArmed: boolean;
   };
+  recentLogs?: {
+    timestamp: string;
+    category: 'SYS' | 'GC' | 'RUNWAY' | 'PITSTOP' | 'HEAL' | 'VFS' | 'BENCH';
+    level: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
+    message: string;
+    rawAnsi?: string;
+  }[];
 }
 
 export interface BenchmarkConfig {

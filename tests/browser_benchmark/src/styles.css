@@ -1022,11 +1022,18 @@ body {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
 }
 
-.term-time { color: #556277; font-size: 10px; }
-.term-cat { font-size: 10px; font-weight: 700; }
+.term-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.term-time { color: #556277; font-size: 10px; font-variant-numeric: tabular-nums; }
+.term-cat { font-size: 10px; font-weight: 700; width: 75px; flex-shrink: 0; }
 .badge-sys { color: var(--pastel-mint); }
 .badge-gc { color: var(--pastel-coral); }
 .badge-runway { color: var(--pastel-butter); }
@@ -1034,11 +1041,27 @@ body {
 .badge-heal { color: var(--pastel-gold); }
 .badge-vfs { color: var(--pastel-lavender); }
 .badge-bench { color: var(--pastel-sky); }
-.term-msg { color: #dbe4ee; word-break: break-all; }
 
-.lvl-error .term-msg { color: var(--pastel-coral); }
+.term-lvl {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  width: 58px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.lvl-badge-info { background: rgba(126, 176, 213, 0.15); color: #7eb0d5; border: 1px solid rgba(126, 176, 213, 0.3); }
+.lvl-badge-success { background: rgba(136, 212, 158, 0.15); color: #88d49e; border: 1px solid rgba(136, 212, 158, 0.3); }
+.lvl-badge-warn { background: rgba(224, 169, 109, 0.15); color: #e0a96d; border: 1px solid rgba(224, 169, 109, 0.3); }
+.lvl-badge-error { background: rgba(229, 152, 155, 0.15); color: #e5989b; border: 1px solid rgba(229, 152, 155, 0.3); }
+
+.term-msg { color: #dbe4ee; word-break: break-all; flex: 1; }
+
+.lvl-error .term-msg { color: var(--pastel-coral); font-weight: 600; }
 .lvl-warn .term-msg { color: var(--pastel-amber); }
-.lvl-success .term-msg { color: var(--pastel-mint); }
+.lvl-success .term-msg { color: #f1f5f9; }
 
 /* =========================================================================
    8. SILICON TOPOLOGY CARD

@@ -201,36 +201,7 @@ export class LatencyHistogramComponent {
       ctx.strokeRect(x + 1, y, Math.max(1, barW - 2), barH);
     }
 
-    // 2. Continuous Gaussian Kernel Density Estimation (KDE) Curve
-    if (numBins > 2) {
-      ctx.beginPath();
-      let started = false;
-      for (let i = 0; i < numBins; ++i) {
-        const normH = Math.min(1.0, Math.max(0.0, this.renderedBins[i]));
-        const barH = normH * plotH;
-        const cx = padding.left + (i + 0.5) * barW;
-        const cy = height - padding.bottom - barH;
-
-        if (!started) {
-          ctx.moveTo(cx, cy);
-          started = true;
-        } else {
-          const prevCx = padding.left + (i - 0.5) * barW;
-          const prevNormH = this.renderedBins[i - 1];
-          const prevCy = height - padding.bottom - prevNormH * plotH;
-          const cpX = (prevCx + cx) / 2;
-          ctx.bezierCurveTo(cpX, prevCy, cpX, cy, cx, cy);
-        }
-      }
-      ctx.strokeStyle = '#d4a373';
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = 'rgba(212, 163, 115, 0.35)';
-      ctx.shadowBlur = 6;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
-    // 3. Percentile Vertical Markers
+    // 2. Percentile Vertical Markers
     const drawPercentileLine = (ns: number, label: string, color: string) => {
       if (!this.stats) return;
       const span = this.stats.maxNs - this.stats.minNs || 1;
