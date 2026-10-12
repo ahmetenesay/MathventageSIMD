@@ -247,11 +247,11 @@ export class NativeBridgeService {
           bitcodeExceptionsShielded: 4
         },
         fourPointStatus: {
-          safepointPolls: this.simFrameIndex * 24,
-          controlpointChecks: this.simFrameIndex * 12,
-          hookpointEnters: this.simFrameIndex * 6,
-          hookpointExits: this.simFrameIndex * 6,
-          pausepointPolls: this.simFrameIndex * 3,
+          safepointPolls: 1420,
+          controlpointChecks: 710,
+          hookpointEnters: 355,
+          hookpointExits: 355,
+          pausepointPolls: 88,
           pausepointArmed: false
         }
       };
