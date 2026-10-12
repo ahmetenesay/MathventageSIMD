@@ -271,6 +271,33 @@ export class NativeBridgeService {
           hookpointExits: 355,
           pausepointPolls: 88,
           pausepointArmed: false
+        },
+        system: {
+          timestamp: Date.now(),
+          cpu: {
+            totalLoad: 35,
+            cores: [45, 60, 30, 25, 40, 35, 20, 18, 12, 10, 50, 62, 58, 48],
+            count: 14
+          },
+          gpu: [
+            { name: 'NVIDIA GeForce RTX 3060', load: 8, vramUsedMB: 1840, vramTotalMB: 12288 }
+          ],
+          memory: {
+            totalMB: 32104,
+            usedMB: 20152,
+            freeMB: 11952,
+            percent: 62,
+            sfvmOnHeapMB: 128
+          },
+          disks: [
+            { fs: 'C:', sizeGB: 931, usedGB: 908, freeGB: 23, usePercent: 97 },
+            { fs: 'E:', sizeGB: 699, usedGB: 675, freeGB: 24, usePercent: 96 }
+          ],
+          network: {
+            iface: 'Ethernet',
+            rxSecKB: 45,
+            txSecKB: 18
+          }
         }
       };
 

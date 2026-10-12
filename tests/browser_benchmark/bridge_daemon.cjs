@@ -18,6 +18,11 @@ const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+let si = null;
+try {
+  si = require('systeminformation');
+} catch {}
 
 const PORT = 9099;
 const WS_MAGIC = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
@@ -46,6 +51,137 @@ let bitcodeShielded = 5;
 let lastRealBenchmarkGflops = 890.4;
 let lastRealLatencyNs = 340;
 let lastRealCycles = 1420;
+
+// Host System Hardware Telemetry State
+let latestSystemMetrics = {
+  timestamp: Date.now(),
+  cpu: { totalLoad: 0, cores: [], count: os.cpus().length },
+  gpu: [],
+  memory: {
+    totalMB: Math.round(os.totalmem() / (1024 * 1024)),
+    usedMB: Math.round((os.totalmem() - os.freemem()) / (1024 * 1024)),
+    freeMB: Math.round(os.freemem() / (1024 * 1024)),
+    percent: Math.round(((os.totalmem() - os.freemem()) / os.totalmem()) * 100),
+    sfvmOnHeapMB: 128
+  },
+  disks: [],
+  network: { iface: 'Primary', rxSecKB: 0, txSecKB: 0 }
+};
+
+let lastCpuTicks = null;
+let lastNetStats = null;
+let lastNetSampleTime = Date.now();
+
+async function updateSystemMetrics() {
+  try {
+    // 1. CPU Loads (Per-Core & Total)
+    const cpus = os.cpus();
+    let totalIdle = 0, totalTick = 0;
+    const coreLoads = [];
+    if (lastCpuTicks && lastCpuTicks.length === cpus.length) {
+      for (let i = 0; i < cpus.length; ++i) {
+        const c = cpus[i].times;
+        const p = lastCpuTicks[i];
+        const idleDelta = c.idle - p.idle;
+        const totalDelta = (c.user - p.user) + (c.nice - p.nice) + (c.sys - p.sys) + (c.irq - p.irq) + idleDelta;
+        const load = totalDelta > 0 ? Math.min(100, Math.max(0, Math.round((1 - idleDelta / totalDelta) * 100))) : 0;
+        coreLoads.push(load);
+        totalIdle += idleDelta;
+        totalTick += totalDelta;
+      }
+    } else {
+      coreLoads.push(...cpus.map(() => 0));
+    }
+    lastCpuTicks = cpus.map(c => ({ ...c.times }));
+    const totalCpu = totalTick > 0 ? Math.min(100, Math.max(0, Math.round((1 - totalIdle / totalTick) * 100))) : 0;
+
+    // 2. Physical Memory & SFVM On-Heap Comparison
+    const totalMB = Math.round(os.totalmem() / (1024 * 1024));
+    const freeMB = Math.round(os.freemem() / (1024 * 1024));
+    const usedMB = totalMB - freeMB;
+    const memPercent = Math.round((usedMB / totalMB) * 100);
+    const sfvmHeapMB = Math.round((128 * 1024 * 1024) / (1024 * 1024));
+
+    // 3. GPU via systeminformation
+    let gpus = [];
+    if (si) {
+      try {
+        const gfx = await si.graphics();
+        if (gfx && gfx.controllers) {
+          gpus = gfx.controllers.map(g => ({
+            name: g.model || 'GPU',
+            load: g.utilizationGpu != null ? g.utilizationGpu : (g.memoryUsed ? Math.round((g.memoryUsed / (g.memoryTotal || 1)) * 100) : 0),
+            vramUsedMB: g.memoryUsed || 0,
+            vramTotalMB: g.vram || 0
+          }));
+        }
+      } catch {}
+    }
+
+    // 4. Disks via systeminformation
+    let disks = [];
+    if (si) {
+      try {
+        const fsData = await si.fsSize();
+        if (fsData && Array.isArray(fsData)) {
+          disks = fsData.map(d => ({
+            fs: d.fs,
+            sizeGB: Math.round(d.size / (1024 * 1024 * 1024)),
+            usedGB: Math.round(d.used / (1024 * 1024 * 1024)),
+            freeGB: Math.round(d.available / (1024 * 1024 * 1024)),
+            usePercent: Math.round(d.use)
+          }));
+        }
+      } catch {}
+    }
+
+    // 5. Network Rx/Tx
+    let rxSecKB = 0, txSecKB = 0, ifaceName = 'Ethernet';
+    if (si) {
+      try {
+        const netStats = await si.networkStats();
+        const now = Date.now();
+        const dt = Math.max(0.2, (now - lastNetSampleTime) / 1000);
+        if (netStats && netStats[0]) {
+          const prim = netStats[0];
+          ifaceName = prim.iface || 'Ethernet';
+          if (lastNetStats) {
+            rxSecKB = Math.max(0, Math.round(((prim.rx_bytes - lastNetStats.rx_bytes) / 1024) / dt));
+            txSecKB = Math.max(0, Math.round(((prim.tx_bytes - lastNetStats.tx_bytes) / 1024) / dt));
+          }
+          lastNetStats = { rx_bytes: prim.rx_bytes, tx_bytes: prim.tx_bytes };
+          lastNetSampleTime = now;
+        }
+      } catch {}
+    }
+
+    latestSystemMetrics = {
+      timestamp: Date.now(),
+      cpu: {
+        totalLoad: totalCpu,
+        cores: coreLoads,
+        count: cpus.length
+      },
+      gpu: gpus,
+      memory: {
+        totalMB,
+        usedMB,
+        freeMB,
+        percent: memPercent,
+        sfvmOnHeapMB: sfvmHeapMB
+      },
+      disks,
+      network: {
+        iface: ifaceName,
+        rxSecKB,
+        txSecKB
+      }
+    };
+  } catch (err) {}
+}
+
+setInterval(updateSystemMetrics, 750);
+updateSystemMetrics();
 
 const wsClients = new Set();
 const liveLogQueue = [];
@@ -471,7 +607,8 @@ function buildTelemetryFrame() {
         pausepointArmed: false
       };
     })(),
-    recentLogs: []
+    recentLogs: [],
+    system: latestSystemMetrics
   };
 }
 

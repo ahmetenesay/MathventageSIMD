@@ -8,9 +8,11 @@ import { TelemetryStreamComponent } from './components/telemetry-stream';
 import { ScriptEditorComponent } from './components/script-editor';
 import { TerminalConsoleComponent } from './components/terminal-console';
 import { SiliconTopologyComponent } from './components/silicon-topology';
+import { SystemTelemetryChartComponent } from './components/system-telemetry-chart';
 import { LiveTelemetryFrame } from './types/telemetry';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const containerSystem = document.getElementById('system-telemetry-container');
   const containerMeters = document.getElementById('throughput-meters-container');
   const containerRoofline = document.getElementById('roofline-container');
   const containerHistogram = document.getElementById('histogram-container');
@@ -21,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const containerTelemetry = document.getElementById('telemetry-container');
 
   if (
+    !containerSystem ||
     !containerMeters ||
     !containerRoofline ||
     !containerHistogram ||
@@ -35,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initialize UI Components
+  const systemComponent = new SystemTelemetryChartComponent(containerSystem);
   const metersComponent = new ThroughputMeterComponent(containerMeters);
   const rooflineComponent = new RooflineChartComponent(containerRoofline, nativeBridge.hardwareCeilings);
   const histogramComponent = new LatencyHistogramComponent(containerHistogram);
@@ -56,7 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Wire live telemetry frames (pure numerical metrics, no log sampling)
   nativeBridge.onFrame((frame: LiveTelemetryFrame) => {
-    // 1. Throughput & tensor meters
+    // 0. System Hardware Telemetry Chart (CPU, GPU, RAM, Disks, Network)
+    if (frame.system) {
+      systemComponent.update(frame.system);
+    }
     metersComponent.update(
       frame.metrics,
       frame.topography?.eggCount || 0,

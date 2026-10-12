@@ -82,6 +82,40 @@ export interface BenchmarkMetrics {
   activeIsa: SIMDTarget;
 }
 
+export interface SystemTelemetry {
+  timestamp: number;
+  cpu: {
+    totalLoad: number; // 0 - 100 %
+    cores: number[];   // per-core %
+    count: number;
+  };
+  gpu: {
+    name: string;
+    load: number;      // 0 - 100 %
+    vramUsedMB: number;
+    vramTotalMB: number;
+  }[];
+  memory: {
+    totalMB: number;
+    usedMB: number;
+    freeMB: number;
+    percent: number;
+    sfvmOnHeapMB: number;
+  };
+  disks: {
+    fs: string;
+    sizeGB: number;
+    usedGB: number;
+    freeGB: number;
+    usePercent: number;
+  }[];
+  network: {
+    iface: string;
+    rxSecKB: number; // Download speed
+    txSecKB: number; // Upload speed
+  };
+}
+
 export interface LiveTelemetryFrame {
   timestamp: number;
   frameIndex: number;
@@ -109,6 +143,7 @@ export interface LiveTelemetryFrame {
     pausepointPolls: number;
     pausepointArmed: boolean;
   };
+  system?: SystemTelemetry;
   recentLogs?: {
     timestamp: string;
     category: 'SYS' | 'GC' | 'RUNWAY' | 'PITSTOP' | 'HEAL' | 'VFS' | 'BENCH';
