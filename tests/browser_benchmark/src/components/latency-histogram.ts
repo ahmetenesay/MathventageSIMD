@@ -4,9 +4,15 @@ export class LatencyHistogramComponent {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private history: LatencySample[] = [];
-  private readonly maxSamples = 500;
+  private readonly maxSamples = 600;
   private stats: LatencyHistogramStats | null = null;
   private statsOverlay: HTMLElement;
+
+  // Double-buffering & smooth 60 FPS interpolation
+  private renderedBins: number[] = new Array(28).fill(0);
+  private targetBins: number[] = new Array(28).fill(0);
+  private animFrameId: number | null = null;
+  private lastRenderTime: number = 0;
 
   constructor(container: HTMLElement) {
     const wrapper = document.createElement('div');
@@ -22,20 +28,45 @@ export class LatencyHistogramComponent {
 
     container.appendChild(wrapper);
 
-    this.ctx = this.canvas.getContext('2d')!;
+    this.ctx = this.canvas.getContext('2d', { alpha: false })!;
     this.resize();
     window.addEventListener('resize', () => this.resize());
+
+    // Start 60 FPS smooth render loop
+    this.startLoop();
   }
 
   public resize(): void {
     const rect = this.canvas.parentElement?.getBoundingClientRect();
-    if (rect) {
+    if (rect && rect.width > 0) {
       const dpr = window.devicePixelRatio || 1;
-      this.canvas.width = rect.width * dpr;
-      this.canvas.height = (rect.height || 250) * dpr;
-      this.ctx.scale(dpr, dpr);
-      this.render();
+      this.canvas.width = Math.floor(rect.width * dpr);
+      this.canvas.height = Math.floor((rect.height || 260) * dpr);
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+  }
+
+  private startLoop(): void {
+    const loop = (time: number) => {
+      this.animFrameId = requestAnimationFrame(loop);
+      // Smooth lerp on rendered bins (friction 0.18 for buttery response, zero flicker)
+      let changed = false;
+      for (let i = 0; i < this.renderedBins.length; ++i) {
+        const diff = this.targetBins[i] - this.renderedBins[i];
+        if (Math.abs(diff) > 0.001) {
+          this.renderedBins[i] += diff * 0.18;
+          changed = true;
+        } else {
+          this.renderedBins[i] = this.targetBins[i];
+        }
+      }
+
+      if (changed || time - this.lastRenderTime > 200) {
+        this.render();
+        this.lastRenderTime = time;
+      }
+    };
+    this.animFrameId = requestAnimationFrame(loop);
   }
 
   public addSamples(samples: LatencySample[]): void {
@@ -47,7 +78,6 @@ export class LatencyHistogramComponent {
     }
     this.computeStats();
     this.updateStatsOverlay();
-    this.render();
   }
 
   private computeStats(): void {
@@ -70,8 +100,9 @@ export class LatencyHistogramComponent {
     const stdDevNs = Math.sqrt(variance);
     const jitterNs = maxNs - minNs;
 
-    const numBins = 24;
-    const binWidth = Math.max(1, (maxNs - minNs) / numBins);
+    const numBins = 28;
+    const span = Math.max(1, maxNs - minNs);
+    const binWidth = span / numBins;
     const bins: { binStartNs: number; binEndNs: number; count: number }[] = [];
 
     for (let i = 0; i < numBins; ++i) {
@@ -87,6 +118,11 @@ export class LatencyHistogramComponent {
       if (bIdx >= numBins) bIdx = numBins - 1;
       if (bIdx < 0) bIdx = 0;
       bins[bIdx].count++;
+    }
+
+    const maxCount = Math.max(...bins.map(b => b.count), 1);
+    for (let i = 0; i < numBins; ++i) {
+      this.targetBins[i] = bins[i].count / maxCount;
     }
 
     this.stats = {
@@ -113,52 +149,92 @@ export class LatencyHistogramComponent {
       <span>p99: <strong style="color: #e5989b">${this.stats.p99Ns} ns</strong></span>
       <span>Avg: <strong>${this.stats.avgNs} ns</strong></span>
       <span>Jitter: <strong>${this.stats.jitterNs} ns</strong></span>
-      <span>Samples: <strong>${this.stats.sampleCount}</strong></span>
+      <span>N: <strong>${this.stats.sampleCount}</strong></span>
     `;
   }
 
   public render(): void {
     const width = this.canvas.clientWidth;
     const height = this.canvas.clientHeight;
-    if (width === 0 || height === 0 || !this.stats || this.stats.bins.length === 0) return;
+    if (width === 0 || height === 0 || !this.stats) return;
 
     const ctx = this.ctx;
-    ctx.clearRect(0, 0, width, height);
 
     // Charcoal Dark Slate Canvas
     ctx.fillStyle = '#1d222b';
     ctx.fillRect(0, 0, width, height);
 
-    const padding = { left: 45, right: 25, top: 35, bottom: 32 };
+    const padding = { left: 50, right: 30, top: 35, bottom: 32 };
     const plotW = width - padding.left - padding.right;
     const plotH = height - padding.top - padding.bottom;
 
-    const maxCount = Math.max(...this.stats.bins.map(b => b.count), 1);
-    const barW = plotW / this.stats.bins.length;
+    const numBins = this.renderedBins.length;
+    const barW = plotW / numBins;
 
-    // Draw Histogram Bars in Soft Pastel Sky
-    for (let i = 0; i < this.stats.bins.length; ++i) {
-      const b = this.stats.bins[i];
-      const barH = (b.count / maxCount) * plotH;
+    // Grid Lines (Refined Dark Charcoal)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.lineWidth = 1;
+    for (let g = 1; g <= 4; ++g) {
+      const y = padding.top + (plotH / 4) * g;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(width - padding.right, y);
+      ctx.stroke();
+    }
+
+    // 1. Draw Histogram Bars with Soft Gradient
+    for (let i = 0; i < numBins; ++i) {
+      const normH = Math.min(1.0, Math.max(0.0, this.renderedBins[i]));
+      const barH = normH * plotH;
       const x = padding.left + i * barW;
       const y = height - padding.bottom - barH;
 
       const grad = ctx.createLinearGradient(0, y, 0, height - padding.bottom);
       grad.addColorStop(0, '#7eb0d5');
-      grad.addColorStop(1, 'rgba(126, 176, 213, 0.15)');
+      grad.addColorStop(1, 'rgba(126, 176, 213, 0.12)');
 
       ctx.fillStyle = grad;
-      ctx.fillRect(x + 1, y, barW - 2, barH);
+      ctx.fillRect(x + 1, y, Math.max(1, barW - 2), barH);
 
-      ctx.strokeStyle = '#9dc3e6';
+      ctx.strokeStyle = 'rgba(157, 195, 230, 0.4)';
       ctx.lineWidth = 1;
-      ctx.strokeRect(x + 1, y, barW - 2, barH);
+      ctx.strokeRect(x + 1, y, Math.max(1, barW - 2), barH);
     }
 
-    // Draw Percentile Lines with Pastel Indicators
+    // 2. Continuous Gaussian Kernel Density Estimation (KDE) Curve
+    if (numBins > 2) {
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < numBins; ++i) {
+        const normH = Math.min(1.0, Math.max(0.0, this.renderedBins[i]));
+        const barH = normH * plotH;
+        const cx = padding.left + (i + 0.5) * barW;
+        const cy = height - padding.bottom - barH;
+
+        if (!started) {
+          ctx.moveTo(cx, cy);
+          started = true;
+        } else {
+          const prevCx = padding.left + (i - 0.5) * barW;
+          const prevNormH = this.renderedBins[i - 1];
+          const prevCy = height - padding.bottom - prevNormH * plotH;
+          const cpX = (prevCx + cx) / 2;
+          ctx.bezierCurveTo(cpX, prevCy, cpX, cy, cx, cy);
+        }
+      }
+      ctx.strokeStyle = '#d4a373';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = 'rgba(212, 163, 115, 0.35)';
+      ctx.shadowBlur = 6;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // 3. Percentile Vertical Markers
     const drawPercentileLine = (ns: number, label: string, color: string) => {
       if (!this.stats) return;
-      const ratio = (ns - this.stats.minNs) / (this.stats.maxNs - this.stats.minNs || 1);
+      const span = this.stats.maxNs - this.stats.minNs || 1;
+      const ratio = Math.max(0, Math.min(1, (ns - this.stats.minNs) / span));
       const x = padding.left + ratio * plotW;
 
       ctx.strokeStyle = color;
@@ -180,7 +256,7 @@ export class LatencyHistogramComponent {
     drawPercentileLine(this.stats.p95Ns, 'p95', '#f6d585');
     drawPercentileLine(this.stats.p99Ns, 'p99', '#e5989b');
 
-    // Axes
+    // 4. Base Axes & Ticks
     ctx.strokeStyle = '#2b3240';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -190,12 +266,18 @@ export class LatencyHistogramComponent {
     ctx.lineTo(padding.left, height - padding.bottom);
     ctx.stroke();
 
-    // Axis Labels
+    // 5. Clean Axis Labels
     ctx.fillStyle = '#64748b';
     ctx.font = '9px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`${Math.round(this.stats.minNs)} ns`, padding.left, height - 12);
     ctx.fillText(`${Math.round(this.stats.maxNs)} ns`, width - padding.right, height - 12);
-    ctx.fillText('Execution Latency Distribution', width / 2, height - 12);
+    ctx.fillText('Execution Latency Distribution (RDTSC Clocks)', width / 2, height - 12);
+  }
+
+  public destroy(): void {
+    if (this.animFrameId !== null) {
+      cancelAnimationFrame(this.animFrameId);
+    }
   }
 }

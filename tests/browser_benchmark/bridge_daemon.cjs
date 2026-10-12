@@ -201,6 +201,7 @@ function buildTelemetryFrame() {
     }
   }
 
+  // When idle, keep telemetry rock-solid and stable (no chaotic random jitter)
   let baseGflops = lastRealBenchmarkGflops;
   let arithmeticIntensity = 18.5;
   if (activeKernel === 'msimd_wave_supersaw_7') {
@@ -209,15 +210,14 @@ function buildTelemetryFrame() {
     arithmeticIntensity = 1.8;
   }
 
-  const jitter = Math.sin(frameIndex * 0.25) * 0.04;
-  const currentGflops = Math.max(10, Math.round((baseGflops * (1 + jitter)) * 10) / 10);
+  const currentGflops = baseGflops;
   const throughputGBs = Math.round((currentGflops / arithmeticIntensity) * 10) / 10;
   const ipc = Math.min(3.85, Math.round(((currentGflops / (4200 * 0.001 * 16)) * 2.1) * 100) / 100);
 
   return {
     timestamp: Date.now(),
     frameIndex: frameIndex,
-    cpuMhz: 4200 + Math.floor(Math.sin(frameIndex * 0.15) * 100),
+    cpuMhz: 4200,
     nativeBackend: {
       isNative: nativeLoaded,
       libraryPath: nativePath || 'Built-in High-Fidelity Simulation Engine',
@@ -250,8 +250,8 @@ function buildTelemetryFrame() {
     recentLatencies: [
       {
         timestamp: Date.now(),
-        cycles: lastRealCycles + Math.floor(Math.random() * 40),
-        nanoseconds: lastRealLatencyNs + Math.floor(Math.random() * 10),
+        cycles: lastRealCycles,
+        nanoseconds: lastRealLatencyNs,
         kernelName: activeKernel,
         isa: activeIsa
       }
