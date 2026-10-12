@@ -253,7 +253,15 @@ export class NativeBridgeService {
           hookpointExits: 355,
           pausepointPolls: 88,
           pausepointArmed: false
-        }
+        },
+        recentLogs: [
+          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'SYS', level: 'SUCCESS', message: 'SFVM runtime initialized via C-ABI at 64-bit boundary' },
+          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'RUNWAY', level: 'INFO', message: 'Motherline partitioned: Egg zone active (34 tensors), Fledgling zone ready (158 tensors)' },
+          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'PITSTOP', level: 'INFO', message: 'Pitstop buffer armed. Empty box protocol ready for non-compacting ISA retargeting' },
+          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'GC', level: 'SUCCESS', message: 'sfGC Generational Collector ready. RMRP Plump compaction initialized' },
+          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'HEAL', level: 'SUCCESS', message: 'Self-Healing Engine online. Canary guards armed against Brooks cycles' },
+          { timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }), category: 'VFS', level: 'INFO', message: 'VFS mount /heap/on_heap mounted with strict fail-fast validation' }
+        ]
       };
 
       this.notifyFrame(frame);

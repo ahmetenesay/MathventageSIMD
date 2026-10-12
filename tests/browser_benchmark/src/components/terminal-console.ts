@@ -110,7 +110,7 @@ export class TerminalConsoleComponent {
     // Avoid spamming exact duplicate consecutive lines
     if (this.logs.length > 0) {
       const last = this.logs[this.logs.length - 1];
-      if (last.message === entry.message && Math.abs(Number(new Date(last.timestamp)) - Number(new Date(entry.timestamp))) < 1000) {
+      if (last.message === entry.message && last.category === entry.category && last.timestamp === entry.timestamp) {
         return;
       }
     }

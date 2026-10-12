@@ -61,25 +61,28 @@ function parseNativeLogEntry(rawText) {
   let category = 'SYS';
   let level = 'INFO';
 
-  if (clean.includes('[SFVM GC') || clean.includes('sfGC') || clean.includes('0x00A') || clean.includes('0x00C')) {
+  const lower = clean.toLowerCase();
+  if (clean.includes('[SFVM GC') || lower.includes('sfgc') || clean.includes('0x00C') || lower.includes('sweep') || lower.includes('compaction') || lower.includes('rmrp')) {
     category = 'GC';
-  } else if (clean.includes('Motherline') || clean.includes('Runway') || clean.includes('Egg') || clean.includes('Fledgling')) {
+  } else if (clean.includes('Motherline') || clean.includes('Runway') || lower.includes('egg') || lower.includes('fledgling') || clean.includes('0x00B')) {
     category = 'RUNWAY';
-  } else if (clean.includes('Pitstop') || clean.includes('0x00B')) {
+  } else if (clean.includes('Pitstop') || clean.includes('0x00D') || lower.includes('pitstop') || lower.includes('excision')) {
     category = 'PITSTOP';
-  } else if (clean.includes('SelfHeal') || clean.includes('Brooks') || clean.includes('Corruption') || clean.includes('0x00F')) {
+  } else if (clean.includes('SelfHeal') || clean.includes('Brooks') || clean.includes('Corruption') || clean.includes('0x00F') || lower.includes('canary')) {
     category = 'HEAL';
-  } else if (clean.includes('VFS') || clean.includes('Mount') || clean.includes('Tree')) {
+  } else if (clean.includes('VFS') || lower.includes('/heap') || lower.includes('/code_boot') || lower.includes('mount')) {
     category = 'VFS';
-  } else if (clean.includes('BENCH') || clean.includes('GFLOPS') || clean.includes('Kernel')) {
+  } else if (clean.includes('BENCH') || lower.includes('gflops') || clean.includes('0x00B5') || lower.includes('kernel') || lower.includes('dispatch') || lower.includes('evaluated')) {
     category = 'BENCH';
+  } else if (clean.includes('0x00A') || clean.includes('SysCore') || clean.includes('Scheduler') || lower.includes('thread') || lower.includes('native')) {
+    category = 'SYS';
   }
 
   if (clean.includes('ERROR') || clean.includes('FATAL') || clean.includes('PANIC') || clean.includes('Fault')) {
     level = 'ERROR';
   } else if (clean.includes('WARN') || clean.includes('Saturated')) {
     level = 'WARN';
-  } else if (clean.includes('SUCCESS') || clean.includes('Registered') || clean.includes('Completed') || clean.includes('Promoted')) {
+  } else if (clean.includes('SUCCESS') || clean.includes('Registered') || clean.includes('Completed') || clean.includes('Promoted') || clean.includes('evaluated')) {
     level = 'SUCCESS';
   }
 
