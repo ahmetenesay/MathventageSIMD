@@ -95,9 +95,12 @@ StrictDiagnosticLogging       = true
 # =============================================================================
 
 [TARGET_ARCHITECTURES_INTEL]
-# Desktop, Mobile & Hybrid Architectures
-ARL-P                = { Year: 2024, Vendor: "Intel", Core: "LionCove",       ISA: ["AVX2", "FMA3", "AVX_VNNI", "SHA"], Tier: 1 }
-ARL-E                = { Year: 2024, Vendor: "Intel", Core: "Skymont",        ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
+# Desktop, Mobile & Hybrid Architectures (LGA1954 / LGA1851 / LGA1700)
+NVL-P                = { Year: 2026, Vendor: "Intel", Socket: "LGA1954", Core: "CoyoteCove",       ISA: ["AVX10_2", "AVX512F", "APX_F", "FMA3", "AVX_VNNI"], Tier: 1 }
+NVL-E                = { Year: 2026, Vendor: "Intel", Socket: "LGA1954", Core: "ArcticWolf",       ISA: ["AVX10_2", "AVX512F", "APX_F", "FMA3", "AVX_VNNI"], Tier: 1 }
+PTL                  = { Year: 2025, Vendor: "Intel", Socket: "BGA2540", Core: "CougarCove+Darkmont", ISA: ["AVX2", "FMA3", "AVX_VNNI", "SHA"],           Tier: 1 }
+ARL-P                = { Year: 2024, Vendor: "Intel", Socket: "LGA1851", Core: "LionCove",         ISA: ["AVX2", "FMA3", "AVX_VNNI", "SHA"],              Tier: 1 }
+ARL-E                = { Year: 2024, Vendor: "Intel", Socket: "LGA1851", Core: "Skymont",          ISA: ["AVX2", "FMA3", "AVX_VNNI"],                     Tier: 1 }
 LNL                  = { Year: 2024, Vendor: "Intel", Core: "LionCove+Skymont",ISA: ["AVX2", "FMA3", "AVX_VNNI"],       Tier: 1 }
 MTL-P                = { Year: 2023, Vendor: "Intel", Core: "RedwoodCove",    ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
 MTL-E                = { Year: 2023, Vendor: "Intel", Core: "Crestmont",      ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 1 }
@@ -110,10 +113,13 @@ ICL                  = { Year: 2019, Vendor: "Intel", Core: "SunnyCove",      IS
 SKL                  = { Year: 2015, Vendor: "Intel", Core: "Skylake",        ISA: ["AVX2", "FMA3"],                    Tier: 1 }
 BDW                  = { Year: 2014, Vendor: "Intel", Core: "Broadwell",      ISA: ["AVX2", "FMA3"],                    Tier: 1 }
 HSW                  = { Year: 2013, Vendor: "Intel", Core: "Haswell",        ISA: ["AVX2", "FMA3", "BMI2"],            Tier: 1 }
+IVB                  = { Year: 2012, Vendor: "Intel", Core: "IvyBridge",      ISA: ["AVX", "F16C"],                     Tier: 1 }
 SNB                  = { Year: 2011, Vendor: "Intel", Core: "SandyBridge",    ISA: ["AVX"],                             Tier: 1 }
 
 # Server, Workstation & High-Performance Computing (HPC)
+DMR                  = { Year: 2026, Vendor: "Intel", Socket: "LGA9324", Core: "DiamondRapids",  ISA: ["AVX10_2", "AVX512F", "APX_F", "AMX"],         Tier: 3 }
 GNR                  = { Year: 2024, Vendor: "Intel", Core: "GraniteRapids",  ISA: ["AVX512F", "AMX", "AVX512_FP16"],   Tier: 3 }
+SRF                  = { Year: 2024, Vendor: "Intel", Core: "SierraForest",   ISA: ["AVX2", "FMA3", "AVX_VNNI"],        Tier: 3 }
 EMR                  = { Year: 2023, Vendor: "Intel", Core: "EmeraldRapids",  ISA: ["AVX512F", "AMX", "AVX512_BF16"],   Tier: 3 }
 SPR                  = { Year: 2023, Vendor: "Intel", Core: "SapphireRapids", ISA: ["AVX512F", "AMX", "AVX512_FP16"],   Tier: 3 }
 ICX                  = { Year: 2021, Vendor: "Intel", Core: "IceLakeSP",      ISA: ["AVX512F", "AVX512_VNNI"],          Tier: 3 }
@@ -125,9 +131,14 @@ TRM                  = { Year: 2020, Vendor: "Intel", Core: "Tremont",        IS
 GLM                  = { Year: 2016, Vendor: "Intel", Core: "Goldmont",       ISA: ["SSE4_2", "POPCNT", "SHA"],         Tier: 1 }
 
 [TARGET_ARCHITECTURES_AMD]
-ZEN6                 = { Year: 2025, Vendor: "AMD",   Core: "Morpheus",       ISA: ["AVX512F", "AVX512_FP16", "AMX_V"], Tier: 1 }
-ZEN5                 = { Year: 2024, Vendor: "AMD",   Core: "Nirvana",        ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "AVX512_VNNI"], Tier: 1 }
-ZEN4                 = { Year: 2022, Vendor: "AMD",   Core: "Persephone",     ISA: ["AVX512F", "AVX512VL", "AVX512_BF16"],                Tier: 1 }
+ZEN6                 = { Year: 2026, Vendor: "AMD",   Socket: "AM5", Core: "Morpheus",       ISA: ["AVX512F", "AVX512VL", "AVX512_FP16", "AVX512_BF16", "AVX512_VNNI", "AVX512_BMM", "FMA3"], Tier: 1 }
+ZEN6C                = { Year: 2026, Vendor: "AMD",   Socket: "SP7", Core: "Prometheus",     ISA: ["AVX512F", "AVX512VL", "AVX512_FP16", "AVX512_BF16", "AVX512_VNNI", "AVX512_BMM", "FMA3"], Tier: 1 }
+ZEN6_X3D             = { Year: 2026, Vendor: "AMD",   Socket: "AM5", Core: "Medusa_X3D",     ISA: ["AVX512F", "AVX512VL", "AVX512_FP16", "AVX512_BF16", "AVX512_VNNI", "AVX512_BMM", "FMA3"], Tier: 1 }
+ZEN5                 = { Year: 2024, Vendor: "AMD",   Socket: "AM5", Core: "Nirvana",        ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "AVX512_VNNI", "FMA3"], Tier: 1 }
+ZEN5C                = { Year: 2024, Vendor: "AMD",   Socket: "SP5", Core: "TurinDense",     ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "AVX512_VNNI", "FMA3"], Tier: 1 }
+ZEN5_X3D             = { Year: 2025, Vendor: "AMD",   Socket: "AM5", Core: "GraniteRidgeX",  ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "AVX512_VNNI", "FMA3"], Tier: 1 }
+ZEN4                 = { Year: 2022, Vendor: "AMD",   Socket: "AM5", Core: "Persephone",     ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "FMA3"],                Tier: 1 }
+ZEN4C                = { Year: 2023, Vendor: "AMD",   Socket: "SP5", Core: "Dionysus",       ISA: ["AVX512F", "AVX512VL", "AVX512_BF16", "FMA3"],                Tier: 1 }
 ZEN3                 = { Year: 2020, Vendor: "AMD",   Core: "Vermeer",        ISA: ["AVX2", "FMA3", "BMI2", "VAES"],                       Tier: 1 }
 ZEN2                 = { Year: 2019, Vendor: "AMD",   Core: "Renoir",         ISA: ["AVX2", "FMA3", "BMI2"],                               Tier: 1 }
 ZEN+                 = { Year: 2018, Vendor: "AMD",   Core: "PinnacleRidge",  ISA: ["AVX2", "FMA3"],                                       Tier: 1 }

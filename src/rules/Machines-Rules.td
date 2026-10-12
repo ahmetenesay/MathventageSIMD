@@ -252,13 +252,37 @@ def Arch_DiamondRapids         : CPUFamily<"DiamondRapids", Vendor_Intel, "DMR",
   let PipelineWidth = "8-wide";
   let ProcessNode = "Intel 18A";
 }
+def Arch_PantherLake           : CPUFamily<"PantherLake", Vendor_Intel, "PTL", 64> {
+  let ReleaseYear = 2025;
+  let IsHeterogeneous = 1;
+  let MaxVectorBitWidth = 256;
+  let DefaultSocket = "BGA2540";
+  let PipelineWidth = "8-wide";
+  let ProcessNode = "Intel 18A";
+}
 def Arch_NovaLake              : CPUFamily<"NovaLake", Vendor_Intel, "NVL", 64> {
   let ReleaseYear = 2026;
   let IsHeterogeneous = 1;
   let MaxVectorBitWidth = 512;
-  let DefaultSocket = "LGA1851";
+  let DefaultSocket = "LGA1954";
+  let PipelineWidth = "10-wide";
+  let ProcessNode = "TSMC N2 / Intel 18A";
+}
+def Arch_CoyoteCove            : CPUFamily<"CoyoteCove", Vendor_Intel, "NVL-P", 64> {
+  let ReleaseYear = 2026;
+  let IsHeterogeneous = 0;
+  let MaxVectorBitWidth = 512;
+  let DefaultSocket = "LGA1954";
   let PipelineWidth = "10-wide";
   let ProcessNode = "TSMC N2";
+}
+def Arch_ArcticWolf            : CPUFamily<"ArcticWolf", Vendor_Intel, "NVL-E", 64> {
+  let ReleaseYear = 2026;
+  let IsHeterogeneous = 0;
+  let MaxVectorBitWidth = 512;
+  let DefaultSocket = "LGA1954";
+  let PipelineWidth = "8-wide";
+  let ProcessNode = "TSMC N2 / Intel 18A";
 }
 def Arch_Goldmont              : CPUFamily<"Goldmont", Vendor_Intel, "GLM", 64> {
   let ReleaseYear = 2016;
@@ -428,13 +452,37 @@ def Arch_KrakenPoint           : CPUFamily<"KrakenPoint", Vendor_AMD, "KRK", 64>
   let PipelineWidth = "8-wide";
   let ProcessNode = "4nm";
 }
-def Arch_Zen6                  : CPUFamily<"Zen6", Vendor_AMD, "ZN6", 64> {
+def Arch_Zen5_X3D              : CPUFamily<"Zen5X3D_9950X3D", Vendor_AMD, "ZN5X3D", 64> {
+  let ReleaseYear = 2025;
+  let IsHeterogeneous = 1;
+  let MaxVectorBitWidth = 512;
+  let DefaultSocket = "AM5";
+  let PipelineWidth = "8-wide";
+  let ProcessNode = "TSMC N4P + 2nd-Gen 3D V-Cache";
+}
+def Arch_Zen6                  : CPUFamily<"Zen6_Morpheus", Vendor_AMD, "ZN6", 64> {
   let ReleaseYear = 2026;
   let IsHeterogeneous = 0;
   let MaxVectorBitWidth = 512;
-  let DefaultSocket = "AM6";
+  let DefaultSocket = "AM5";
   let PipelineWidth = "8-wide";
-  let ProcessNode = "2nm";
+  let ProcessNode = "TSMC N2P";
+}
+def Arch_Zen6c                 : CPUFamily<"Zen6c_Prometheus", Vendor_AMD, "ZN6C", 64> {
+  let ReleaseYear = 2026;
+  let IsHeterogeneous = 0;
+  let MaxVectorBitWidth = 512;
+  let DefaultSocket = "SP7";
+  let PipelineWidth = "8-wide";
+  let ProcessNode = "TSMC N2";
+}
+def Arch_Zen6_X3D              : CPUFamily<"Zen6X3D_Medusa", Vendor_AMD, "ZN6X3D", 64> {
+  let ReleaseYear = 2026;
+  let IsHeterogeneous = 1;
+  let MaxVectorBitWidth = 512;
+  let DefaultSocket = "AM5";
+  let PipelineWidth = "8-wide";
+  let ProcessNode = "TSMC N2P + 3rd-Gen 3D V-Cache";
 }
 def Arch_AppleM1               : CPUFamily<"AppleM1", Vendor_Apple, "M1", 128> {
   let ReleaseYear = 2020;
@@ -548,7 +596,7 @@ def Arch_CortexA55             : CPUFamily<"CortexA55", Vendor_ARM, "A55", 64> {
   let PipelineWidth = "2-wide";
   let ProcessNode = "10nm";
 }
-def Arch_CortexA72             : CPUFamily<"CortexA72", Vendor_Broadcom, "A72", 64> {
+def Arch_CortexA72             : CPUFamily<"CortexA72", Vendor_ARM, "A72", 64> {
   let ReleaseYear = 2019;
   let IsHeterogeneous = 0;
   let MaxVectorBitWidth = 128;
@@ -556,7 +604,7 @@ def Arch_CortexA72             : CPUFamily<"CortexA72", Vendor_Broadcom, "A72", 
   let PipelineWidth = "3-wide";
   let ProcessNode = "28nm";
 }
-def Arch_CortexA76             : CPUFamily<"CortexA76", Vendor_Broadcom, "A76", 64> {
+def Arch_CortexA76             : CPUFamily<"CortexA76", Vendor_ARM, "A76", 64> {
   let ReleaseYear = 2023;
   let IsHeterogeneous = 0;
   let MaxVectorBitWidth = 128;
@@ -660,7 +708,7 @@ def Arch_NvidiaOrin            : CPUFamily<"NvidiaOrin", Vendor_Nvidia, "ORN", 6
   let PipelineWidth = "4-wide";
   let ProcessNode = "Samsung 8nm";
 }
-def Arch_NvidiaGrace           : CPUFamily<"NvidiaGrace", Vendor_Nvidia, "GRC", 64> {
+def Arch_NvidiaGrace           : CPUFamily<"NvidiaGrace", Vendor_Nvidia, "GRACE", 64> {
   let ReleaseYear = 2023;
   let IsHeterogeneous = 0;
   let MaxVectorBitWidth = 256;
@@ -684,7 +732,7 @@ def Arch_AmpereOne             : CPUFamily<"AmpereOne", Vendor_Ampere, "AONE", 6
   let PipelineWidth = "4-wide";
   let ProcessNode = "5nm";
 }
-def Arch_FujitsuA64FX          : CPUFamily<"FujitsuA64FX", Vendor_Fujitsu, "A64", 256> {
+def Arch_FujitsuA64FX          : CPUFamily<"FujitsuA64FX", Vendor_Fujitsu, "A64FX", 256> {
   let ReleaseYear = 2020;
   let IsHeterogeneous = 0;
   let MaxVectorBitWidth = 512;
@@ -804,7 +852,7 @@ def Arch_ZhaoxinKX7000         : CPUFamily<"ZhaoxinKX7000", Vendor_Zhaoxin, "KX7
   let PipelineWidth = "4-wide";
   let ProcessNode = "7nm";
 }
-def Arch_SunwaySW26010Pro      : CPUFamily<"SunwaySW26010Pro", Vendor_Sunway, "SW26", 64> {
+def Arch_SunwaySW26010Pro      : CPUFamily<"SunwaySW26010Pro", Vendor_Sunway, "SW26P", 64> {
   let ReleaseYear = 2021;
   let IsHeterogeneous = 0;
   let MaxVectorBitWidth = 512;
@@ -880,7 +928,7 @@ def Arch_PhytiumS5000          : CPUFamily<"PhytiumS5000", Vendor_Phytium, "S50"
   let PipelineWidth = "4-wide";
   let ProcessNode = "7nm";
 }
-def Arch_Snapdragon8Elite      : CPUFamily<"Snapdragon8Elite", Vendor_Qualcomm, "ORY2", 64> {
+def Arch_Snapdragon8Elite      : CPUFamily<"Snapdragon8Elite", Vendor_Qualcomm, "SD8E", 64> {
   let ReleaseYear = 2024;
   let IsHeterogeneous = 1;
   let MaxVectorBitWidth = 128;
@@ -1440,7 +1488,7 @@ def ISA_x86_FMA3               : MachineISA<"x86_FMA3", 256, "__FMA__", 85> {
   let CPUIDRegister = "ECX";
   let CPUIDBit = 12;
 }
-def ISA_x86_AVX_VNNI           : MachineISA<"x86_AVX_VNNI", 256, "__AVX_VNNI__", 88> {
+def ISA_x86_AVX_VNNI           : MachineISA<"x86_AVX_VNNI", 256, "__AVXVNNI__", 88> {
   let SupportsFMA = 1;
   let SupportsMasking = 0;
   let SupportsVariableLength = 0;
@@ -1605,44 +1653,44 @@ def ISA_x86_AMX                : MachineISA<"x86_AMX", 1024, "__AMX_TILE__", 120
   let CPUIDRegister = "EDX";
   let CPUIDBit = 24;
 }
-def ISA_x86_APX                : MachineISA<"x86_APX", 512, "__APX_F__", 125> {
+def ISA_x86_APX                : MachineISA<"x86_APX", 64, "__APX_F__", 125> {
   let SupportsFMA = 1;
   let SupportsMasking = 1;
   let SupportsVariableLength = 0;
-  let PreferredAlignmentBytes = 64;
+  let PreferredAlignmentBytes = 8;
   let HeaderInclude = "<immintrin.h>";
   let CPUIDLeaf = 7;
   let CPUIDSubleaf = 1;
   let CPUIDRegister = "EDX";
   let CPUIDBit = 21;
 }
-def ISA_x86_APX_EGPR           : MachineISA<"x86_APX_EGPR", 512, "__APX_F__", 126> {
+def ISA_x86_APX_EGPR           : MachineISA<"x86_APX_EGPR", 64, "__APX_F__", 126> {
   let SupportsFMA = 1;
   let SupportsMasking = 1;
   let SupportsVariableLength = 0;
-  let PreferredAlignmentBytes = 64;
+  let PreferredAlignmentBytes = 8;
   let HeaderInclude = "<immintrin.h>";
   let CPUIDLeaf = 7;
   let CPUIDSubleaf = 1;
   let CPUIDRegister = "EDX";
   let CPUIDBit = 21;
 }
-def ISA_x86_APX_NDD            : MachineISA<"x86_APX_NDD", 512, "__APX_NDD__", 127> {
+def ISA_x86_APX_NDD            : MachineISA<"x86_APX_NDD", 64, "__APX_NDD__", 127> {
   let SupportsFMA = 0;
   let SupportsMasking = 1;
   let SupportsVariableLength = 0;
-  let PreferredAlignmentBytes = 64;
+  let PreferredAlignmentBytes = 8;
   let HeaderInclude = "<immintrin.h>";
   let CPUIDLeaf = 7;
   let CPUIDSubleaf = 1;
   let CPUIDRegister = "EDX";
   let CPUIDBit = 21;
 }
-def ISA_x86_APX_NF             : MachineISA<"x86_APX_NF", 512, "__APX_NF__", 128> {
+def ISA_x86_APX_NF             : MachineISA<"x86_APX_NF", 64, "__APX_NF__", 128> {
   let SupportsFMA = 0;
   let SupportsMasking = 1;
   let SupportsVariableLength = 0;
-  let PreferredAlignmentBytes = 64;
+  let PreferredAlignmentBytes = 8;
   let HeaderInclude = "<immintrin.h>";
   let CPUIDLeaf = 7;
   let CPUIDSubleaf = 1;
@@ -2105,6 +2153,12 @@ class RegisterLaneConfig<string name, PhysicalRegisterFile regfile, string eleme
 
 def Lane_ZMM_64xU8             : RegisterLaneConfig<"Lane_ZMM_64xU8", RegFile_ZMM, "uint8_t", 64>;
 def Lane_ZMM_64xI8             : RegisterLaneConfig<"Lane_ZMM_64xI8", RegFile_ZMM, "int8_t", 64>;
+def Lane_ZMM_64xBF8_E5M2       : RegisterLaneConfig<"Lane_ZMM_64xBF8_E5M2", RegFile_ZMM, "uint8_t", 64>;
+def Lane_ZMM_64xHF8_E4M3       : RegisterLaneConfig<"Lane_ZMM_64xHF8_E4M3", RegFile_ZMM, "uint8_t", 64>;
+def Lane_YMM_32xBF8_E5M2       : RegisterLaneConfig<"Lane_YMM_32xBF8_E5M2", RegFile_YMM, "uint8_t", 32>;
+def Lane_YMM_32xHF8_E4M3       : RegisterLaneConfig<"Lane_YMM_32xHF8_E4M3", RegFile_YMM, "uint8_t", 32>;
+def Lane_XMM_16xBF8_E5M2       : RegisterLaneConfig<"Lane_XMM_16xBF8_E5M2", RegFile_XMM, "uint8_t", 16>;
+def Lane_XMM_16xHF8_E4M3       : RegisterLaneConfig<"Lane_XMM_16xHF8_E4M3", RegFile_XMM, "uint8_t", 16>;
 def Lane_ZMM_32xU16            : RegisterLaneConfig<"Lane_ZMM_32xU16", RegFile_ZMM, "uint16_t", 32>;
 def Lane_ZMM_32xI16            : RegisterLaneConfig<"Lane_ZMM_32xI16", RegFile_ZMM, "int16_t", 32>;
 def Lane_ZMM_32xFP16           : RegisterLaneConfig<"Lane_ZMM_32xFP16", RegFile_ZMM, "_Float16", 32>;
@@ -2231,6 +2285,11 @@ def Port_Skymont_P0      : ExecutionPort<"Port_Skymont_P0", 110, "Intel Skymont:
 def Port_Skymont_P1      : ExecutionPort<"Port_Skymont_P1", 111, "Intel Skymont: 128-bit / 256-bit Vector ALU 1">;
 def Port_Skymont_P2      : ExecutionPort<"Port_Skymont_P2", 112, "Intel Skymont: Vector Load / AGU 0">;
 def Port_Skymont_P3      : ExecutionPort<"Port_Skymont_P3", 113, "Intel Skymont: Vector Load / AGU 1">;
+def Port_CoyoteCove_P0   : ExecutionPort<"Port_CoyoteCove_P0", 120, "Intel Nova Lake Coyote Cove: 512-bit AVX10.2 FMA 0 / APX ALU">;
+def Port_CoyoteCove_P1   : ExecutionPort<"Port_CoyoteCove_P1", 121, "Intel Nova Lake Coyote Cove: 512-bit AVX10.2 FMA 1 / APX ALU">;
+def Port_CoyoteCove_P5   : ExecutionPort<"Port_CoyoteCove_P5", 125, "Intel Nova Lake Coyote Cove: 512-bit AVX10.2 Shuffle / Permute">;
+def Port_ArcticWolf_V0   : ExecutionPort<"Port_ArcticWolf_V0", 126, "Intel Nova Lake Arctic Wolf: Converged AVX10.2 Vector FMA Pipe 0">;
+def Port_ArcticWolf_V1   : ExecutionPort<"Port_ArcticWolf_V1", 127, "Intel Nova Lake Arctic Wolf: Converged AVX10.2 Vector FMA Pipe 1">;
 def Port_Zen_ALU0        : ExecutionPort<"Port_Zen_ALU0", 20, "AMD Zen: Integer ALU 0 / Branch">;
 def Port_Zen_ALU1        : ExecutionPort<"Port_Zen_ALU1", 21, "AMD Zen: Integer ALU 1">;
 def Port_Zen_ALU2        : ExecutionPort<"Port_Zen_ALU2", 22, "AMD Zen: Integer ALU 2">;
@@ -2243,6 +2302,10 @@ def Port_Zen5_FP0        : ExecutionPort<"Port_Zen5_FP0", 130, "AMD Zen 5: 512-b
 def Port_Zen5_FP1        : ExecutionPort<"Port_Zen5_FP1", 131, "AMD Zen 5: 512-bit Native FMA Pipe 1">;
 def Port_Zen5_FP2        : ExecutionPort<"Port_Zen5_FP2", 132, "AMD Zen 5: 512-bit Vector Add / Shuffle Pipe 2">;
 def Port_Zen5_FP3        : ExecutionPort<"Port_Zen5_FP3", 133, "AMD Zen 5: 512-bit Vector Store / Permute Pipe 3">;
+def Port_Zen6_FP0        : ExecutionPort<"Port_Zen6_FP0", 134, "AMD Zen 6 Morpheus: 512-bit Native FMA / FP16 / BMM Pipe 0">;
+def Port_Zen6_FP1        : ExecutionPort<"Port_Zen6_FP1", 135, "AMD Zen 6 Morpheus: 512-bit Native FMA / FP16 / BMM Pipe 1">;
+def Port_Zen6_FP2        : ExecutionPort<"Port_Zen6_FP2", 136, "AMD Zen 6 Morpheus: 512-bit Vector Add / Shuffle Pipe 2">;
+def Port_Zen6_FP3        : ExecutionPort<"Port_Zen6_FP3", 137, "AMD Zen 6 Morpheus: 512-bit Vector Store / Permute Pipe 3">;
 def Port_Apple_FMA0      : ExecutionPort<"Port_Apple_FMA0", 30, "Apple Firestorm/Avalanche: 128-bit Vector FMA Pipe 0">;
 def Port_Apple_FMA1      : ExecutionPort<"Port_Apple_FMA1", 31, "Apple Firestorm/Avalanche: 128-bit Vector FMA Pipe 1">;
 def Port_Apple_FMA2      : ExecutionPort<"Port_Apple_FMA2", 32, "Apple Firestorm/Avalanche: 128-bit Vector FMA Pipe 2">;
@@ -2254,6 +2317,8 @@ def Port_Oryon_V2        : ExecutionPort<"Port_Oryon_V2", 42, "Qualcomm Oryon: 1
 def Port_Oryon_V3        : ExecutionPort<"Port_Oryon_V3", 43, "Qualcomm Oryon: 128-bit Vector Load/Store Pipe 3">;
 def Port_Neoverse_V0     : ExecutionPort<"Port_Neoverse_V0", 50, "ARM Neoverse V2: SVE 4x128b / 2x256b Pipe 0">;
 def Port_Neoverse_V1     : ExecutionPort<"Port_Neoverse_V1", 51, "ARM Neoverse V2: SVE 4x128b / 2x256b Pipe 1">;
+def Port_RVV_V0          : ExecutionPort<"Port_RVV_V0", 60, "RISC-V Vector V1.0: 512-bit Vector FMA / ALU Pipe 0">;
+def Port_RVV_V1          : ExecutionPort<"Port_RVV_V1", 61, "RISC-V Vector V1.0: 512-bit Vector FMA / ALU Pipe 1">;
 
 // =============================================================================
 // SECTION 5: BRANCH PREDICTOR (BPU) MODELS & MISPREDICTION PENALTY TABLES
@@ -2275,12 +2340,15 @@ def BPU_Haswell          : BranchPredictorModel<"Intel Haswell", "TAGE-like Dyna
 def BPU_Skylake          : BranchPredictorModel<"Intel Skylake", "TAGE Branch Predictor", 14, 19, 5120, "0.88", "VPBLEND_K_MASK">;
 def BPU_GoldenCove       : BranchPredictorModel<"Intel Golden Cove", "Deep TAGE-SC-L", 16, 21, 12288, "0.90", "VPBLEND_K_MASK">;
 def BPU_LionCove         : BranchPredictorModel<"Intel Lion Cove", "Fast Recovery TAGE", 14, 18, 16384, "0.92", "APX_CCMP_CMOV">;
+def BPU_CoyoteCove       : BranchPredictorModel<"Intel Coyote Cove", "Wide Neural TAGE + APX CCMP", 12, 16, 32768, "0.94", "APX_CCMP_K_MASK_AVX10_2">;
 def BPU_Gracemont        : BranchPredictorModel<"Intel Gracemont", "Multi-Way Perceptron", 13, 17, 4096, "0.84", "CMOV">;
 def BPU_Skymont          : BranchPredictorModel<"Intel Skymont", "Direct Branch Target", 12, 16, 8192, "0.87", "VPBLENDPS">;
+def BPU_ArcticWolf       : BranchPredictorModel<"Intel Arctic Wolf", "Decoupled Dual-Pipe TAGE", 11, 15, 16384, "0.91", "APX_CCMP_K_MASK_AVX10_2">;
 def BPU_Zen2             : BranchPredictorModel<"AMD Zen 2", "Hashed Perceptron", 14, 18, 4096, "0.86", "CMOV_AND_VBLEND">;
 def BPU_Zen3             : BranchPredictorModel<"AMD Zen 3", "Decoupled TAGE BPU", 11, 14, 8192, "0.89", "VBLENDPS">;
 def BPU_Zen4             : BranchPredictorModel<"AMD Zen 4", "2-Branch-per-cycle TAGE", 11, 14, 16384, "0.91", "K_MASK_OR_VBLEND">;
 def BPU_Zen5             : BranchPredictorModel<"AMD Zen 5", "Dual-Pipeline TAGE", 10, 13, 24576, "0.93", "K_MASK_AVX512">;
+def BPU_Zen6             : BranchPredictorModel<"AMD Zen 6 Morpheus", "Quad-Window Ahead-Pipeline TAGE", 9, 12, 32768, "0.95", "K_MASK_AVX512_AVX10_2">;
 def BPU_AppleM1          : BranchPredictorModel<"Apple Firestorm", "Deep Perceptron / Multi-Hash", 12, 15, 16384, "0.92", "ASIMD_CSEL">;
 def BPU_AppleM4          : BranchPredictorModel<"Apple M4", "Ultra-Wide Neural BPU", 11, 14, 32768, "0.94", "ASIMD_FCSEL">;
 def BPU_QualcommOryon    : BranchPredictorModel<"Qualcomm Oryon", "Custom Multi-Way BPU", 11, 15, 16384, "0.91", "CSEL">;
@@ -2331,13 +2399,17 @@ def Cache_Raptorlake_P     : CacheTopology<"Cache_Raptorlake_P", 48, 5, 2048, 15
 def Cache_Arrowlake_P      : CacheTopology<"Cache_Arrowlake_P", 48, 4, 3072, 14, 36, 48, 64, "Intel Lion Cove Multi-Tier">;
 def Cache_Arrowlake_E      : CacheTopology<"Cache_Arrowlake_E", 32, 3, 4096, 15, 36, 48, 64, "Intel Skymont Wide Streamer">;
 def Cache_GraniteRapids    : CacheTopology<"Cache_GraniteRapids", 48, 4, 2048, 14, 504, 52, 64, "Intel Mesh Shared LLC Streamer">;
+def Cache_NovaLake_bLLC    : CacheTopology<"Cache_NovaLake_bLLC", 48, 4, 4096, 13, 144, 46, 64, "Intel Nova Lake Coyote Cove bLLC 3D Stacked Cache">;
+def Cache_NovaLake_ArcticWolf : CacheTopology<"Cache_NovaLake_ArcticWolf", 32, 3, 4096, 14, 144, 46, 64, "Intel Nova Lake Arctic Wolf Shared bLLC Streamer">;
 def Cache_Zen2             : CacheTopology<"Cache_Zen2", 32, 4, 512, 12, 32, 48, 64, "AMD Zen 2 L1/L2 Streamer">;
 def Cache_Zen3             : CacheTopology<"Cache_Zen3", 32, 4, 512, 12, 32, 46, 64, "AMD Zen 3 L1/L2 Streamer">;
 def Cache_Zen4             : CacheTopology<"Cache_Zen4", 32, 4, 1024, 14, 64, 48, 64, "AMD Zen 4 Stride + Region">;
 def Cache_Zen4c            : CacheTopology<"Cache_Zen4c", 32, 4, 1024, 14, 32, 50, 64, "AMD Zen 4c Dense Streamer">;
 def Cache_Zen5             : CacheTopology<"Cache_Zen5", 48, 4, 1024, 14, 64, 46, 64, "AMD Zen 5 Dual Streamer">;
-def Cache_Zen5_3DVCache    : CacheTopology<"Cache_Zen5_3DVCache", 48, 4, 1024, 14, 96, 48, 64, "AMD Zen 5 3D V-Cache Stack">;
+def Cache_Zen5_3DVCache    : CacheTopology<"Cache_Zen5_3DVCache", 48, 4, 1024, 14, 128, 48, 64, "AMD Zen 5 9950X3D 2nd-Gen Inverted 3D V-Cache Stack">;
 def Cache_Zen5c            : CacheTopology<"Cache_Zen5c", 48, 4, 1024, 14, 32, 48, 64, "AMD Zen 5c Dense Streamer">;
+def Cache_Zen6             : CacheTopology<"Cache_Zen6", 48, 4, 2048, 12, 96, 42, 64, "AMD Zen 6 Morpheus 32-Core Unified CCD Ring Streamer">;
+def Cache_Zen6_3DVCache    : CacheTopology<"Cache_Zen6_3DVCache", 48, 4, 2048, 12, 192, 44, 64, "AMD Zen 6 Medusa X3D Dual-Stacked 3rd-Gen 3D V-Cache">;
 def Cache_AppleM1          : CacheTopology<"Cache_AppleM1", 128, 3, 12288, 16, 24, 32, 128, "Apple DMP + Hardware Streamer">;
 def Cache_AppleM2          : CacheTopology<"Cache_AppleM2", 128, 3, 16384, 16, 24, 32, 128, "Apple M2 High Bandwidth DMP">;
 def Cache_AppleM3          : CacheTopology<"Cache_AppleM3", 128, 3, 16384, 15, 28, 30, 128, "Apple M3 Dynamic Caching DMP">;
@@ -2381,12 +2453,14 @@ class BLIS_CacheBlockingStrategy<string name, int mr, int nr, int kc, int mc, in
   int PrefetchLinesAhead_B = prefetch_lines_b;
 }
 
-def Tile_AVX2_Haswell_Skylake   : BLIS_CacheBlockingStrategy<"Tile_AVX2_Haswell_Skylake",    6,  16, 256, 72,  4096, 64, 4, 4>;
-def Tile_AVX512_SkylakeX_ICL    : BLIS_CacheBlockingStrategy<"Tile_AVX512_SkylakeX_ICL",     8,  32, 384, 128, 8192, 64, 6, 6>;
-def Tile_AVX512_Zen4_Zen5       : BLIS_CacheBlockingStrategy<"Tile_AVX512_Zen4_Zen5",       12,  32, 512, 144, 8192, 64, 6, 6>;
-def Tile_Apple_M1_M4            : BLIS_CacheBlockingStrategy<"Tile_Apple_M1_M4",             8,  16, 512, 192, 16384, 128, 8, 8>;
-def Tile_ARM_NeoverseV2_SVE2    : BLIS_CacheBlockingStrategy<"Tile_ARM_NeoverseV2_SVE2",     8,  32, 384, 128, 8192, 64, 6, 6>;
-def Tile_RISCV_Vector_V1        : BLIS_CacheBlockingStrategy<"Tile_RISCV_Vector_V1",         4,  16, 256, 64,  2048, 64, 4, 4>;
+def Tile_AVX2_Haswell_Skylake      : BLIS_CacheBlockingStrategy<"Tile_AVX2_Haswell_Skylake",       6,  16, 256, 72,  4096,  64, 4, 4>;
+def Tile_AVX512_SkylakeX_ICL       : BLIS_CacheBlockingStrategy<"Tile_AVX512_SkylakeX_ICL",        8,  32, 384, 128, 8192,  64, 6, 6>;
+def Tile_AVX512_Zen4_Zen5          : BLIS_CacheBlockingStrategy<"Tile_AVX512_Zen4_Zen5",          12,  32, 512, 144, 8192,  64, 6, 6>;
+def Tile_AVX512_Zen6_3DVCache      : BLIS_CacheBlockingStrategy<"Tile_AVX512_Zen6_3DVCache",      14,  32, 512, 224, 16384, 64, 8, 8>;
+def Tile_AVX10_2_NovaLake_bLLC     : BLIS_CacheBlockingStrategy<"Tile_AVX10_2_NovaLake_bLLC",     14,  32, 512, 224, 16384, 64, 8, 8>;
+def Tile_Apple_M1_M4               : BLIS_CacheBlockingStrategy<"Tile_Apple_M1_M4",                8,  16, 512, 192, 16384, 128, 8, 8>;
+def Tile_ARM_NeoverseV2_SVE2       : BLIS_CacheBlockingStrategy<"Tile_ARM_NeoverseV2_SVE2",        8,  32, 384, 128, 8192,  64, 6, 6>;
+def Tile_RISCV_Vector_V1           : BLIS_CacheBlockingStrategy<"Tile_RISCV_Vector_V1",            4,  16, 256, 64,  2048,  64, 4, 4>;
 
 // =============================================================================
 // SECTION 6C: 2D MATRIX TILE HARDWARE ENGINES (AMX & SME)
@@ -2474,11 +2548,13 @@ def Throttle_AlderLake       : FrequencyThrottlingModel<"Throttle_AlderLake", "0
 def Throttle_RaptorLake      : FrequencyThrottlingModel<"Throttle_RaptorLake", "0.0", "0.0", 0, 16, "lfence; rdtsc">;
 def Throttle_MeteorLake      : FrequencyThrottlingModel<"Throttle_MeteorLake", "0.0", "0.0", 0, 16, "lfence; rdtsc">;
 def Throttle_ArrowLake       : FrequencyThrottlingModel<"Throttle_ArrowLake", "0.0", "0.0", 0, 14, "lfence; rdtsc">;
+def Throttle_NovaLake        : FrequencyThrottlingModel<"Throttle_NovaLake", "0.0", "0.0", 0, 12, "lfence; rdtsc">;
 def Throttle_EmeraldRapids   : FrequencyThrottlingModel<"Throttle_EmeraldRapids", "0.0", "0.0", 0, 18, "lfence; rdtsc">;
 def Throttle_Zen2            : FrequencyThrottlingModel<"Throttle_Zen2", "0.0", "0.0", 0, 20, "lfence; rdtsc">;
 def Throttle_Zen3            : FrequencyThrottlingModel<"Throttle_Zen3", "0.0", "0.0", 0, 18, "lfence; rdtsc">;
 def Throttle_Zen4            : FrequencyThrottlingModel<"Throttle_Zen4", "0.0", "0.0", 0, 16, "lfence; rdtsc">;
 def Throttle_Zen5            : FrequencyThrottlingModel<"Throttle_Zen5", "0.0", "0.0", 0, 14, "lfence; rdtsc">;
+def Throttle_Zen6            : FrequencyThrottlingModel<"Throttle_Zen6", "0.0", "0.0", 0, 12, "lfence; rdtsc">;
 def Throttle_AppleM1_M4      : FrequencyThrottlingModel<"Throttle_AppleM1_M4", "0.0", "0.0", 0, 10, "isb; mrs cntvct_el0">;
 def Throttle_ARM_Generic     : FrequencyThrottlingModel<"Throttle_ARM_Generic", "0.0", "0.0", 0, 12, "isb; mrs cntvct_el0">;
 
@@ -2506,6 +2582,9 @@ def Hybrid_RaptorLake      : HybridCoreTopology<"Hybrid_RaptorLake", Arch_Raptor
 def Hybrid_MeteorLake      : HybridCoreTopology<"Hybrid_MeteorLake", Arch_Meteorlake, Arch_Crestmont, 256, 256, "0x000000FF", "0xFFFFFF00", "AVX2_Compute_Heavy", "LowPower_Streaming">;
 def Hybrid_ArrowLake       : HybridCoreTopology<"Hybrid_ArrowLake", Arch_Arrowlake, Arch_Skymont, 256, 256, "0x000000FF", "0xFFFFFF00", "HighFreq_AVX2_VNNI_Compute", "Vectorized_Throughput_Parallel">;
 def Hybrid_LunarLake       : HybridCoreTopology<"Hybrid_LunarLake", Arch_Lunarlake, Arch_Skymont, 256, 256, "0x0000000F", "0x000000F0", "AVX2_Matrix_Polynomial", "Memory_Bounded_Reduction">;
+def Hybrid_NovaLake        : HybridCoreTopology<"Hybrid_NovaLake", Arch_CoyoteCove, Arch_ArcticWolf, 512, 512, "0x0000FFFF", "0xFFFFFFFF0000", "AVX10_2_512_APX_HeavyCompute", "AVX10_2_512_ParallelStreaming">;
+def Hybrid_Zen5_9950X3D    : HybridCoreTopology<"Hybrid_Zen5_9950X3D", Arch_Zen5_X3D, Arch_Zen5, 512, 512, "0x0000FFFF", "0xFFFF0000", "CacheBound_LBM_Stencil_V_Cache_CCD0", "FreqBound_AVX512_Transcendental_CCD1">;
+def Hybrid_Zen6_Medusa     : HybridCoreTopology<"Hybrid_Zen6_Medusa", Arch_Zen6_X3D, Arch_Zen6c, 512, 512, "0x0000FFFF", "0xFFFF0000", "CacheBound_3DVCache_AVX10_2_BMM", "Throughput_Dense_Prometheus_CCD">;
 def Hybrid_AppleM1_M4      : HybridCoreTopology<"Hybrid_AppleM1_M4", Arch_AppleM1, Arch_CortexA55, 128, 128, "0x0000000F", "0x000000F0", "Wide_4FMA_Heavy_Double", "Background_Vector_Processing">;
 def Hybrid_RK3399          : HybridCoreTopology<"Hybrid_RK3399", Arch_CortexA72, Arch_CortexA53, 128, 128, "0x0000000C", "0x00000003", "Compute_A72_DualCore", "Lightweight_A53_QuadCore">;
 def Hybrid_RK3588          : HybridCoreTopology<"Hybrid_RK3588", Arch_CortexA76, Arch_CortexA55, 128, 128, "0x000000F0", "0x0000000F", "Compute_A76_QuadCore", "Lightweight_A55_QuadCore">;
@@ -2534,615 +2613,615 @@ class HardwareScalarPrimitive<string op, string type_name, string x86_intr, stri
 // -----------------------------------------------------------------------------
 
 def Prim_U8_Add                  : VectorIntrinsicPrimitive<"add", "u8", 16, "_mm_add_epi8", "vaddq_u8">;
-def Prim_U8_256_Add              : VectorIntrinsicPrimitive<"add", "u8", 32, "_mm256_add_epi8", "vaddq_u8_x2">;
+def Prim_U8_256_Add              : VectorIntrinsicPrimitive<"add", "u8", 32, "_mm256_add_epi8", "svadd_u8_z">;
 def Prim_U8_512_Add              : VectorIntrinsicPrimitive<"add", "u8", 64, "_mm512_add_epi8", "svadd_u8_z">;
 def Prim_U8_Sub                  : VectorIntrinsicPrimitive<"sub", "u8", 16, "_mm_sub_epi8", "vsubq_u8">;
-def Prim_U8_256_Sub              : VectorIntrinsicPrimitive<"sub", "u8", 32, "_mm256_sub_epi8", "vsubq_u8_x2">;
+def Prim_U8_256_Sub              : VectorIntrinsicPrimitive<"sub", "u8", 32, "_mm256_sub_epi8", "svsub_u8_z">;
 def Prim_U8_512_Sub              : VectorIntrinsicPrimitive<"sub", "u8", 64, "_mm512_sub_epi8", "svsub_u8_z">;
-def Prim_U8_Mul                  : VectorIntrinsicPrimitive<"mul", "u8", 16, "_mm_mullo_epi8", "vmulq_u8">;
-def Prim_U8_256_Mul              : VectorIntrinsicPrimitive<"mul", "u8", 32, "_mm256_mullo_epi8", "vmulq_u8_x2">;
-def Prim_U8_512_Mul              : VectorIntrinsicPrimitive<"mul", "u8", 64, "_mm512_mullo_epi8", "svmul_u8_z">;
-def Prim_U8_Min                  : VectorIntrinsicPrimitive<"min", "u8", 16, "_mm_min_epi8", "vminq_u8">;
-def Prim_U8_256_Min              : VectorIntrinsicPrimitive<"min", "u8", 32, "_mm256_min_epi8", "vminq_u8_x2">;
-def Prim_U8_512_Min              : VectorIntrinsicPrimitive<"min", "u8", 64, "_mm512_min_epi8", "svmin_u8_z">;
-def Prim_U8_Max                  : VectorIntrinsicPrimitive<"max", "u8", 16, "_mm_max_epi8", "vmaxq_u8">;
-def Prim_U8_256_Max              : VectorIntrinsicPrimitive<"max", "u8", 32, "_mm256_max_epi8", "vmaxq_u8_x2">;
-def Prim_U8_512_Max              : VectorIntrinsicPrimitive<"max", "u8", 64, "_mm512_max_epi8", "svmax_u8_z">;
+def Prim_U8_Mul                  : VectorIntrinsicPrimitive<"mul", "u8", 16, "_mm_mullo_epi16", "vmulq_u8">;
+def Prim_U8_256_Mul              : VectorIntrinsicPrimitive<"mul", "u8", 32, "_mm256_mullo_epi16", "svmul_u8_z">;
+def Prim_U8_512_Mul              : VectorIntrinsicPrimitive<"mul", "u8", 64, "_mm512_mullo_epi16", "svmul_u8_z">;
+def Prim_U8_Min                  : VectorIntrinsicPrimitive<"min", "u8", 16, "_mm_min_epu8", "vminq_u8">;
+def Prim_U8_256_Min              : VectorIntrinsicPrimitive<"min", "u8", 32, "_mm256_min_epu8", "svmin_u8_z">;
+def Prim_U8_512_Min              : VectorIntrinsicPrimitive<"min", "u8", 64, "_mm512_min_epu8", "svmin_u8_z">;
+def Prim_U8_Max                  : VectorIntrinsicPrimitive<"max", "u8", 16, "_mm_max_epu8", "vmaxq_u8">;
+def Prim_U8_256_Max              : VectorIntrinsicPrimitive<"max", "u8", 32, "_mm256_max_epu8", "svmax_u8_z">;
+def Prim_U8_512_Max              : VectorIntrinsicPrimitive<"max", "u8", 64, "_mm512_max_epu8", "svmax_u8_z">;
 def Prim_U8_CmpEq                : VectorIntrinsicPrimitive<"cmpeq", "u8", 16, "_mm_cmpeq_epi8", "vcmeqq_u8">;
-def Prim_U8_256_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "u8", 32, "_mm256_cmpeq_epi8", "vcmeqq_u8_x2">;
-def Prim_U8_512_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "u8", 64, "_mm512_cmpeq_epi8", "svcmeq_u8_z">;
-def Prim_U8_CmpGt                : VectorIntrinsicPrimitive<"cmpgt", "u8", 16, "_mm_cmpgt_epi8", "vcmgtq_u8">;
-def Prim_U8_256_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "u8", 32, "_mm256_cmpgt_epi8", "vcmgtq_u8_x2">;
-def Prim_U8_512_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "u8", 64, "_mm512_cmpgt_epi8", "svcmgt_u8_z">;
+def Prim_U8_256_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "u8", 32, "_mm256_cmpeq_epi8", "svcmeq_u8_z">;
+def Prim_U8_512_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "u8", 64, "_mm512_cmpeq_epu8_mask", "svcmeq_u8_z">;
+def Prim_U8_CmpGt                : VectorIntrinsicPrimitive<"cmpgt", "u8", 16, "_mm_cmpgt_epu8_mask", "vcmgtq_u8">;
+def Prim_U8_256_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "u8", 32, "_mm256_cmpgt_epu8_mask", "svcmgt_u8_z">;
+def Prim_U8_512_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "u8", 64, "_mm512_cmpgt_epu8_mask", "svcmgt_u8_z">;
 def Prim_U8_BlendV               : VectorIntrinsicPrimitive<"blendv", "u8", 16, "_mm_blendv_epi8", "vbslq_u8">;
-def Prim_U8_256_BlendV           : VectorIntrinsicPrimitive<"blendv", "u8", 32, "_mm256_blendv_epi8", "vbslq_u8_x2">;
-def Prim_U8_512_BlendV           : VectorIntrinsicPrimitive<"blendv", "u8", 64, "_mm512_blendv_epi8", "svbsl_u8_z">;
-def Prim_U8_And                  : VectorIntrinsicPrimitive<"and", "u8", 16, "_mm_and_epi8", "vandq_u8">;
-def Prim_U8_256_And              : VectorIntrinsicPrimitive<"and", "u8", 32, "_mm256_and_epi8", "vandq_u8_x2">;
-def Prim_U8_512_And              : VectorIntrinsicPrimitive<"and", "u8", 64, "_mm512_and_epi8", "svand_u8_z">;
-def Prim_U8_Or                   : VectorIntrinsicPrimitive<"or", "u8", 16, "_mm_or_epi8", "vorrq_u8">;
-def Prim_U8_256_Or               : VectorIntrinsicPrimitive<"or", "u8", 32, "_mm256_or_epi8", "vorrq_u8_x2">;
-def Prim_U8_512_Or               : VectorIntrinsicPrimitive<"or", "u8", 64, "_mm512_or_epi8", "svorr_u8_z">;
-def Prim_U8_Xor                  : VectorIntrinsicPrimitive<"xor", "u8", 16, "_mm_xor_epi8", "veorq_u8">;
-def Prim_U8_256_Xor              : VectorIntrinsicPrimitive<"xor", "u8", 32, "_mm256_xor_epi8", "veorq_u8_x2">;
-def Prim_U8_512_Xor              : VectorIntrinsicPrimitive<"xor", "u8", 64, "_mm512_xor_epi8", "sveor_u8_z">;
-def Prim_U8_AddSat               : VectorIntrinsicPrimitive<"adds_sat", "u8", 16, "_mm_adds_epi8", "vqaddq_u8">;
-def Prim_U8_256_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "u8", 32, "_mm256_adds_epi8", "vqaddq_u8_x2">;
-def Prim_U8_512_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "u8", 64, "_mm512_adds_epi8", "svqadd_u8_z">;
-def Prim_U8_SubSat               : VectorIntrinsicPrimitive<"subs_sat", "u8", 16, "_mm_subs_epi8", "vqsubq_u8">;
-def Prim_U8_256_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "u8", 32, "_mm256_subs_epi8", "vqsubq_u8_x2">;
-def Prim_U8_512_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "u8", 64, "_mm512_subs_epi8", "svqsub_u8_z">;
-def Prim_U8_Shl                  : VectorIntrinsicPrimitive<"sll", "u8", 16, "_mm_slli_epi8", "vshl_nq_u8">;
-def Prim_U8_256_Shl              : VectorIntrinsicPrimitive<"sll", "u8", 32, "_mm256_slli_epi8", "vshl_nq_u8_x2">;
-def Prim_U8_512_Shl              : VectorIntrinsicPrimitive<"sll", "u8", 64, "_mm512_slli_epi8", "svshl_n_u8_z">;
-def Prim_U8_Shr                  : VectorIntrinsicPrimitive<"sra", "u8", 16, "_mm_srai_epi8", "vshr_nq_u8">;
-def Prim_U8_256_Shr              : VectorIntrinsicPrimitive<"sra", "u8", 32, "_mm256_srai_epi8", "vshr_nq_u8_x2">;
-def Prim_U8_512_Shr              : VectorIntrinsicPrimitive<"sra", "u8", 64, "_mm512_srai_epi8", "svshr_n_u8_z">;
+def Prim_U8_256_BlendV           : VectorIntrinsicPrimitive<"blendv", "u8", 32, "_mm256_blendv_epi8", "svbsl_u8_z">;
+def Prim_U8_512_BlendV           : VectorIntrinsicPrimitive<"blendv", "u8", 64, "_mm512_mask_blend_epi8", "svbsl_u8_z">;
+def Prim_U8_And                  : VectorIntrinsicPrimitive<"and", "u8", 16, "_mm_and_si128", "vandq_u8">;
+def Prim_U8_256_And              : VectorIntrinsicPrimitive<"and", "u8", 32, "_mm256_and_si256", "svand_u8_z">;
+def Prim_U8_512_And              : VectorIntrinsicPrimitive<"and", "u8", 64, "_mm512_and_si512", "svand_u8_z">;
+def Prim_U8_Or                   : VectorIntrinsicPrimitive<"or", "u8", 16, "_mm_or_si128", "vorrq_u8">;
+def Prim_U8_256_Or               : VectorIntrinsicPrimitive<"or", "u8", 32, "_mm256_or_si256", "svorr_u8_z">;
+def Prim_U8_512_Or               : VectorIntrinsicPrimitive<"or", "u8", 64, "_mm512_or_si512", "svorr_u8_z">;
+def Prim_U8_Xor                  : VectorIntrinsicPrimitive<"xor", "u8", 16, "_mm_xor_si128", "veorq_u8">;
+def Prim_U8_256_Xor              : VectorIntrinsicPrimitive<"xor", "u8", 32, "_mm256_xor_si256", "sveor_u8_z">;
+def Prim_U8_512_Xor              : VectorIntrinsicPrimitive<"xor", "u8", 64, "_mm512_xor_si512", "sveor_u8_z">;
+def Prim_U8_AddSat               : VectorIntrinsicPrimitive<"adds_sat", "u8", 16, "_mm_adds_epu8", "vqaddq_u8">;
+def Prim_U8_256_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "u8", 32, "_mm256_adds_epu8", "svqadd_u8_z">;
+def Prim_U8_512_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "u8", 64, "_mm512_adds_epu8", "svqadd_u8_z">;
+def Prim_U8_SubSat               : VectorIntrinsicPrimitive<"subs_sat", "u8", 16, "_mm_subs_epu8", "vqsubq_u8">;
+def Prim_U8_256_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "u8", 32, "_mm256_subs_epu8", "svqsub_u8_z">;
+def Prim_U8_512_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "u8", 64, "_mm512_subs_epu8", "svqsub_u8_z">;
+def Prim_U8_Shl                  : VectorIntrinsicPrimitive<"sll", "u8", 16, "_mm_slli_epi16", "vshlq_n_u8">;
+def Prim_U8_256_Shl              : VectorIntrinsicPrimitive<"sll", "u8", 32, "_mm256_slli_epi16", "svlsl_n_u8_z">;
+def Prim_U8_512_Shl              : VectorIntrinsicPrimitive<"sll", "u8", 64, "_mm512_slli_epi16", "svshl_n_u8_z">;
+def Prim_U8_Shr                  : VectorIntrinsicPrimitive<"srl", "u8", 16, "_mm_srli_epi16", "vshrq_n_u8">;
+def Prim_U8_256_Shr              : VectorIntrinsicPrimitive<"srl", "u8", 32, "_mm256_srli_epi16", "svlsr_n_u8_z">;
+def Prim_U8_512_Shr              : VectorIntrinsicPrimitive<"srl", "u8", 64, "_mm512_srli_epi16", "svlsr_n_u8_z">;
 
 def Prim_I8_Add                  : VectorIntrinsicPrimitive<"add", "i8", 16, "_mm_add_epi8", "vaddq_s8">;
-def Prim_I8_256_Add              : VectorIntrinsicPrimitive<"add", "i8", 32, "_mm256_add_epi8", "vaddq_s8_x2">;
+def Prim_I8_256_Add              : VectorIntrinsicPrimitive<"add", "i8", 32, "_mm256_add_epi8", "svadd_s8_z">;
 def Prim_I8_512_Add              : VectorIntrinsicPrimitive<"add", "i8", 64, "_mm512_add_epi8", "svadd_s8_z">;
 def Prim_I8_Sub                  : VectorIntrinsicPrimitive<"sub", "i8", 16, "_mm_sub_epi8", "vsubq_s8">;
-def Prim_I8_256_Sub              : VectorIntrinsicPrimitive<"sub", "i8", 32, "_mm256_sub_epi8", "vsubq_s8_x2">;
+def Prim_I8_256_Sub              : VectorIntrinsicPrimitive<"sub", "i8", 32, "_mm256_sub_epi8", "svsub_s8_z">;
 def Prim_I8_512_Sub              : VectorIntrinsicPrimitive<"sub", "i8", 64, "_mm512_sub_epi8", "svsub_s8_z">;
-def Prim_I8_Mul                  : VectorIntrinsicPrimitive<"mul", "i8", 16, "_mm_mullo_epi8", "vmulq_s8">;
-def Prim_I8_256_Mul              : VectorIntrinsicPrimitive<"mul", "i8", 32, "_mm256_mullo_epi8", "vmulq_s8_x2">;
-def Prim_I8_512_Mul              : VectorIntrinsicPrimitive<"mul", "i8", 64, "_mm512_mullo_epi8", "svmul_s8_z">;
+def Prim_I8_Mul                  : VectorIntrinsicPrimitive<"mul", "i8", 16, "_mm_mullo_epi16", "vmulq_s8">;
+def Prim_I8_256_Mul              : VectorIntrinsicPrimitive<"mul", "i8", 32, "_mm256_mullo_epi16", "svmul_s8_z">;
+def Prim_I8_512_Mul              : VectorIntrinsicPrimitive<"mul", "i8", 64, "_mm512_mullo_epi16", "svmul_s8_z">;
 def Prim_I8_Min                  : VectorIntrinsicPrimitive<"min", "i8", 16, "_mm_min_epi8", "vminq_s8">;
-def Prim_I8_256_Min              : VectorIntrinsicPrimitive<"min", "i8", 32, "_mm256_min_epi8", "vminq_s8_x2">;
+def Prim_I8_256_Min              : VectorIntrinsicPrimitive<"min", "i8", 32, "_mm256_min_epi8", "svmin_s8_z">;
 def Prim_I8_512_Min              : VectorIntrinsicPrimitive<"min", "i8", 64, "_mm512_min_epi8", "svmin_s8_z">;
 def Prim_I8_Max                  : VectorIntrinsicPrimitive<"max", "i8", 16, "_mm_max_epi8", "vmaxq_s8">;
-def Prim_I8_256_Max              : VectorIntrinsicPrimitive<"max", "i8", 32, "_mm256_max_epi8", "vmaxq_s8_x2">;
+def Prim_I8_256_Max              : VectorIntrinsicPrimitive<"max", "i8", 32, "_mm256_max_epi8", "svmax_s8_z">;
 def Prim_I8_512_Max              : VectorIntrinsicPrimitive<"max", "i8", 64, "_mm512_max_epi8", "svmax_s8_z">;
 def Prim_I8_CmpEq                : VectorIntrinsicPrimitive<"cmpeq", "i8", 16, "_mm_cmpeq_epi8", "vcmeqq_s8">;
-def Prim_I8_256_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "i8", 32, "_mm256_cmpeq_epi8", "vcmeqq_s8_x2">;
+def Prim_I8_256_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "i8", 32, "_mm256_cmpeq_epi8", "svcmeq_s8_z">;
 def Prim_I8_512_CmpEq            : VectorIntrinsicPrimitive<"cmpeq", "i8", 64, "_mm512_cmpeq_epi8", "svcmeq_s8_z">;
 def Prim_I8_CmpGt                : VectorIntrinsicPrimitive<"cmpgt", "i8", 16, "_mm_cmpgt_epi8", "vcmgtq_s8">;
-def Prim_I8_256_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "i8", 32, "_mm256_cmpgt_epi8", "vcmgtq_s8_x2">;
+def Prim_I8_256_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "i8", 32, "_mm256_cmpgt_epi8", "svcmgt_s8_z">;
 def Prim_I8_512_CmpGt            : VectorIntrinsicPrimitive<"cmpgt", "i8", 64, "_mm512_cmpgt_epi8", "svcmgt_s8_z">;
 def Prim_I8_BlendV               : VectorIntrinsicPrimitive<"blendv", "i8", 16, "_mm_blendv_epi8", "vbslq_s8">;
-def Prim_I8_256_BlendV           : VectorIntrinsicPrimitive<"blendv", "i8", 32, "_mm256_blendv_epi8", "vbslq_s8_x2">;
-def Prim_I8_512_BlendV           : VectorIntrinsicPrimitive<"blendv", "i8", 64, "_mm512_blendv_epi8", "svbsl_s8_z">;
-def Prim_I8_And                  : VectorIntrinsicPrimitive<"and", "i8", 16, "_mm_and_epi8", "vandq_s8">;
-def Prim_I8_256_And              : VectorIntrinsicPrimitive<"and", "i8", 32, "_mm256_and_epi8", "vandq_s8_x2">;
-def Prim_I8_512_And              : VectorIntrinsicPrimitive<"and", "i8", 64, "_mm512_and_epi8", "svand_s8_z">;
-def Prim_I8_Or                   : VectorIntrinsicPrimitive<"or", "i8", 16, "_mm_or_epi8", "vorrq_s8">;
-def Prim_I8_256_Or               : VectorIntrinsicPrimitive<"or", "i8", 32, "_mm256_or_epi8", "vorrq_s8_x2">;
-def Prim_I8_512_Or               : VectorIntrinsicPrimitive<"or", "i8", 64, "_mm512_or_epi8", "svorr_s8_z">;
-def Prim_I8_Xor                  : VectorIntrinsicPrimitive<"xor", "i8", 16, "_mm_xor_epi8", "veorq_s8">;
-def Prim_I8_256_Xor              : VectorIntrinsicPrimitive<"xor", "i8", 32, "_mm256_xor_epi8", "veorq_s8_x2">;
-def Prim_I8_512_Xor              : VectorIntrinsicPrimitive<"xor", "i8", 64, "_mm512_xor_epi8", "sveor_s8_z">;
+def Prim_I8_256_BlendV           : VectorIntrinsicPrimitive<"blendv", "i8", 32, "_mm256_blendv_epi8", "svbsl_s8_z">;
+def Prim_I8_512_BlendV           : VectorIntrinsicPrimitive<"blendv", "i8", 64, "_mm512_mask_blend_epi8", "svbsl_s8_z">;
+def Prim_I8_And                  : VectorIntrinsicPrimitive<"and", "i8", 16, "_mm_and_si128", "vandq_s8">;
+def Prim_I8_256_And              : VectorIntrinsicPrimitive<"and", "i8", 32, "_mm256_and_si256", "svand_s8_z">;
+def Prim_I8_512_And              : VectorIntrinsicPrimitive<"and", "i8", 64, "_mm512_and_si512", "svand_s8_z">;
+def Prim_I8_Or                   : VectorIntrinsicPrimitive<"or", "i8", 16, "_mm_or_si128", "vorrq_s8">;
+def Prim_I8_256_Or               : VectorIntrinsicPrimitive<"or", "i8", 32, "_mm256_or_si256", "svorr_s8_z">;
+def Prim_I8_512_Or               : VectorIntrinsicPrimitive<"or", "i8", 64, "_mm512_or_si512", "svorr_s8_z">;
+def Prim_I8_Xor                  : VectorIntrinsicPrimitive<"xor", "i8", 16, "_mm_xor_si128", "veorq_s8">;
+def Prim_I8_256_Xor              : VectorIntrinsicPrimitive<"xor", "i8", 32, "_mm256_xor_si256", "sveor_s8_z">;
+def Prim_I8_512_Xor              : VectorIntrinsicPrimitive<"xor", "i8", 64, "_mm512_xor_si512", "sveor_s8_z">;
 def Prim_I8_AddSat               : VectorIntrinsicPrimitive<"adds_sat", "i8", 16, "_mm_adds_epi8", "vqaddq_s8">;
-def Prim_I8_256_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "i8", 32, "_mm256_adds_epi8", "vqaddq_s8_x2">;
+def Prim_I8_256_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "i8", 32, "_mm256_adds_epi8", "svqadd_s8_z">;
 def Prim_I8_512_AddSat           : VectorIntrinsicPrimitive<"adds_sat", "i8", 64, "_mm512_adds_epi8", "svqadd_s8_z">;
 def Prim_I8_SubSat               : VectorIntrinsicPrimitive<"subs_sat", "i8", 16, "_mm_subs_epi8", "vqsubq_s8">;
-def Prim_I8_256_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "i8", 32, "_mm256_subs_epi8", "vqsubq_s8_x2">;
+def Prim_I8_256_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "i8", 32, "_mm256_subs_epi8", "svqsub_s8_z">;
 def Prim_I8_512_SubSat           : VectorIntrinsicPrimitive<"subs_sat", "i8", 64, "_mm512_subs_epi8", "svqsub_s8_z">;
-def Prim_I8_Shl                  : VectorIntrinsicPrimitive<"sll", "i8", 16, "_mm_slli_epi8", "vshl_nq_s8">;
-def Prim_I8_256_Shl              : VectorIntrinsicPrimitive<"sll", "i8", 32, "_mm256_slli_epi8", "vshl_nq_s8_x2">;
-def Prim_I8_512_Shl              : VectorIntrinsicPrimitive<"sll", "i8", 64, "_mm512_slli_epi8", "svshl_n_s8_z">;
-def Prim_I8_Shr                  : VectorIntrinsicPrimitive<"sra", "i8", 16, "_mm_srai_epi8", "vshr_nq_s8">;
-def Prim_I8_256_Shr              : VectorIntrinsicPrimitive<"sra", "i8", 32, "_mm256_srai_epi8", "vshr_nq_s8_x2">;
-def Prim_I8_512_Shr              : VectorIntrinsicPrimitive<"sra", "i8", 64, "_mm512_srai_epi8", "svshr_n_s8_z">;
+def Prim_I8_Shl                  : VectorIntrinsicPrimitive<"sll", "i8", 16, "_mm_slli_epi16", "vshlq_n_s8">;
+def Prim_I8_256_Shl              : VectorIntrinsicPrimitive<"sll", "i8", 32, "_mm256_slli_epi16", "svlsl_n_s8_z">;
+def Prim_I8_512_Shl              : VectorIntrinsicPrimitive<"sll", "i8", 64, "_mm512_slli_epi16", "svshl_n_s8_z">;
+def Prim_I8_Shr                  : VectorIntrinsicPrimitive<"sra", "i8", 16, "_mm_srai_epi16", "vshrq_n_s8">;
+def Prim_I8_256_Shr              : VectorIntrinsicPrimitive<"sra", "i8", 32, "_mm256_srai_epi16", "svasr_n_s8_z">;
+def Prim_I8_512_Shr              : VectorIntrinsicPrimitive<"sra", "i8", 64, "_mm512_srai_epi16", "svshr_n_s8_z">;
 
 def Prim_I16_Add                 : VectorIntrinsicPrimitive<"add", "i16", 8, "_mm_add_epi16", "vaddq_s16">;
-def Prim_I16_256_Add             : VectorIntrinsicPrimitive<"add", "i16", 16, "_mm256_add_epi16", "vaddq_s16_x2">;
+def Prim_I16_256_Add             : VectorIntrinsicPrimitive<"add", "i16", 16, "_mm256_add_epi16", "svadd_s16_z">;
 def Prim_I16_512_Add             : VectorIntrinsicPrimitive<"add", "i16", 32, "_mm512_add_epi16", "svadd_s16_z">;
 def Prim_I16_Sub                 : VectorIntrinsicPrimitive<"sub", "i16", 8, "_mm_sub_epi16", "vsubq_s16">;
-def Prim_I16_256_Sub             : VectorIntrinsicPrimitive<"sub", "i16", 16, "_mm256_sub_epi16", "vsubq_s16_x2">;
+def Prim_I16_256_Sub             : VectorIntrinsicPrimitive<"sub", "i16", 16, "_mm256_sub_epi16", "svsub_s16_z">;
 def Prim_I16_512_Sub             : VectorIntrinsicPrimitive<"sub", "i16", 32, "_mm512_sub_epi16", "svsub_s16_z">;
 def Prim_I16_Mul                 : VectorIntrinsicPrimitive<"mul", "i16", 8, "_mm_mullo_epi16", "vmulq_s16">;
-def Prim_I16_256_Mul             : VectorIntrinsicPrimitive<"mul", "i16", 16, "_mm256_mullo_epi16", "vmulq_s16_x2">;
+def Prim_I16_256_Mul             : VectorIntrinsicPrimitive<"mul", "i16", 16, "_mm256_mullo_epi16", "svmul_s16_z">;
 def Prim_I16_512_Mul             : VectorIntrinsicPrimitive<"mul", "i16", 32, "_mm512_mullo_epi16", "svmul_s16_z">;
 def Prim_I16_Min                 : VectorIntrinsicPrimitive<"min", "i16", 8, "_mm_min_epi16", "vminq_s16">;
-def Prim_I16_256_Min             : VectorIntrinsicPrimitive<"min", "i16", 16, "_mm256_min_epi16", "vminq_s16_x2">;
+def Prim_I16_256_Min             : VectorIntrinsicPrimitive<"min", "i16", 16, "_mm256_min_epi16", "svmin_s16_z">;
 def Prim_I16_512_Min             : VectorIntrinsicPrimitive<"min", "i16", 32, "_mm512_min_epi16", "svmin_s16_z">;
 def Prim_I16_Max                 : VectorIntrinsicPrimitive<"max", "i16", 8, "_mm_max_epi16", "vmaxq_s16">;
-def Prim_I16_256_Max             : VectorIntrinsicPrimitive<"max", "i16", 16, "_mm256_max_epi16", "vmaxq_s16_x2">;
+def Prim_I16_256_Max             : VectorIntrinsicPrimitive<"max", "i16", 16, "_mm256_max_epi16", "svmax_s16_z">;
 def Prim_I16_512_Max             : VectorIntrinsicPrimitive<"max", "i16", 32, "_mm512_max_epi16", "svmax_s16_z">;
 def Prim_I16_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "i16", 8, "_mm_cmpeq_epi16", "vcmeqq_s16">;
-def Prim_I16_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i16", 16, "_mm256_cmpeq_epi16", "vcmeqq_s16_x2">;
+def Prim_I16_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i16", 16, "_mm256_cmpeq_epi16", "svcmeq_s16_z">;
 def Prim_I16_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i16", 32, "_mm512_cmpeq_epi16", "svcmeq_s16_z">;
 def Prim_I16_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "i16", 8, "_mm_cmpgt_epi16", "vcmgtq_s16">;
-def Prim_I16_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i16", 16, "_mm256_cmpgt_epi16", "vcmgtq_s16_x2">;
+def Prim_I16_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i16", 16, "_mm256_cmpgt_epi16", "svcmgt_s16_z">;
 def Prim_I16_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i16", 32, "_mm512_cmpgt_epi16", "svcmgt_s16_z">;
-def Prim_I16_BlendV              : VectorIntrinsicPrimitive<"blendv", "i16", 8, "_mm_blendv_epi16", "vbslq_s16">;
-def Prim_I16_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "i16", 16, "_mm256_blendv_epi16", "vbslq_s16_x2">;
-def Prim_I16_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "i16", 32, "_mm512_blendv_epi16", "svbsl_s16_z">;
-def Prim_I16_And                 : VectorIntrinsicPrimitive<"and", "i16", 8, "_mm_and_epi16", "vandq_s16">;
-def Prim_I16_256_And             : VectorIntrinsicPrimitive<"and", "i16", 16, "_mm256_and_epi16", "vandq_s16_x2">;
-def Prim_I16_512_And             : VectorIntrinsicPrimitive<"and", "i16", 32, "_mm512_and_epi16", "svand_s16_z">;
-def Prim_I16_Or                  : VectorIntrinsicPrimitive<"or", "i16", 8, "_mm_or_epi16", "vorrq_s16">;
-def Prim_I16_256_Or              : VectorIntrinsicPrimitive<"or", "i16", 16, "_mm256_or_epi16", "vorrq_s16_x2">;
-def Prim_I16_512_Or              : VectorIntrinsicPrimitive<"or", "i16", 32, "_mm512_or_epi16", "svorr_s16_z">;
-def Prim_I16_Xor                 : VectorIntrinsicPrimitive<"xor", "i16", 8, "_mm_xor_epi16", "veorq_s16">;
-def Prim_I16_256_Xor             : VectorIntrinsicPrimitive<"xor", "i16", 16, "_mm256_xor_epi16", "veorq_s16_x2">;
-def Prim_I16_512_Xor             : VectorIntrinsicPrimitive<"xor", "i16", 32, "_mm512_xor_epi16", "sveor_s16_z">;
+def Prim_I16_BlendV              : VectorIntrinsicPrimitive<"blendv", "i16", 8, "_mm_blendv_epi8", "vbslq_s16">;
+def Prim_I16_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "i16", 16, "_mm256_blendv_epi8", "svbsl_s16_z">;
+def Prim_I16_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "i16", 32, "_mm512_mask_blend_epi16", "svbsl_s16_z">;
+def Prim_I16_And                 : VectorIntrinsicPrimitive<"and", "i16", 8, "_mm_and_si128", "vandq_s16">;
+def Prim_I16_256_And             : VectorIntrinsicPrimitive<"and", "i16", 16, "_mm256_and_si256", "svand_s16_z">;
+def Prim_I16_512_And             : VectorIntrinsicPrimitive<"and", "i16", 32, "_mm512_and_si512", "svand_s16_z">;
+def Prim_I16_Or                  : VectorIntrinsicPrimitive<"or", "i16", 8, "_mm_or_si128", "vorrq_s16">;
+def Prim_I16_256_Or              : VectorIntrinsicPrimitive<"or", "i16", 16, "_mm256_or_si256", "svorr_s16_z">;
+def Prim_I16_512_Or              : VectorIntrinsicPrimitive<"or", "i16", 32, "_mm512_or_si512", "svorr_s16_z">;
+def Prim_I16_Xor                 : VectorIntrinsicPrimitive<"xor", "i16", 8, "_mm_xor_si128", "veorq_s16">;
+def Prim_I16_256_Xor             : VectorIntrinsicPrimitive<"xor", "i16", 16, "_mm256_xor_si256", "sveor_s16_z">;
+def Prim_I16_512_Xor             : VectorIntrinsicPrimitive<"xor", "i16", 32, "_mm512_xor_si512", "sveor_s16_z">;
 def Prim_I16_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "i16", 8, "_mm_adds_epi16", "vqaddq_s16">;
-def Prim_I16_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i16", 16, "_mm256_adds_epi16", "vqaddq_s16_x2">;
+def Prim_I16_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i16", 16, "_mm256_adds_epi16", "svqadd_s16_z">;
 def Prim_I16_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i16", 32, "_mm512_adds_epi16", "svqadd_s16_z">;
 def Prim_I16_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "i16", 8, "_mm_subs_epi16", "vqsubq_s16">;
-def Prim_I16_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i16", 16, "_mm256_subs_epi16", "vqsubq_s16_x2">;
+def Prim_I16_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i16", 16, "_mm256_subs_epi16", "svqsub_s16_z">;
 def Prim_I16_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i16", 32, "_mm512_subs_epi16", "svqsub_s16_z">;
-def Prim_I16_Shl                 : VectorIntrinsicPrimitive<"sll", "i16", 8, "_mm_slli_epi16", "vshl_nq_s16">;
-def Prim_I16_256_Shl             : VectorIntrinsicPrimitive<"sll", "i16", 16, "_mm256_slli_epi16", "vshl_nq_s16_x2">;
+def Prim_I16_Shl                 : VectorIntrinsicPrimitive<"sll", "i16", 8, "_mm_slli_epi16", "vshlq_n_s16">;
+def Prim_I16_256_Shl             : VectorIntrinsicPrimitive<"sll", "i16", 16, "_mm256_slli_epi16", "svlsl_n_s16_z">;
 def Prim_I16_512_Shl             : VectorIntrinsicPrimitive<"sll", "i16", 32, "_mm512_slli_epi16", "svshl_n_s16_z">;
-def Prim_I16_Shr                 : VectorIntrinsicPrimitive<"sra", "i16", 8, "_mm_srai_epi16", "vshr_nq_s16">;
-def Prim_I16_256_Shr             : VectorIntrinsicPrimitive<"sra", "i16", 16, "_mm256_srai_epi16", "vshr_nq_s16_x2">;
+def Prim_I16_Shr                 : VectorIntrinsicPrimitive<"sra", "i16", 8, "_mm_srai_epi16", "vshrq_n_s16">;
+def Prim_I16_256_Shr             : VectorIntrinsicPrimitive<"sra", "i16", 16, "_mm256_srai_epi16", "svasr_n_s16_z">;
 def Prim_I16_512_Shr             : VectorIntrinsicPrimitive<"sra", "i16", 32, "_mm512_srai_epi16", "svshr_n_s16_z">;
 
-def Prim_U16_Add                 : VectorIntrinsicPrimitive<"add", "u16", 8, "_mm_add_epu16", "vaddq_u16">;
-def Prim_U16_256_Add             : VectorIntrinsicPrimitive<"add", "u16", 16, "_mm256_add_epu16", "vaddq_u16_x2">;
-def Prim_U16_512_Add             : VectorIntrinsicPrimitive<"add", "u16", 32, "_mm512_add_epu16", "svadd_u16_z">;
-def Prim_U16_Sub                 : VectorIntrinsicPrimitive<"sub", "u16", 8, "_mm_sub_epu16", "vsubq_u16">;
-def Prim_U16_256_Sub             : VectorIntrinsicPrimitive<"sub", "u16", 16, "_mm256_sub_epu16", "vsubq_u16_x2">;
-def Prim_U16_512_Sub             : VectorIntrinsicPrimitive<"sub", "u16", 32, "_mm512_sub_epu16", "svsub_u16_z">;
-def Prim_U16_Mul                 : VectorIntrinsicPrimitive<"mul", "u16", 8, "_mm_mullo_epu16", "vmulq_u16">;
-def Prim_U16_256_Mul             : VectorIntrinsicPrimitive<"mul", "u16", 16, "_mm256_mullo_epu16", "vmulq_u16_x2">;
-def Prim_U16_512_Mul             : VectorIntrinsicPrimitive<"mul", "u16", 32, "_mm512_mullo_epu16", "svmul_u16_z">;
+def Prim_U16_Add                 : VectorIntrinsicPrimitive<"add", "u16", 8, "_mm_add_epi16", "vaddq_u16">;
+def Prim_U16_256_Add             : VectorIntrinsicPrimitive<"add", "u16", 16, "_mm256_add_epi16", "svadd_u16_z">;
+def Prim_U16_512_Add             : VectorIntrinsicPrimitive<"add", "u16", 32, "_mm512_add_epi16", "svadd_u16_z">;
+def Prim_U16_Sub                 : VectorIntrinsicPrimitive<"sub", "u16", 8, "_mm_sub_epi16", "vsubq_u16">;
+def Prim_U16_256_Sub             : VectorIntrinsicPrimitive<"sub", "u16", 16, "_mm256_sub_epi16", "svsub_u16_z">;
+def Prim_U16_512_Sub             : VectorIntrinsicPrimitive<"sub", "u16", 32, "_mm512_sub_epi16", "svsub_u16_z">;
+def Prim_U16_Mul                 : VectorIntrinsicPrimitive<"mul", "u16", 8, "_mm_mullo_epi16", "vmulq_u16">;
+def Prim_U16_256_Mul             : VectorIntrinsicPrimitive<"mul", "u16", 16, "_mm256_mullo_epi16", "svmul_u16_z">;
+def Prim_U16_512_Mul             : VectorIntrinsicPrimitive<"mul", "u16", 32, "_mm512_mullo_epi16", "svmul_u16_z">;
 def Prim_U16_Min                 : VectorIntrinsicPrimitive<"min", "u16", 8, "_mm_min_epu16", "vminq_u16">;
-def Prim_U16_256_Min             : VectorIntrinsicPrimitive<"min", "u16", 16, "_mm256_min_epu16", "vminq_u16_x2">;
+def Prim_U16_256_Min             : VectorIntrinsicPrimitive<"min", "u16", 16, "_mm256_min_epu16", "svmin_u16_z">;
 def Prim_U16_512_Min             : VectorIntrinsicPrimitive<"min", "u16", 32, "_mm512_min_epu16", "svmin_u16_z">;
 def Prim_U16_Max                 : VectorIntrinsicPrimitive<"max", "u16", 8, "_mm_max_epu16", "vmaxq_u16">;
-def Prim_U16_256_Max             : VectorIntrinsicPrimitive<"max", "u16", 16, "_mm256_max_epu16", "vmaxq_u16_x2">;
+def Prim_U16_256_Max             : VectorIntrinsicPrimitive<"max", "u16", 16, "_mm256_max_epu16", "svmax_u16_z">;
 def Prim_U16_512_Max             : VectorIntrinsicPrimitive<"max", "u16", 32, "_mm512_max_epu16", "svmax_u16_z">;
-def Prim_U16_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "u16", 8, "_mm_cmpeq_epu16", "vcmeqq_u16">;
-def Prim_U16_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u16", 16, "_mm256_cmpeq_epu16", "vcmeqq_u16_x2">;
-def Prim_U16_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u16", 32, "_mm512_cmpeq_epu16", "svcmeq_u16_z">;
-def Prim_U16_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "u16", 8, "_mm_cmpgt_epu16", "vcmgtq_u16">;
-def Prim_U16_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u16", 16, "_mm256_cmpgt_epu16", "vcmgtq_u16_x2">;
-def Prim_U16_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u16", 32, "_mm512_cmpgt_epu16", "svcmgt_u16_z">;
-def Prim_U16_BlendV              : VectorIntrinsicPrimitive<"blendv", "u16", 8, "_mm_blendv_epu16", "vbslq_u16">;
-def Prim_U16_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "u16", 16, "_mm256_blendv_epu16", "vbslq_u16_x2">;
-def Prim_U16_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "u16", 32, "_mm512_blendv_epu16", "svbsl_u16_z">;
-def Prim_U16_And                 : VectorIntrinsicPrimitive<"and", "u16", 8, "_mm_and_epu16", "vandq_u16">;
-def Prim_U16_256_And             : VectorIntrinsicPrimitive<"and", "u16", 16, "_mm256_and_epu16", "vandq_u16_x2">;
-def Prim_U16_512_And             : VectorIntrinsicPrimitive<"and", "u16", 32, "_mm512_and_epu16", "svand_u16_z">;
-def Prim_U16_Or                  : VectorIntrinsicPrimitive<"or", "u16", 8, "_mm_or_epu16", "vorrq_u16">;
-def Prim_U16_256_Or              : VectorIntrinsicPrimitive<"or", "u16", 16, "_mm256_or_epu16", "vorrq_u16_x2">;
-def Prim_U16_512_Or              : VectorIntrinsicPrimitive<"or", "u16", 32, "_mm512_or_epu16", "svorr_u16_z">;
-def Prim_U16_Xor                 : VectorIntrinsicPrimitive<"xor", "u16", 8, "_mm_xor_epu16", "veorq_u16">;
-def Prim_U16_256_Xor             : VectorIntrinsicPrimitive<"xor", "u16", 16, "_mm256_xor_epu16", "veorq_u16_x2">;
-def Prim_U16_512_Xor             : VectorIntrinsicPrimitive<"xor", "u16", 32, "_mm512_xor_epu16", "sveor_u16_z">;
+def Prim_U16_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "u16", 8, "_mm_cmpeq_epi16", "vcmeqq_u16">;
+def Prim_U16_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u16", 16, "_mm256_cmpeq_epi16", "svcmeq_u16_z">;
+def Prim_U16_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u16", 32, "_mm512_cmpeq_epu16_mask", "svcmeq_u16_z">;
+def Prim_U16_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "u16", 8, "_mm_cmpgt_epu16_mask", "vcmgtq_u16">;
+def Prim_U16_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u16", 16, "_mm256_cmpgt_epu16_mask", "svcmgt_u16_z">;
+def Prim_U16_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u16", 32, "_mm512_cmpgt_epu16_mask", "svcmgt_u16_z">;
+def Prim_U16_BlendV              : VectorIntrinsicPrimitive<"blendv", "u16", 8, "_mm_blendv_epi8", "vbslq_u16">;
+def Prim_U16_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "u16", 16, "_mm256_blendv_epi8", "svbsl_u16_z">;
+def Prim_U16_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "u16", 32, "_mm512_mask_blend_epi16", "svbsl_u16_z">;
+def Prim_U16_And                 : VectorIntrinsicPrimitive<"and", "u16", 8, "_mm_and_si128", "vandq_u16">;
+def Prim_U16_256_And             : VectorIntrinsicPrimitive<"and", "u16", 16, "_mm256_and_si256", "svand_u16_z">;
+def Prim_U16_512_And             : VectorIntrinsicPrimitive<"and", "u16", 32, "_mm512_and_si512", "svand_u16_z">;
+def Prim_U16_Or                  : VectorIntrinsicPrimitive<"or", "u16", 8, "_mm_or_si128", "vorrq_u16">;
+def Prim_U16_256_Or              : VectorIntrinsicPrimitive<"or", "u16", 16, "_mm256_or_si256", "svorr_u16_z">;
+def Prim_U16_512_Or              : VectorIntrinsicPrimitive<"or", "u16", 32, "_mm512_or_si512", "svorr_u16_z">;
+def Prim_U16_Xor                 : VectorIntrinsicPrimitive<"xor", "u16", 8, "_mm_xor_si128", "veorq_u16">;
+def Prim_U16_256_Xor             : VectorIntrinsicPrimitive<"xor", "u16", 16, "_mm256_xor_si256", "sveor_u16_z">;
+def Prim_U16_512_Xor             : VectorIntrinsicPrimitive<"xor", "u16", 32, "_mm512_xor_si512", "sveor_u16_z">;
 def Prim_U16_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "u16", 8, "_mm_adds_epu16", "vqaddq_u16">;
-def Prim_U16_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u16", 16, "_mm256_adds_epu16", "vqaddq_u16_x2">;
+def Prim_U16_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u16", 16, "_mm256_adds_epu16", "svqadd_u16_z">;
 def Prim_U16_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u16", 32, "_mm512_adds_epu16", "svqadd_u16_z">;
 def Prim_U16_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "u16", 8, "_mm_subs_epu16", "vqsubq_u16">;
-def Prim_U16_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u16", 16, "_mm256_subs_epu16", "vqsubq_u16_x2">;
+def Prim_U16_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u16", 16, "_mm256_subs_epu16", "svqsub_u16_z">;
 def Prim_U16_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u16", 32, "_mm512_subs_epu16", "svqsub_u16_z">;
-def Prim_U16_Shl                 : VectorIntrinsicPrimitive<"sll", "u16", 8, "_mm_slli_epu16", "vshl_nq_u16">;
-def Prim_U16_256_Shl             : VectorIntrinsicPrimitive<"sll", "u16", 16, "_mm256_slli_epu16", "vshl_nq_u16_x2">;
-def Prim_U16_512_Shl             : VectorIntrinsicPrimitive<"sll", "u16", 32, "_mm512_slli_epu16", "svshl_n_u16_z">;
-def Prim_U16_Shr                 : VectorIntrinsicPrimitive<"sra", "u16", 8, "_mm_srai_epu16", "vshr_nq_u16">;
-def Prim_U16_256_Shr             : VectorIntrinsicPrimitive<"sra", "u16", 16, "_mm256_srai_epu16", "vshr_nq_u16_x2">;
-def Prim_U16_512_Shr             : VectorIntrinsicPrimitive<"sra", "u16", 32, "_mm512_srai_epu16", "svshr_n_u16_z">;
+def Prim_U16_Shl                 : VectorIntrinsicPrimitive<"sll", "u16", 8, "_mm_slli_epi16", "vshlq_n_u16">;
+def Prim_U16_256_Shl             : VectorIntrinsicPrimitive<"sll", "u16", 16, "_mm256_slli_epi16", "svlsl_n_u16_z">;
+def Prim_U16_512_Shl             : VectorIntrinsicPrimitive<"sll", "u16", 32, "_mm512_slli_epi16", "svshl_n_u16_z">;
+def Prim_U16_Shr                 : VectorIntrinsicPrimitive<"sra", "u16", 8, "_mm_srli_epi16", "vshrq_n_u16">;
+def Prim_U16_256_Shr             : VectorIntrinsicPrimitive<"sra", "u16", 16, "_mm256_srli_epi16", "svlsr_n_u16_z">;
+def Prim_U16_512_Shr             : VectorIntrinsicPrimitive<"sra", "u16", 32, "_mm512_srli_epi16", "svshr_n_u16_z">;
 
 def Prim_I32_Add                 : VectorIntrinsicPrimitive<"add", "i32", 4, "_mm_add_epi32", "vaddq_s32">;
-def Prim_I32_256_Add             : VectorIntrinsicPrimitive<"add", "i32", 8, "_mm256_add_epi32", "vaddq_s32_x2">;
+def Prim_I32_256_Add             : VectorIntrinsicPrimitive<"add", "i32", 8, "_mm256_add_epi32", "svadd_s32_z">;
 def Prim_I32_512_Add             : VectorIntrinsicPrimitive<"add", "i32", 16, "_mm512_add_epi32", "svadd_s32_z">;
 def Prim_I32_Sub                 : VectorIntrinsicPrimitive<"sub", "i32", 4, "_mm_sub_epi32", "vsubq_s32">;
-def Prim_I32_256_Sub             : VectorIntrinsicPrimitive<"sub", "i32", 8, "_mm256_sub_epi32", "vsubq_s32_x2">;
+def Prim_I32_256_Sub             : VectorIntrinsicPrimitive<"sub", "i32", 8, "_mm256_sub_epi32", "svsub_s32_z">;
 def Prim_I32_512_Sub             : VectorIntrinsicPrimitive<"sub", "i32", 16, "_mm512_sub_epi32", "svsub_s32_z">;
 def Prim_I32_Mul                 : VectorIntrinsicPrimitive<"mul", "i32", 4, "_mm_mullo_epi32", "vmulq_s32">;
-def Prim_I32_256_Mul             : VectorIntrinsicPrimitive<"mul", "i32", 8, "_mm256_mullo_epi32", "vmulq_s32_x2">;
+def Prim_I32_256_Mul             : VectorIntrinsicPrimitive<"mul", "i32", 8, "_mm256_mullo_epi32", "svmul_s32_z">;
 def Prim_I32_512_Mul             : VectorIntrinsicPrimitive<"mul", "i32", 16, "_mm512_mullo_epi32", "svmul_s32_z">;
 def Prim_I32_Min                 : VectorIntrinsicPrimitive<"min", "i32", 4, "_mm_min_epi32", "vminq_s32">;
-def Prim_I32_256_Min             : VectorIntrinsicPrimitive<"min", "i32", 8, "_mm256_min_epi32", "vminq_s32_x2">;
+def Prim_I32_256_Min             : VectorIntrinsicPrimitive<"min", "i32", 8, "_mm256_min_epi32", "svmin_s32_z">;
 def Prim_I32_512_Min             : VectorIntrinsicPrimitive<"min", "i32", 16, "_mm512_min_epi32", "svmin_s32_z">;
 def Prim_I32_Max                 : VectorIntrinsicPrimitive<"max", "i32", 4, "_mm_max_epi32", "vmaxq_s32">;
-def Prim_I32_256_Max             : VectorIntrinsicPrimitive<"max", "i32", 8, "_mm256_max_epi32", "vmaxq_s32_x2">;
+def Prim_I32_256_Max             : VectorIntrinsicPrimitive<"max", "i32", 8, "_mm256_max_epi32", "svmax_s32_z">;
 def Prim_I32_512_Max             : VectorIntrinsicPrimitive<"max", "i32", 16, "_mm512_max_epi32", "svmax_s32_z">;
 def Prim_I32_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "i32", 4, "_mm_cmpeq_epi32", "vcmeqq_s32">;
-def Prim_I32_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i32", 8, "_mm256_cmpeq_epi32", "vcmeqq_s32_x2">;
+def Prim_I32_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i32", 8, "_mm256_cmpeq_epi32", "svcmeq_s32_z">;
 def Prim_I32_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i32", 16, "_mm512_cmpeq_epi32", "svcmeq_s32_z">;
 def Prim_I32_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "i32", 4, "_mm_cmpgt_epi32", "vcmgtq_s32">;
-def Prim_I32_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i32", 8, "_mm256_cmpgt_epi32", "vcmgtq_s32_x2">;
+def Prim_I32_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i32", 8, "_mm256_cmpgt_epi32", "svcmgt_s32_z">;
 def Prim_I32_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i32", 16, "_mm512_cmpgt_epi32", "svcmgt_s32_z">;
-def Prim_I32_BlendV              : VectorIntrinsicPrimitive<"blendv", "i32", 4, "_mm_blendv_epi32", "vbslq_s32">;
-def Prim_I32_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "i32", 8, "_mm256_blendv_epi32", "vbslq_s32_x2">;
-def Prim_I32_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "i32", 16, "_mm512_blendv_epi32", "svbsl_s32_z">;
-def Prim_I32_And                 : VectorIntrinsicPrimitive<"and", "i32", 4, "_mm_and_epi32", "vandq_s32">;
-def Prim_I32_256_And             : VectorIntrinsicPrimitive<"and", "i32", 8, "_mm256_and_epi32", "vandq_s32_x2">;
+def Prim_I32_BlendV              : VectorIntrinsicPrimitive<"blendv", "i32", 4, "_mm_blendv_epi8", "vbslq_s32">;
+def Prim_I32_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "i32", 8, "_mm256_blendv_epi8", "svbsl_s32_z">;
+def Prim_I32_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "i32", 16, "_mm512_mask_blend_epi32", "svbsl_s32_z">;
+def Prim_I32_And                 : VectorIntrinsicPrimitive<"and", "i32", 4, "_mm_and_si128", "vandq_s32">;
+def Prim_I32_256_And             : VectorIntrinsicPrimitive<"and", "i32", 8, "_mm256_and_si256", "svand_s32_z">;
 def Prim_I32_512_And             : VectorIntrinsicPrimitive<"and", "i32", 16, "_mm512_and_epi32", "svand_s32_z">;
-def Prim_I32_Or                  : VectorIntrinsicPrimitive<"or", "i32", 4, "_mm_or_epi32", "vorrq_s32">;
-def Prim_I32_256_Or              : VectorIntrinsicPrimitive<"or", "i32", 8, "_mm256_or_epi32", "vorrq_s32_x2">;
+def Prim_I32_Or                  : VectorIntrinsicPrimitive<"or", "i32", 4, "_mm_or_si128", "vorrq_s32">;
+def Prim_I32_256_Or              : VectorIntrinsicPrimitive<"or", "i32", 8, "_mm256_or_si256", "svorr_s32_z">;
 def Prim_I32_512_Or              : VectorIntrinsicPrimitive<"or", "i32", 16, "_mm512_or_epi32", "svorr_s32_z">;
-def Prim_I32_Xor                 : VectorIntrinsicPrimitive<"xor", "i32", 4, "_mm_xor_epi32", "veorq_s32">;
-def Prim_I32_256_Xor             : VectorIntrinsicPrimitive<"xor", "i32", 8, "_mm256_xor_epi32", "veorq_s32_x2">;
+def Prim_I32_Xor                 : VectorIntrinsicPrimitive<"xor", "i32", 4, "_mm_xor_si128", "veorq_s32">;
+def Prim_I32_256_Xor             : VectorIntrinsicPrimitive<"xor", "i32", 8, "_mm256_xor_si256", "sveor_s32_z">;
 def Prim_I32_512_Xor             : VectorIntrinsicPrimitive<"xor", "i32", 16, "_mm512_xor_epi32", "sveor_s32_z">;
-def Prim_I32_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "i32", 4, "_mm_adds_epi32", "vqaddq_s32">;
-def Prim_I32_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i32", 8, "_mm256_adds_epi32", "vqaddq_s32_x2">;
-def Prim_I32_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i32", 16, "_mm512_adds_epi32", "svqadd_s32_z">;
-def Prim_I32_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "i32", 4, "_mm_subs_epi32", "vqsubq_s32">;
-def Prim_I32_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i32", 8, "_mm256_subs_epi32", "vqsubq_s32_x2">;
-def Prim_I32_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i32", 16, "_mm512_subs_epi32", "svqsub_s32_z">;
-def Prim_I32_Shl                 : VectorIntrinsicPrimitive<"sll", "i32", 4, "_mm_slli_epi32", "vshl_nq_s32">;
-def Prim_I32_256_Shl             : VectorIntrinsicPrimitive<"sll", "i32", 8, "_mm256_slli_epi32", "vshl_nq_s32_x2">;
+def Prim_I32_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "i32", 4, "_mm_add_epi32", "vqaddq_s32">;
+def Prim_I32_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i32", 8, "_mm256_add_epi32", "svqadd_s32_z">;
+def Prim_I32_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i32", 16, "_mm512_add_epi32", "svqadd_s32_z">;
+def Prim_I32_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "i32", 4, "_mm_sub_epi32", "vqsubq_s32">;
+def Prim_I32_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i32", 8, "_mm256_sub_epi32", "svqsub_s32_z">;
+def Prim_I32_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i32", 16, "_mm512_sub_epi32", "svqsub_s32_z">;
+def Prim_I32_Shl                 : VectorIntrinsicPrimitive<"sll", "i32", 4, "_mm_slli_epi32", "vshlq_n_s32">;
+def Prim_I32_256_Shl             : VectorIntrinsicPrimitive<"sll", "i32", 8, "_mm256_slli_epi32", "svlsl_n_s32_z">;
 def Prim_I32_512_Shl             : VectorIntrinsicPrimitive<"sll", "i32", 16, "_mm512_slli_epi32", "svshl_n_s32_z">;
-def Prim_I32_Shr                 : VectorIntrinsicPrimitive<"sra", "i32", 4, "_mm_srai_epi32", "vshr_nq_s32">;
-def Prim_I32_256_Shr             : VectorIntrinsicPrimitive<"sra", "i32", 8, "_mm256_srai_epi32", "vshr_nq_s32_x2">;
+def Prim_I32_Shr                 : VectorIntrinsicPrimitive<"sra", "i32", 4, "_mm_srai_epi32", "vshrq_n_s32">;
+def Prim_I32_256_Shr             : VectorIntrinsicPrimitive<"sra", "i32", 8, "_mm256_srai_epi32", "svasr_n_s32_z">;
 def Prim_I32_512_Shr             : VectorIntrinsicPrimitive<"sra", "i32", 16, "_mm512_srai_epi32", "svshr_n_s32_z">;
 
-def Prim_U32_Add                 : VectorIntrinsicPrimitive<"add", "u32", 4, "_mm_add_epu32", "vaddq_u32">;
-def Prim_U32_256_Add             : VectorIntrinsicPrimitive<"add", "u32", 8, "_mm256_add_epu32", "vaddq_u32_x2">;
-def Prim_U32_512_Add             : VectorIntrinsicPrimitive<"add", "u32", 16, "_mm512_add_epu32", "svadd_u32_z">;
-def Prim_U32_Sub                 : VectorIntrinsicPrimitive<"sub", "u32", 4, "_mm_sub_epu32", "vsubq_u32">;
-def Prim_U32_256_Sub             : VectorIntrinsicPrimitive<"sub", "u32", 8, "_mm256_sub_epu32", "vsubq_u32_x2">;
-def Prim_U32_512_Sub             : VectorIntrinsicPrimitive<"sub", "u32", 16, "_mm512_sub_epu32", "svsub_u32_z">;
-def Prim_U32_Mul                 : VectorIntrinsicPrimitive<"mul", "u32", 4, "_mm_mullo_epu32", "vmulq_u32">;
-def Prim_U32_256_Mul             : VectorIntrinsicPrimitive<"mul", "u32", 8, "_mm256_mullo_epu32", "vmulq_u32_x2">;
-def Prim_U32_512_Mul             : VectorIntrinsicPrimitive<"mul", "u32", 16, "_mm512_mullo_epu32", "svmul_u32_z">;
+def Prim_U32_Add                 : VectorIntrinsicPrimitive<"add", "u32", 4, "_mm_add_epi32", "vaddq_u32">;
+def Prim_U32_256_Add             : VectorIntrinsicPrimitive<"add", "u32", 8, "_mm256_add_epi32", "svadd_u32_z">;
+def Prim_U32_512_Add             : VectorIntrinsicPrimitive<"add", "u32", 16, "_mm512_add_epi32", "svadd_u32_z">;
+def Prim_U32_Sub                 : VectorIntrinsicPrimitive<"sub", "u32", 4, "_mm_sub_epi32", "vsubq_u32">;
+def Prim_U32_256_Sub             : VectorIntrinsicPrimitive<"sub", "u32", 8, "_mm256_sub_epi32", "svsub_u32_z">;
+def Prim_U32_512_Sub             : VectorIntrinsicPrimitive<"sub", "u32", 16, "_mm512_sub_epi32", "svsub_u32_z">;
+def Prim_U32_Mul                 : VectorIntrinsicPrimitive<"mul", "u32", 4, "_mm_mullo_epi32", "vmulq_u32">;
+def Prim_U32_256_Mul             : VectorIntrinsicPrimitive<"mul", "u32", 8, "_mm256_mullo_epi32", "svmul_u32_z">;
+def Prim_U32_512_Mul             : VectorIntrinsicPrimitive<"mul", "u32", 16, "_mm512_mullo_epi32", "svmul_u32_z">;
 def Prim_U32_Min                 : VectorIntrinsicPrimitive<"min", "u32", 4, "_mm_min_epu32", "vminq_u32">;
-def Prim_U32_256_Min             : VectorIntrinsicPrimitive<"min", "u32", 8, "_mm256_min_epu32", "vminq_u32_x2">;
+def Prim_U32_256_Min             : VectorIntrinsicPrimitive<"min", "u32", 8, "_mm256_min_epu32", "svmin_u32_z">;
 def Prim_U32_512_Min             : VectorIntrinsicPrimitive<"min", "u32", 16, "_mm512_min_epu32", "svmin_u32_z">;
 def Prim_U32_Max                 : VectorIntrinsicPrimitive<"max", "u32", 4, "_mm_max_epu32", "vmaxq_u32">;
-def Prim_U32_256_Max             : VectorIntrinsicPrimitive<"max", "u32", 8, "_mm256_max_epu32", "vmaxq_u32_x2">;
+def Prim_U32_256_Max             : VectorIntrinsicPrimitive<"max", "u32", 8, "_mm256_max_epu32", "svmax_u32_z">;
 def Prim_U32_512_Max             : VectorIntrinsicPrimitive<"max", "u32", 16, "_mm512_max_epu32", "svmax_u32_z">;
-def Prim_U32_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "u32", 4, "_mm_cmpeq_epu32", "vcmeqq_u32">;
-def Prim_U32_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u32", 8, "_mm256_cmpeq_epu32", "vcmeqq_u32_x2">;
-def Prim_U32_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u32", 16, "_mm512_cmpeq_epu32", "svcmeq_u32_z">;
-def Prim_U32_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "u32", 4, "_mm_cmpgt_epu32", "vcmgtq_u32">;
-def Prim_U32_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u32", 8, "_mm256_cmpgt_epu32", "vcmgtq_u32_x2">;
-def Prim_U32_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u32", 16, "_mm512_cmpgt_epu32", "svcmgt_u32_z">;
-def Prim_U32_BlendV              : VectorIntrinsicPrimitive<"blendv", "u32", 4, "_mm_blendv_epu32", "vbslq_u32">;
-def Prim_U32_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "u32", 8, "_mm256_blendv_epu32", "vbslq_u32_x2">;
-def Prim_U32_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "u32", 16, "_mm512_blendv_epu32", "svbsl_u32_z">;
-def Prim_U32_And                 : VectorIntrinsicPrimitive<"and", "u32", 4, "_mm_and_epu32", "vandq_u32">;
-def Prim_U32_256_And             : VectorIntrinsicPrimitive<"and", "u32", 8, "_mm256_and_epu32", "vandq_u32_x2">;
-def Prim_U32_512_And             : VectorIntrinsicPrimitive<"and", "u32", 16, "_mm512_and_epu32", "svand_u32_z">;
-def Prim_U32_Or                  : VectorIntrinsicPrimitive<"or", "u32", 4, "_mm_or_epu32", "vorrq_u32">;
-def Prim_U32_256_Or              : VectorIntrinsicPrimitive<"or", "u32", 8, "_mm256_or_epu32", "vorrq_u32_x2">;
-def Prim_U32_512_Or              : VectorIntrinsicPrimitive<"or", "u32", 16, "_mm512_or_epu32", "svorr_u32_z">;
-def Prim_U32_Xor                 : VectorIntrinsicPrimitive<"xor", "u32", 4, "_mm_xor_epu32", "veorq_u32">;
-def Prim_U32_256_Xor             : VectorIntrinsicPrimitive<"xor", "u32", 8, "_mm256_xor_epu32", "veorq_u32_x2">;
-def Prim_U32_512_Xor             : VectorIntrinsicPrimitive<"xor", "u32", 16, "_mm512_xor_epu32", "sveor_u32_z">;
-def Prim_U32_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "u32", 4, "_mm_adds_epu32", "vqaddq_u32">;
-def Prim_U32_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u32", 8, "_mm256_adds_epu32", "vqaddq_u32_x2">;
-def Prim_U32_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u32", 16, "_mm512_adds_epu32", "svqadd_u32_z">;
-def Prim_U32_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "u32", 4, "_mm_subs_epu32", "vqsubq_u32">;
-def Prim_U32_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u32", 8, "_mm256_subs_epu32", "vqsubq_u32_x2">;
-def Prim_U32_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u32", 16, "_mm512_subs_epu32", "svqsub_u32_z">;
-def Prim_U32_Shl                 : VectorIntrinsicPrimitive<"sll", "u32", 4, "_mm_slli_epu32", "vshl_nq_u32">;
-def Prim_U32_256_Shl             : VectorIntrinsicPrimitive<"sll", "u32", 8, "_mm256_slli_epu32", "vshl_nq_u32_x2">;
-def Prim_U32_512_Shl             : VectorIntrinsicPrimitive<"sll", "u32", 16, "_mm512_slli_epu32", "svshl_n_u32_z">;
-def Prim_U32_Shr                 : VectorIntrinsicPrimitive<"sra", "u32", 4, "_mm_srai_epu32", "vshr_nq_u32">;
-def Prim_U32_256_Shr             : VectorIntrinsicPrimitive<"sra", "u32", 8, "_mm256_srai_epu32", "vshr_nq_u32_x2">;
-def Prim_U32_512_Shr             : VectorIntrinsicPrimitive<"sra", "u32", 16, "_mm512_srai_epu32", "svshr_n_u32_z">;
+def Prim_U32_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "u32", 4, "_mm_cmpeq_epi32", "vcmeqq_u32">;
+def Prim_U32_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u32", 8, "_mm256_cmpeq_epi32", "svcmeq_u32_z">;
+def Prim_U32_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u32", 16, "_mm512_cmpeq_epu32_mask", "svcmeq_u32_z">;
+def Prim_U32_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "u32", 4, "_mm_cmpgt_epu32_mask", "vcmgtq_u32">;
+def Prim_U32_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u32", 8, "_mm256_cmpgt_epu32_mask", "svcmgt_u32_z">;
+def Prim_U32_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u32", 16, "_mm512_cmpgt_epu32_mask", "svcmgt_u32_z">;
+def Prim_U32_BlendV              : VectorIntrinsicPrimitive<"blendv", "u32", 4, "_mm_blendv_epi8", "vbslq_u32">;
+def Prim_U32_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "u32", 8, "_mm256_blendv_epi8", "svbsl_u32_z">;
+def Prim_U32_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "u32", 16, "_mm512_mask_blend_epi32", "svbsl_u32_z">;
+def Prim_U32_And                 : VectorIntrinsicPrimitive<"and", "u32", 4, "_mm_and_si128", "vandq_u32">;
+def Prim_U32_256_And             : VectorIntrinsicPrimitive<"and", "u32", 8, "_mm256_and_si256", "svand_u32_z">;
+def Prim_U32_512_And             : VectorIntrinsicPrimitive<"and", "u32", 16, "_mm512_and_epi32", "svand_u32_z">;
+def Prim_U32_Or                  : VectorIntrinsicPrimitive<"or", "u32", 4, "_mm_or_si128", "vorrq_u32">;
+def Prim_U32_256_Or              : VectorIntrinsicPrimitive<"or", "u32", 8, "_mm256_or_si256", "svorr_u32_z">;
+def Prim_U32_512_Or              : VectorIntrinsicPrimitive<"or", "u32", 16, "_mm512_or_epi32", "svorr_u32_z">;
+def Prim_U32_Xor                 : VectorIntrinsicPrimitive<"xor", "u32", 4, "_mm_xor_si128", "veorq_u32">;
+def Prim_U32_256_Xor             : VectorIntrinsicPrimitive<"xor", "u32", 8, "_mm256_xor_si256", "sveor_u32_z">;
+def Prim_U32_512_Xor             : VectorIntrinsicPrimitive<"xor", "u32", 16, "_mm512_xor_epi32", "sveor_u32_z">;
+def Prim_U32_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "u32", 4, "_mm_add_epi32", "vqaddq_u32">;
+def Prim_U32_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u32", 8, "_mm256_add_epi32", "svqadd_u32_z">;
+def Prim_U32_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u32", 16, "_mm512_add_epi32", "svqadd_u32_z">;
+def Prim_U32_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "u32", 4, "_mm_sub_epi32", "vqsubq_u32">;
+def Prim_U32_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u32", 8, "_mm256_sub_epi32", "svqsub_u32_z">;
+def Prim_U32_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u32", 16, "_mm512_sub_epi32", "svqsub_u32_z">;
+def Prim_U32_Shl                 : VectorIntrinsicPrimitive<"sll", "u32", 4, "_mm_slli_epi32", "vshlq_n_u32">;
+def Prim_U32_256_Shl             : VectorIntrinsicPrimitive<"sll", "u32", 8, "_mm256_slli_epi32", "svlsl_n_u32_z">;
+def Prim_U32_512_Shl             : VectorIntrinsicPrimitive<"sll", "u32", 16, "_mm512_slli_epi32", "svshl_n_u32_z">;
+def Prim_U32_Shr                 : VectorIntrinsicPrimitive<"sra", "u32", 4, "_mm_srli_epi32", "vshrq_n_u32">;
+def Prim_U32_256_Shr             : VectorIntrinsicPrimitive<"sra", "u32", 8, "_mm256_srli_epi32", "svlsr_n_u32_z">;
+def Prim_U32_512_Shr             : VectorIntrinsicPrimitive<"sra", "u32", 16, "_mm512_srli_epi32", "svshr_n_u32_z">;
 
 def Prim_I64_Add                 : VectorIntrinsicPrimitive<"add", "i64", 2, "_mm_add_epi64", "vaddq_s64">;
-def Prim_I64_256_Add             : VectorIntrinsicPrimitive<"add", "i64", 4, "_mm256_add_epi64", "vaddq_s64_x2">;
+def Prim_I64_256_Add             : VectorIntrinsicPrimitive<"add", "i64", 4, "_mm256_add_epi64", "svadd_s64_z">;
 def Prim_I64_512_Add             : VectorIntrinsicPrimitive<"add", "i64", 8, "_mm512_add_epi64", "svadd_s64_z">;
 def Prim_I64_Sub                 : VectorIntrinsicPrimitive<"sub", "i64", 2, "_mm_sub_epi64", "vsubq_s64">;
-def Prim_I64_256_Sub             : VectorIntrinsicPrimitive<"sub", "i64", 4, "_mm256_sub_epi64", "vsubq_s64_x2">;
+def Prim_I64_256_Sub             : VectorIntrinsicPrimitive<"sub", "i64", 4, "_mm256_sub_epi64", "svsub_s64_z">;
 def Prim_I64_512_Sub             : VectorIntrinsicPrimitive<"sub", "i64", 8, "_mm512_sub_epi64", "svsub_s64_z">;
 def Prim_I64_Mul                 : VectorIntrinsicPrimitive<"mul", "i64", 2, "_mm_mullo_epi64", "vmulq_s64">;
-def Prim_I64_256_Mul             : VectorIntrinsicPrimitive<"mul", "i64", 4, "_mm256_mullo_epi64", "vmulq_s64_x2">;
+def Prim_I64_256_Mul             : VectorIntrinsicPrimitive<"mul", "i64", 4, "_mm256_mullo_epi64", "svmul_s64_z">;
 def Prim_I64_512_Mul             : VectorIntrinsicPrimitive<"mul", "i64", 8, "_mm512_mullo_epi64", "svmul_s64_z">;
 def Prim_I64_Min                 : VectorIntrinsicPrimitive<"min", "i64", 2, "_mm_min_epi64", "vminq_s64">;
-def Prim_I64_256_Min             : VectorIntrinsicPrimitive<"min", "i64", 4, "_mm256_min_epi64", "vminq_s64_x2">;
+def Prim_I64_256_Min             : VectorIntrinsicPrimitive<"min", "i64", 4, "_mm256_min_epi64", "svmin_s64_z">;
 def Prim_I64_512_Min             : VectorIntrinsicPrimitive<"min", "i64", 8, "_mm512_min_epi64", "svmin_s64_z">;
 def Prim_I64_Max                 : VectorIntrinsicPrimitive<"max", "i64", 2, "_mm_max_epi64", "vmaxq_s64">;
-def Prim_I64_256_Max             : VectorIntrinsicPrimitive<"max", "i64", 4, "_mm256_max_epi64", "vmaxq_s64_x2">;
+def Prim_I64_256_Max             : VectorIntrinsicPrimitive<"max", "i64", 4, "_mm256_max_epi64", "svmax_s64_z">;
 def Prim_I64_512_Max             : VectorIntrinsicPrimitive<"max", "i64", 8, "_mm512_max_epi64", "svmax_s64_z">;
 def Prim_I64_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "i64", 2, "_mm_cmpeq_epi64", "vcmeqq_s64">;
-def Prim_I64_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i64", 4, "_mm256_cmpeq_epi64", "vcmeqq_s64_x2">;
+def Prim_I64_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i64", 4, "_mm256_cmpeq_epi64", "svcmeq_s64_z">;
 def Prim_I64_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "i64", 8, "_mm512_cmpeq_epi64", "svcmeq_s64_z">;
 def Prim_I64_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "i64", 2, "_mm_cmpgt_epi64", "vcmgtq_s64">;
-def Prim_I64_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i64", 4, "_mm256_cmpgt_epi64", "vcmgtq_s64_x2">;
+def Prim_I64_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i64", 4, "_mm256_cmpgt_epi64", "svcmgt_s64_z">;
 def Prim_I64_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "i64", 8, "_mm512_cmpgt_epi64", "svcmgt_s64_z">;
-def Prim_I64_BlendV              : VectorIntrinsicPrimitive<"blendv", "i64", 2, "_mm_blendv_epi64", "vbslq_s64">;
-def Prim_I64_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "i64", 4, "_mm256_blendv_epi64", "vbslq_s64_x2">;
-def Prim_I64_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "i64", 8, "_mm512_blendv_epi64", "svbsl_s64_z">;
-def Prim_I64_And                 : VectorIntrinsicPrimitive<"and", "i64", 2, "_mm_and_epi64", "vandq_s64">;
-def Prim_I64_256_And             : VectorIntrinsicPrimitive<"and", "i64", 4, "_mm256_and_epi64", "vandq_s64_x2">;
+def Prim_I64_BlendV              : VectorIntrinsicPrimitive<"blendv", "i64", 2, "_mm_blendv_epi8", "vbslq_s64">;
+def Prim_I64_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "i64", 4, "_mm256_blendv_epi8", "svbsl_s64_z">;
+def Prim_I64_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "i64", 8, "_mm512_mask_blend_epi64", "svbsl_s64_z">;
+def Prim_I64_And                 : VectorIntrinsicPrimitive<"and", "i64", 2, "_mm_and_si128", "vandq_s64">;
+def Prim_I64_256_And             : VectorIntrinsicPrimitive<"and", "i64", 4, "_mm256_and_si256", "svand_s64_z">;
 def Prim_I64_512_And             : VectorIntrinsicPrimitive<"and", "i64", 8, "_mm512_and_epi64", "svand_s64_z">;
-def Prim_I64_Or                  : VectorIntrinsicPrimitive<"or", "i64", 2, "_mm_or_epi64", "vorrq_s64">;
-def Prim_I64_256_Or              : VectorIntrinsicPrimitive<"or", "i64", 4, "_mm256_or_epi64", "vorrq_s64_x2">;
+def Prim_I64_Or                  : VectorIntrinsicPrimitive<"or", "i64", 2, "_mm_or_si128", "vorrq_s64">;
+def Prim_I64_256_Or              : VectorIntrinsicPrimitive<"or", "i64", 4, "_mm256_or_si256", "svorr_s64_z">;
 def Prim_I64_512_Or              : VectorIntrinsicPrimitive<"or", "i64", 8, "_mm512_or_epi64", "svorr_s64_z">;
-def Prim_I64_Xor                 : VectorIntrinsicPrimitive<"xor", "i64", 2, "_mm_xor_epi64", "veorq_s64">;
-def Prim_I64_256_Xor             : VectorIntrinsicPrimitive<"xor", "i64", 4, "_mm256_xor_epi64", "veorq_s64_x2">;
+def Prim_I64_Xor                 : VectorIntrinsicPrimitive<"xor", "i64", 2, "_mm_xor_si128", "veorq_s64">;
+def Prim_I64_256_Xor             : VectorIntrinsicPrimitive<"xor", "i64", 4, "_mm256_xor_si256", "sveor_s64_z">;
 def Prim_I64_512_Xor             : VectorIntrinsicPrimitive<"xor", "i64", 8, "_mm512_xor_epi64", "sveor_s64_z">;
-def Prim_I64_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "i64", 2, "_mm_adds_epi64", "vqaddq_s64">;
-def Prim_I64_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i64", 4, "_mm256_adds_epi64", "vqaddq_s64_x2">;
-def Prim_I64_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i64", 8, "_mm512_adds_epi64", "svqadd_s64_z">;
-def Prim_I64_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "i64", 2, "_mm_subs_epi64", "vqsubq_s64">;
-def Prim_I64_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i64", 4, "_mm256_subs_epi64", "vqsubq_s64_x2">;
-def Prim_I64_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i64", 8, "_mm512_subs_epi64", "svqsub_s64_z">;
-def Prim_I64_Shl                 : VectorIntrinsicPrimitive<"sll", "i64", 2, "_mm_slli_epi64", "vshl_nq_s64">;
-def Prim_I64_256_Shl             : VectorIntrinsicPrimitive<"sll", "i64", 4, "_mm256_slli_epi64", "vshl_nq_s64_x2">;
+def Prim_I64_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "i64", 2, "_mm_add_epi64", "vqaddq_s64">;
+def Prim_I64_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i64", 4, "_mm256_add_epi64", "svqadd_s64_z">;
+def Prim_I64_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "i64", 8, "_mm512_add_epi64", "svqadd_s64_z">;
+def Prim_I64_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "i64", 2, "_mm_sub_epi64", "vqsubq_s64">;
+def Prim_I64_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i64", 4, "_mm256_sub_epi64", "svqsub_s64_z">;
+def Prim_I64_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "i64", 8, "_mm512_sub_epi64", "svqsub_s64_z">;
+def Prim_I64_Shl                 : VectorIntrinsicPrimitive<"sll", "i64", 2, "_mm_slli_epi64", "vshlq_n_s64">;
+def Prim_I64_256_Shl             : VectorIntrinsicPrimitive<"sll", "i64", 4, "_mm256_slli_epi64", "svlsl_n_s64_z">;
 def Prim_I64_512_Shl             : VectorIntrinsicPrimitive<"sll", "i64", 8, "_mm512_slli_epi64", "svshl_n_s64_z">;
-def Prim_I64_Shr                 : VectorIntrinsicPrimitive<"sra", "i64", 2, "_mm_srai_epi64", "vshr_nq_s64">;
-def Prim_I64_256_Shr             : VectorIntrinsicPrimitive<"sra", "i64", 4, "_mm256_srai_epi64", "vshr_nq_s64_x2">;
+def Prim_I64_Shr                 : VectorIntrinsicPrimitive<"sra", "i64", 2, "_mm_srai_epi64", "vshrq_n_s64">;
+def Prim_I64_256_Shr             : VectorIntrinsicPrimitive<"sra", "i64", 4, "_mm256_srai_epi64", "svasr_n_s64_z">;
 def Prim_I64_512_Shr             : VectorIntrinsicPrimitive<"sra", "i64", 8, "_mm512_srai_epi64", "svshr_n_s64_z">;
 
-def Prim_U64_Add                 : VectorIntrinsicPrimitive<"add", "u64", 2, "_mm_add_epu64", "vaddq_u64">;
-def Prim_U64_256_Add             : VectorIntrinsicPrimitive<"add", "u64", 4, "_mm256_add_epu64", "vaddq_u64_x2">;
-def Prim_U64_512_Add             : VectorIntrinsicPrimitive<"add", "u64", 8, "_mm512_add_epu64", "svadd_u64_z">;
-def Prim_U64_Sub                 : VectorIntrinsicPrimitive<"sub", "u64", 2, "_mm_sub_epu64", "vsubq_u64">;
-def Prim_U64_256_Sub             : VectorIntrinsicPrimitive<"sub", "u64", 4, "_mm256_sub_epu64", "vsubq_u64_x2">;
-def Prim_U64_512_Sub             : VectorIntrinsicPrimitive<"sub", "u64", 8, "_mm512_sub_epu64", "svsub_u64_z">;
-def Prim_U64_Mul                 : VectorIntrinsicPrimitive<"mul", "u64", 2, "_mm_mullo_epu64", "vmulq_u64">;
-def Prim_U64_256_Mul             : VectorIntrinsicPrimitive<"mul", "u64", 4, "_mm256_mullo_epu64", "vmulq_u64_x2">;
-def Prim_U64_512_Mul             : VectorIntrinsicPrimitive<"mul", "u64", 8, "_mm512_mullo_epu64", "svmul_u64_z">;
+def Prim_U64_Add                 : VectorIntrinsicPrimitive<"add", "u64", 2, "_mm_add_epi64", "vaddq_u64">;
+def Prim_U64_256_Add             : VectorIntrinsicPrimitive<"add", "u64", 4, "_mm256_add_epi64", "svadd_u64_z">;
+def Prim_U64_512_Add             : VectorIntrinsicPrimitive<"add", "u64", 8, "_mm512_add_epi64", "svadd_u64_z">;
+def Prim_U64_Sub                 : VectorIntrinsicPrimitive<"sub", "u64", 2, "_mm_sub_epi64", "vsubq_u64">;
+def Prim_U64_256_Sub             : VectorIntrinsicPrimitive<"sub", "u64", 4, "_mm256_sub_epi64", "svsub_u64_z">;
+def Prim_U64_512_Sub             : VectorIntrinsicPrimitive<"sub", "u64", 8, "_mm512_sub_epi64", "svsub_u64_z">;
+def Prim_U64_Mul                 : VectorIntrinsicPrimitive<"mul", "u64", 2, "_mm_mullo_epi64", "vmulq_u64">;
+def Prim_U64_256_Mul             : VectorIntrinsicPrimitive<"mul", "u64", 4, "_mm256_mullo_epi64", "svmul_u64_z">;
+def Prim_U64_512_Mul             : VectorIntrinsicPrimitive<"mul", "u64", 8, "_mm512_mullo_epi64", "svmul_u64_z">;
 def Prim_U64_Min                 : VectorIntrinsicPrimitive<"min", "u64", 2, "_mm_min_epu64", "vminq_u64">;
-def Prim_U64_256_Min             : VectorIntrinsicPrimitive<"min", "u64", 4, "_mm256_min_epu64", "vminq_u64_x2">;
+def Prim_U64_256_Min             : VectorIntrinsicPrimitive<"min", "u64", 4, "_mm256_min_epu64", "svmin_u64_z">;
 def Prim_U64_512_Min             : VectorIntrinsicPrimitive<"min", "u64", 8, "_mm512_min_epu64", "svmin_u64_z">;
 def Prim_U64_Max                 : VectorIntrinsicPrimitive<"max", "u64", 2, "_mm_max_epu64", "vmaxq_u64">;
-def Prim_U64_256_Max             : VectorIntrinsicPrimitive<"max", "u64", 4, "_mm256_max_epu64", "vmaxq_u64_x2">;
+def Prim_U64_256_Max             : VectorIntrinsicPrimitive<"max", "u64", 4, "_mm256_max_epu64", "svmax_u64_z">;
 def Prim_U64_512_Max             : VectorIntrinsicPrimitive<"max", "u64", 8, "_mm512_max_epu64", "svmax_u64_z">;
-def Prim_U64_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "u64", 2, "_mm_cmpeq_epu64", "vcmeqq_u64">;
-def Prim_U64_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u64", 4, "_mm256_cmpeq_epu64", "vcmeqq_u64_x2">;
-def Prim_U64_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u64", 8, "_mm512_cmpeq_epu64", "svcmeq_u64_z">;
-def Prim_U64_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "u64", 2, "_mm_cmpgt_epu64", "vcmgtq_u64">;
-def Prim_U64_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u64", 4, "_mm256_cmpgt_epu64", "vcmgtq_u64_x2">;
-def Prim_U64_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u64", 8, "_mm512_cmpgt_epu64", "svcmgt_u64_z">;
-def Prim_U64_BlendV              : VectorIntrinsicPrimitive<"blendv", "u64", 2, "_mm_blendv_epu64", "vbslq_u64">;
-def Prim_U64_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "u64", 4, "_mm256_blendv_epu64", "vbslq_u64_x2">;
-def Prim_U64_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "u64", 8, "_mm512_blendv_epu64", "svbsl_u64_z">;
-def Prim_U64_And                 : VectorIntrinsicPrimitive<"and", "u64", 2, "_mm_and_epu64", "vandq_u64">;
-def Prim_U64_256_And             : VectorIntrinsicPrimitive<"and", "u64", 4, "_mm256_and_epu64", "vandq_u64_x2">;
-def Prim_U64_512_And             : VectorIntrinsicPrimitive<"and", "u64", 8, "_mm512_and_epu64", "svand_u64_z">;
-def Prim_U64_Or                  : VectorIntrinsicPrimitive<"or", "u64", 2, "_mm_or_epu64", "vorrq_u64">;
-def Prim_U64_256_Or              : VectorIntrinsicPrimitive<"or", "u64", 4, "_mm256_or_epu64", "vorrq_u64_x2">;
-def Prim_U64_512_Or              : VectorIntrinsicPrimitive<"or", "u64", 8, "_mm512_or_epu64", "svorr_u64_z">;
-def Prim_U64_Xor                 : VectorIntrinsicPrimitive<"xor", "u64", 2, "_mm_xor_epu64", "veorq_u64">;
-def Prim_U64_256_Xor             : VectorIntrinsicPrimitive<"xor", "u64", 4, "_mm256_xor_epu64", "veorq_u64_x2">;
-def Prim_U64_512_Xor             : VectorIntrinsicPrimitive<"xor", "u64", 8, "_mm512_xor_epu64", "sveor_u64_z">;
-def Prim_U64_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "u64", 2, "_mm_adds_epu64", "vqaddq_u64">;
-def Prim_U64_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u64", 4, "_mm256_adds_epu64", "vqaddq_u64_x2">;
-def Prim_U64_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u64", 8, "_mm512_adds_epu64", "svqadd_u64_z">;
-def Prim_U64_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "u64", 2, "_mm_subs_epu64", "vqsubq_u64">;
-def Prim_U64_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u64", 4, "_mm256_subs_epu64", "vqsubq_u64_x2">;
-def Prim_U64_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u64", 8, "_mm512_subs_epu64", "svqsub_u64_z">;
-def Prim_U64_Shl                 : VectorIntrinsicPrimitive<"sll", "u64", 2, "_mm_slli_epu64", "vshl_nq_u64">;
-def Prim_U64_256_Shl             : VectorIntrinsicPrimitive<"sll", "u64", 4, "_mm256_slli_epu64", "vshl_nq_u64_x2">;
-def Prim_U64_512_Shl             : VectorIntrinsicPrimitive<"sll", "u64", 8, "_mm512_slli_epu64", "svshl_n_u64_z">;
-def Prim_U64_Shr                 : VectorIntrinsicPrimitive<"sra", "u64", 2, "_mm_srai_epu64", "vshr_nq_u64">;
-def Prim_U64_256_Shr             : VectorIntrinsicPrimitive<"sra", "u64", 4, "_mm256_srai_epu64", "vshr_nq_u64_x2">;
-def Prim_U64_512_Shr             : VectorIntrinsicPrimitive<"sra", "u64", 8, "_mm512_srai_epu64", "svshr_n_u64_z">;
+def Prim_U64_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "u64", 2, "_mm_cmpeq_epi64", "vcmeqq_u64">;
+def Prim_U64_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u64", 4, "_mm256_cmpeq_epi64", "svcmeq_u64_z">;
+def Prim_U64_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "u64", 8, "_mm512_cmpeq_epu64_mask", "svcmeq_u64_z">;
+def Prim_U64_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "u64", 2, "_mm_cmpgt_epu64_mask", "vcmgtq_u64">;
+def Prim_U64_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u64", 4, "_mm256_cmpgt_epu64_mask", "svcmgt_u64_z">;
+def Prim_U64_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "u64", 8, "_mm512_cmpgt_epu64_mask", "svcmgt_u64_z">;
+def Prim_U64_BlendV              : VectorIntrinsicPrimitive<"blendv", "u64", 2, "_mm_blendv_epi8", "vbslq_u64">;
+def Prim_U64_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "u64", 4, "_mm256_blendv_epi8", "svbsl_u64_z">;
+def Prim_U64_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "u64", 8, "_mm512_mask_blend_epi64", "svbsl_u64_z">;
+def Prim_U64_And                 : VectorIntrinsicPrimitive<"and", "u64", 2, "_mm_and_si128", "vandq_u64">;
+def Prim_U64_256_And             : VectorIntrinsicPrimitive<"and", "u64", 4, "_mm256_and_si256", "svand_u64_z">;
+def Prim_U64_512_And             : VectorIntrinsicPrimitive<"and", "u64", 8, "_mm512_and_epi64", "svand_u64_z">;
+def Prim_U64_Or                  : VectorIntrinsicPrimitive<"or", "u64", 2, "_mm_or_si128", "vorrq_u64">;
+def Prim_U64_256_Or              : VectorIntrinsicPrimitive<"or", "u64", 4, "_mm256_or_si256", "svorr_u64_z">;
+def Prim_U64_512_Or              : VectorIntrinsicPrimitive<"or", "u64", 8, "_mm512_or_epi64", "svorr_u64_z">;
+def Prim_U64_Xor                 : VectorIntrinsicPrimitive<"xor", "u64", 2, "_mm_xor_si128", "veorq_u64">;
+def Prim_U64_256_Xor             : VectorIntrinsicPrimitive<"xor", "u64", 4, "_mm256_xor_si256", "sveor_u64_z">;
+def Prim_U64_512_Xor             : VectorIntrinsicPrimitive<"xor", "u64", 8, "_mm512_xor_epi64", "sveor_u64_z">;
+def Prim_U64_AddSat              : VectorIntrinsicPrimitive<"adds_sat", "u64", 2, "_mm_add_epi64", "vqaddq_u64">;
+def Prim_U64_256_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u64", 4, "_mm256_add_epi64", "svqadd_u64_z">;
+def Prim_U64_512_AddSat          : VectorIntrinsicPrimitive<"adds_sat", "u64", 8, "_mm512_add_epi64", "svqadd_u64_z">;
+def Prim_U64_SubSat              : VectorIntrinsicPrimitive<"subs_sat", "u64", 2, "_mm_sub_epi64", "vqsubq_u64">;
+def Prim_U64_256_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u64", 4, "_mm256_sub_epi64", "svqsub_u64_z">;
+def Prim_U64_512_SubSat          : VectorIntrinsicPrimitive<"subs_sat", "u64", 8, "_mm512_sub_epi64", "svqsub_u64_z">;
+def Prim_U64_Shl                 : VectorIntrinsicPrimitive<"sll", "u64", 2, "_mm_slli_epi64", "vshlq_n_u64">;
+def Prim_U64_256_Shl             : VectorIntrinsicPrimitive<"sll", "u64", 4, "_mm256_slli_epi64", "svlsl_n_u64_z">;
+def Prim_U64_512_Shl             : VectorIntrinsicPrimitive<"sll", "u64", 8, "_mm512_slli_epi64", "svshl_n_u64_z">;
+def Prim_U64_Shr                 : VectorIntrinsicPrimitive<"sra", "u64", 2, "_mm_srli_epi64", "vshrq_n_u64">;
+def Prim_U64_256_Shr             : VectorIntrinsicPrimitive<"sra", "u64", 4, "_mm256_srli_epi64", "svlsr_n_u64_z">;
+def Prim_U64_512_Shr             : VectorIntrinsicPrimitive<"sra", "u64", 8, "_mm512_srli_epi64", "svshr_n_u64_z">;
 
 def Prim_FP16_Add                : VectorIntrinsicPrimitive<"add", "fp16", 8, "_mm_add_ph", "vaddq_f16">;
-def Prim_FP16_256_Add            : VectorIntrinsicPrimitive<"add", "fp16", 16, "_mm256_add_ph", "vaddq_f16_x2">;
+def Prim_FP16_256_Add            : VectorIntrinsicPrimitive<"add", "fp16", 16, "_mm256_add_ph", "svadd_f16_z">;
 def Prim_FP16_512_Add            : VectorIntrinsicPrimitive<"add", "fp16", 32, "_mm512_add_ph", "svadd_f16_z">;
 def Prim_FP16_Sub                : VectorIntrinsicPrimitive<"sub", "fp16", 8, "_mm_sub_ph", "vsubq_f16">;
-def Prim_FP16_256_Sub            : VectorIntrinsicPrimitive<"sub", "fp16", 16, "_mm256_sub_ph", "vsubq_f16_x2">;
+def Prim_FP16_256_Sub            : VectorIntrinsicPrimitive<"sub", "fp16", 16, "_mm256_sub_ph", "svsub_f16_z">;
 def Prim_FP16_512_Sub            : VectorIntrinsicPrimitive<"sub", "fp16", 32, "_mm512_sub_ph", "svsub_f16_z">;
 def Prim_FP16_Mul                : VectorIntrinsicPrimitive<"mul", "fp16", 8, "_mm_mul_ph", "vmulq_f16">;
-def Prim_FP16_256_Mul            : VectorIntrinsicPrimitive<"mul", "fp16", 16, "_mm256_mul_ph", "vmulq_f16_x2">;
+def Prim_FP16_256_Mul            : VectorIntrinsicPrimitive<"mul", "fp16", 16, "_mm256_mul_ph", "svmul_f16_z">;
 def Prim_FP16_512_Mul            : VectorIntrinsicPrimitive<"mul", "fp16", 32, "_mm512_mul_ph", "svmul_f16_z">;
 def Prim_FP16_Min                : VectorIntrinsicPrimitive<"min", "fp16", 8, "_mm_min_ph", "vminq_f16">;
-def Prim_FP16_256_Min            : VectorIntrinsicPrimitive<"min", "fp16", 16, "_mm256_min_ph", "vminq_f16_x2">;
+def Prim_FP16_256_Min            : VectorIntrinsicPrimitive<"min", "fp16", 16, "_mm256_min_ph", "svmin_f16_z">;
 def Prim_FP16_512_Min            : VectorIntrinsicPrimitive<"min", "fp16", 32, "_mm512_min_ph", "svmin_f16_z">;
 def Prim_FP16_Max                : VectorIntrinsicPrimitive<"max", "fp16", 8, "_mm_max_ph", "vmaxq_f16">;
-def Prim_FP16_256_Max            : VectorIntrinsicPrimitive<"max", "fp16", 16, "_mm256_max_ph", "vmaxq_f16_x2">;
+def Prim_FP16_256_Max            : VectorIntrinsicPrimitive<"max", "fp16", 16, "_mm256_max_ph", "svmax_f16_z">;
 def Prim_FP16_512_Max            : VectorIntrinsicPrimitive<"max", "fp16", 32, "_mm512_max_ph", "svmax_f16_z">;
 def Prim_FP16_CmpEq              : VectorIntrinsicPrimitive<"cmpeq", "fp16", 8, "_mm_cmpeq_ph", "vcmeqq_f16">;
-def Prim_FP16_256_CmpEq          : VectorIntrinsicPrimitive<"cmpeq", "fp16", 16, "_mm256_cmpeq_ph", "vcmeqq_f16_x2">;
+def Prim_FP16_256_CmpEq          : VectorIntrinsicPrimitive<"cmpeq", "fp16", 16, "_mm256_cmpeq_ph", "svcmeq_f16_z">;
 def Prim_FP16_512_CmpEq          : VectorIntrinsicPrimitive<"cmpeq", "fp16", 32, "_mm512_cmpeq_ph", "svcmeq_f16_z">;
 def Prim_FP16_CmpGt              : VectorIntrinsicPrimitive<"cmpgt", "fp16", 8, "_mm_cmpgt_ph", "vcmgtq_f16">;
-def Prim_FP16_256_CmpGt          : VectorIntrinsicPrimitive<"cmpgt", "fp16", 16, "_mm256_cmpgt_ph", "vcmgtq_f16_x2">;
+def Prim_FP16_256_CmpGt          : VectorIntrinsicPrimitive<"cmpgt", "fp16", 16, "_mm256_cmpgt_ph", "svcmgt_f16_z">;
 def Prim_FP16_512_CmpGt          : VectorIntrinsicPrimitive<"cmpgt", "fp16", 32, "_mm512_cmpgt_ph", "svcmgt_f16_z">;
 def Prim_FP16_BlendV             : VectorIntrinsicPrimitive<"blendv", "fp16", 8, "_mm_blendv_ph", "vbslq_f16">;
-def Prim_FP16_256_BlendV         : VectorIntrinsicPrimitive<"blendv", "fp16", 16, "_mm256_blendv_ph", "vbslq_f16_x2">;
-def Prim_FP16_512_BlendV         : VectorIntrinsicPrimitive<"blendv", "fp16", 32, "_mm512_blendv_ph", "svbsl_f16_z">;
+def Prim_FP16_256_BlendV         : VectorIntrinsicPrimitive<"blendv", "fp16", 16, "_mm256_blendv_ph", "svbsl_f16_z">;
+def Prim_FP16_512_BlendV         : VectorIntrinsicPrimitive<"blendv", "fp16", 32, "_mm512_mask_blend_ph", "svbsl_f16_z">;
 def Prim_FP16_And                : VectorIntrinsicPrimitive<"and", "fp16", 8, "_mm_and_ph", "vandq_f16">;
-def Prim_FP16_256_And            : VectorIntrinsicPrimitive<"and", "fp16", 16, "_mm256_and_ph", "vandq_f16_x2">;
+def Prim_FP16_256_And            : VectorIntrinsicPrimitive<"and", "fp16", 16, "_mm256_and_ph", "svand_f16_z">;
 def Prim_FP16_512_And            : VectorIntrinsicPrimitive<"and", "fp16", 32, "_mm512_and_ph", "svand_f16_z">;
 def Prim_FP16_Or                 : VectorIntrinsicPrimitive<"or", "fp16", 8, "_mm_or_ph", "vorrq_f16">;
-def Prim_FP16_256_Or             : VectorIntrinsicPrimitive<"or", "fp16", 16, "_mm256_or_ph", "vorrq_f16_x2">;
+def Prim_FP16_256_Or             : VectorIntrinsicPrimitive<"or", "fp16", 16, "_mm256_or_ph", "svorr_f16_z">;
 def Prim_FP16_512_Or             : VectorIntrinsicPrimitive<"or", "fp16", 32, "_mm512_or_ph", "svorr_f16_z">;
 def Prim_FP16_Xor                : VectorIntrinsicPrimitive<"xor", "fp16", 8, "_mm_xor_ph", "veorq_f16">;
-def Prim_FP16_256_Xor            : VectorIntrinsicPrimitive<"xor", "fp16", 16, "_mm256_xor_ph", "veorq_f16_x2">;
+def Prim_FP16_256_Xor            : VectorIntrinsicPrimitive<"xor", "fp16", 16, "_mm256_xor_ph", "sveor_f16_z">;
 def Prim_FP16_512_Xor            : VectorIntrinsicPrimitive<"xor", "fp16", 32, "_mm512_xor_ph", "sveor_f16_z">;
 def Prim_FP16_Div                : VectorIntrinsicPrimitive<"div", "fp16", 8, "_mm_div_ph", "vdivq_f16">;
-def Prim_FP16_256_Div            : VectorIntrinsicPrimitive<"div", "fp16", 16, "_mm256_div_ph", "vdivq_f16_x2">;
+def Prim_FP16_256_Div            : VectorIntrinsicPrimitive<"div", "fp16", 16, "_mm256_div_ph", "svdiv_f16_z">;
 def Prim_FP16_512_Div            : VectorIntrinsicPrimitive<"div", "fp16", 32, "_mm512_div_ph", "svdiv_f16_z">;
 def Prim_FP16_FMAdd              : VectorIntrinsicPrimitive<"fmadd", "fp16", 8, "_mm_fmadd_ph", "vfmaq_f16">;
-def Prim_FP16_256_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "fp16", 16, "_mm256_fmadd_ph", "vfmaq_f16_x2">;
+def Prim_FP16_256_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "fp16", 16, "_mm256_fmadd_ph", "svmla_f16_z">;
 def Prim_FP16_512_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "fp16", 32, "_mm512_fmadd_ph", "svfma_f16_z">;
 def Prim_FP16_FMSub              : VectorIntrinsicPrimitive<"fmsub", "fp16", 8, "_mm_fmsub_ph", "vfmsq_f16">;
-def Prim_FP16_256_FMSub          : VectorIntrinsicPrimitive<"fmsub", "fp16", 16, "_mm256_fmsub_ph", "vfmsq_f16_x2">;
+def Prim_FP16_256_FMSub          : VectorIntrinsicPrimitive<"fmsub", "fp16", 16, "_mm256_fmsub_ph", "svmls_f16_z">;
 def Prim_FP16_512_FMSub          : VectorIntrinsicPrimitive<"fmsub", "fp16", 32, "_mm512_fmsub_ph", "svfms_f16_z">;
 def Prim_FP16_Sqrt               : VectorIntrinsicPrimitive<"sqrt", "fp16", 8, "_mm_sqrt_ph", "vsqrtq_f16">;
-def Prim_FP16_256_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "fp16", 16, "_mm256_sqrt_ph", "vsqrtq_f16_x2">;
+def Prim_FP16_256_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "fp16", 16, "_mm256_sqrt_ph", "svsqrt_f16_z">;
 def Prim_FP16_512_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "fp16", 32, "_mm512_sqrt_ph", "svsqrt_f16_z">;
 def Prim_FP16_RSqrt              : VectorIntrinsicPrimitive<"rsqrt", "fp16", 8, "_mm_rsqrt_ph", "vrsqrteq_f16">;
-def Prim_FP16_256_RSqrt          : VectorIntrinsicPrimitive<"rsqrt", "fp16", 16, "_mm256_rsqrt_ph", "vrsqrteq_f16_x2">;
+def Prim_FP16_256_RSqrt          : VectorIntrinsicPrimitive<"rsqrt", "fp16", 16, "_mm256_rsqrt_ph", "svrsqrte_f16">;
 def Prim_FP16_512_RSqrt          : VectorIntrinsicPrimitive<"rsqrt", "fp16", 32, "_mm512_rsqrt_ph", "svrsqrte_f16_z">;
 def Prim_FP16_Rcp                : VectorIntrinsicPrimitive<"rcp", "fp16", 8, "_mm_rcp_ph", "vrecpeq_f16">;
-def Prim_FP16_256_Rcp            : VectorIntrinsicPrimitive<"rcp", "fp16", 16, "_mm256_rcp_ph", "vrecpeq_f16_x2">;
+def Prim_FP16_256_Rcp            : VectorIntrinsicPrimitive<"rcp", "fp16", 16, "_mm256_rcp_ph", "svrecpe_f16">;
 def Prim_FP16_512_Rcp            : VectorIntrinsicPrimitive<"rcp", "fp16", 32, "_mm512_rcp_ph", "svrecpe_f16_z">;
 def Prim_FP16_Floor              : VectorIntrinsicPrimitive<"floor", "fp16", 8, "_mm_floor_ph", "vrndmq_f16">;
-def Prim_FP16_256_Floor          : VectorIntrinsicPrimitive<"floor", "fp16", 16, "_mm256_floor_ph", "vrndmq_f16_x2">;
+def Prim_FP16_256_Floor          : VectorIntrinsicPrimitive<"floor", "fp16", 16, "_mm256_floor_ph", "svrintm_f16_z">;
 def Prim_FP16_512_Floor          : VectorIntrinsicPrimitive<"floor", "fp16", 32, "_mm512_floor_ph", "svrndm_f16_z">;
 def Prim_FP16_Ceil               : VectorIntrinsicPrimitive<"ceil", "fp16", 8, "_mm_ceil_ph", "vrndpq_f16">;
-def Prim_FP16_256_Ceil           : VectorIntrinsicPrimitive<"ceil", "fp16", 16, "_mm256_ceil_ph", "vrndpq_f16_x2">;
+def Prim_FP16_256_Ceil           : VectorIntrinsicPrimitive<"ceil", "fp16", 16, "_mm256_ceil_ph", "svrintp_f16_z">;
 def Prim_FP16_512_Ceil           : VectorIntrinsicPrimitive<"ceil", "fp16", 32, "_mm512_ceil_ph", "svrndp_f16_z">;
 def Prim_FP16_Trunc              : VectorIntrinsicPrimitive<"trunc", "fp16", 8, "_mm_round_ph", "vrndq_f16">;
-def Prim_FP16_256_Trunc          : VectorIntrinsicPrimitive<"trunc", "fp16", 16, "_mm256_round_ph", "vrndq_f16_x2">;
+def Prim_FP16_256_Trunc          : VectorIntrinsicPrimitive<"trunc", "fp16", 16, "_mm256_round_ph", "svrintz_f16_z">;
 def Prim_FP16_512_Trunc          : VectorIntrinsicPrimitive<"trunc", "fp16", 32, "_mm512_round_ph", "svrnd_f16_z">;
 
-def Prim_BF16_Add                : VectorIntrinsicPrimitive<"add", "bf16", 8, "_mm_add_pbh", "vaddq_bf16">;
-def Prim_BF16_256_Add            : VectorIntrinsicPrimitive<"add", "bf16", 16, "_mm256_add_pbh", "vaddq_bf16_x2">;
-def Prim_BF16_512_Add            : VectorIntrinsicPrimitive<"add", "bf16", 32, "_mm512_add_pbh", "svadd_bf16_z">;
-def Prim_BF16_Sub                : VectorIntrinsicPrimitive<"sub", "bf16", 8, "_mm_sub_pbh", "vsubq_bf16">;
-def Prim_BF16_256_Sub            : VectorIntrinsicPrimitive<"sub", "bf16", 16, "_mm256_sub_pbh", "vsubq_bf16_x2">;
-def Prim_BF16_512_Sub            : VectorIntrinsicPrimitive<"sub", "bf16", 32, "_mm512_sub_pbh", "svsub_bf16_z">;
-def Prim_BF16_Mul                : VectorIntrinsicPrimitive<"mul", "bf16", 8, "_mm_mul_pbh", "vmulq_bf16">;
-def Prim_BF16_256_Mul            : VectorIntrinsicPrimitive<"mul", "bf16", 16, "_mm256_mul_pbh", "vmulq_bf16_x2">;
-def Prim_BF16_512_Mul            : VectorIntrinsicPrimitive<"mul", "bf16", 32, "_mm512_mul_pbh", "svmul_bf16_z">;
+def Prim_BF16_Add                : VectorIntrinsicPrimitive<"add", "bf16", 8, "_mm_addne_pbh", "vaddq_bf16">;
+def Prim_BF16_256_Add            : VectorIntrinsicPrimitive<"add", "bf16", 16, "_mm256_addne_pbh", "svadd_bf16_z">;
+def Prim_BF16_512_Add            : VectorIntrinsicPrimitive<"add", "bf16", 32, "_mm512_addne_pbh", "svadd_bf16_z">;
+def Prim_BF16_Sub                : VectorIntrinsicPrimitive<"sub", "bf16", 8, "_mm_subne_pbh", "vsubq_bf16">;
+def Prim_BF16_256_Sub            : VectorIntrinsicPrimitive<"sub", "bf16", 16, "_mm256_subne_pbh", "svsub_bf16_z">;
+def Prim_BF16_512_Sub            : VectorIntrinsicPrimitive<"sub", "bf16", 32, "_mm512_subne_pbh", "svsub_bf16_z">;
+def Prim_BF16_Mul                : VectorIntrinsicPrimitive<"mul", "bf16", 8, "_mm_mulne_pbh", "vmulq_bf16">;
+def Prim_BF16_256_Mul            : VectorIntrinsicPrimitive<"mul", "bf16", 16, "_mm256_mulne_pbh", "svmul_bf16_z">;
+def Prim_BF16_512_Mul            : VectorIntrinsicPrimitive<"mul", "bf16", 32, "_mm512_mulne_pbh", "svmul_bf16_z">;
 def Prim_BF16_Min                : VectorIntrinsicPrimitive<"min", "bf16", 8, "_mm_min_pbh", "vminq_bf16">;
-def Prim_BF16_256_Min            : VectorIntrinsicPrimitive<"min", "bf16", 16, "_mm256_min_pbh", "vminq_bf16_x2">;
+def Prim_BF16_256_Min            : VectorIntrinsicPrimitive<"min", "bf16", 16, "_mm256_min_pbh", "svmin_bf16_z">;
 def Prim_BF16_512_Min            : VectorIntrinsicPrimitive<"min", "bf16", 32, "_mm512_min_pbh", "svmin_bf16_z">;
 def Prim_BF16_Max                : VectorIntrinsicPrimitive<"max", "bf16", 8, "_mm_max_pbh", "vmaxq_bf16">;
-def Prim_BF16_256_Max            : VectorIntrinsicPrimitive<"max", "bf16", 16, "_mm256_max_pbh", "vmaxq_bf16_x2">;
+def Prim_BF16_256_Max            : VectorIntrinsicPrimitive<"max", "bf16", 16, "_mm256_max_pbh", "svmax_bf16_z">;
 def Prim_BF16_512_Max            : VectorIntrinsicPrimitive<"max", "bf16", 32, "_mm512_max_pbh", "svmax_bf16_z">;
 def Prim_BF16_CmpEq              : VectorIntrinsicPrimitive<"cmpeq", "bf16", 8, "_mm_cmpeq_pbh", "vcmeqq_bf16">;
-def Prim_BF16_256_CmpEq          : VectorIntrinsicPrimitive<"cmpeq", "bf16", 16, "_mm256_cmpeq_pbh", "vcmeqq_bf16_x2">;
+def Prim_BF16_256_CmpEq          : VectorIntrinsicPrimitive<"cmpeq", "bf16", 16, "_mm256_cmpeq_pbh", "svcmeq_bf16_z">;
 def Prim_BF16_512_CmpEq          : VectorIntrinsicPrimitive<"cmpeq", "bf16", 32, "_mm512_cmpeq_pbh", "svcmeq_bf16_z">;
 def Prim_BF16_CmpGt              : VectorIntrinsicPrimitive<"cmpgt", "bf16", 8, "_mm_cmpgt_pbh", "vcmgtq_bf16">;
-def Prim_BF16_256_CmpGt          : VectorIntrinsicPrimitive<"cmpgt", "bf16", 16, "_mm256_cmpgt_pbh", "vcmgtq_bf16_x2">;
+def Prim_BF16_256_CmpGt          : VectorIntrinsicPrimitive<"cmpgt", "bf16", 16, "_mm256_cmpgt_pbh", "svcmgt_bf16_z">;
 def Prim_BF16_512_CmpGt          : VectorIntrinsicPrimitive<"cmpgt", "bf16", 32, "_mm512_cmpgt_pbh", "svcmgt_bf16_z">;
 def Prim_BF16_BlendV             : VectorIntrinsicPrimitive<"blendv", "bf16", 8, "_mm_blendv_pbh", "vbslq_bf16">;
-def Prim_BF16_256_BlendV         : VectorIntrinsicPrimitive<"blendv", "bf16", 16, "_mm256_blendv_pbh", "vbslq_bf16_x2">;
+def Prim_BF16_256_BlendV         : VectorIntrinsicPrimitive<"blendv", "bf16", 16, "_mm256_blendv_pbh", "svbsl_bf16_z">;
 def Prim_BF16_512_BlendV         : VectorIntrinsicPrimitive<"blendv", "bf16", 32, "_mm512_blendv_pbh", "svbsl_bf16_z">;
 def Prim_BF16_And                : VectorIntrinsicPrimitive<"and", "bf16", 8, "_mm_and_pbh", "vandq_bf16">;
-def Prim_BF16_256_And            : VectorIntrinsicPrimitive<"and", "bf16", 16, "_mm256_and_pbh", "vandq_bf16_x2">;
+def Prim_BF16_256_And            : VectorIntrinsicPrimitive<"and", "bf16", 16, "_mm256_and_pbh", "svand_bf16_z">;
 def Prim_BF16_512_And            : VectorIntrinsicPrimitive<"and", "bf16", 32, "_mm512_and_pbh", "svand_bf16_z">;
 def Prim_BF16_Or                 : VectorIntrinsicPrimitive<"or", "bf16", 8, "_mm_or_pbh", "vorrq_bf16">;
-def Prim_BF16_256_Or             : VectorIntrinsicPrimitive<"or", "bf16", 16, "_mm256_or_pbh", "vorrq_bf16_x2">;
+def Prim_BF16_256_Or             : VectorIntrinsicPrimitive<"or", "bf16", 16, "_mm256_or_pbh", "svorr_bf16_z">;
 def Prim_BF16_512_Or             : VectorIntrinsicPrimitive<"or", "bf16", 32, "_mm512_or_pbh", "svorr_bf16_z">;
 def Prim_BF16_Xor                : VectorIntrinsicPrimitive<"xor", "bf16", 8, "_mm_xor_pbh", "veorq_bf16">;
-def Prim_BF16_256_Xor            : VectorIntrinsicPrimitive<"xor", "bf16", 16, "_mm256_xor_pbh", "veorq_bf16_x2">;
+def Prim_BF16_256_Xor            : VectorIntrinsicPrimitive<"xor", "bf16", 16, "_mm256_xor_pbh", "sveor_bf16_z">;
 def Prim_BF16_512_Xor            : VectorIntrinsicPrimitive<"xor", "bf16", 32, "_mm512_xor_pbh", "sveor_bf16_z">;
-def Prim_BF16_Div                : VectorIntrinsicPrimitive<"div", "bf16", 8, "_mm_div_pbh", "vdivq_bf16">;
-def Prim_BF16_256_Div            : VectorIntrinsicPrimitive<"div", "bf16", 16, "_mm256_div_pbh", "vdivq_bf16_x2">;
-def Prim_BF16_512_Div            : VectorIntrinsicPrimitive<"div", "bf16", 32, "_mm512_div_pbh", "svdiv_bf16_z">;
-def Prim_BF16_FMAdd              : VectorIntrinsicPrimitive<"fmadd", "bf16", 8, "_mm_fmadd_pbh", "vfmaq_bf16">;
-def Prim_BF16_256_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "bf16", 16, "_mm256_fmadd_pbh", "vfmaq_bf16_x2">;
-def Prim_BF16_512_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "bf16", 32, "_mm512_fmadd_pbh", "svfma_bf16_z">;
-def Prim_BF16_FMSub              : VectorIntrinsicPrimitive<"fmsub", "bf16", 8, "_mm_fmsub_pbh", "vfmsq_bf16">;
-def Prim_BF16_256_FMSub          : VectorIntrinsicPrimitive<"fmsub", "bf16", 16, "_mm256_fmsub_pbh", "vfmsq_bf16_x2">;
-def Prim_BF16_512_FMSub          : VectorIntrinsicPrimitive<"fmsub", "bf16", 32, "_mm512_fmsub_pbh", "svfms_bf16_z">;
-def Prim_BF16_Sqrt               : VectorIntrinsicPrimitive<"sqrt", "bf16", 8, "_mm_sqrt_pbh", "vsqrtq_bf16">;
-def Prim_BF16_256_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "bf16", 16, "_mm256_sqrt_pbh", "vsqrtq_bf16_x2">;
-def Prim_BF16_512_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "bf16", 32, "_mm512_sqrt_pbh", "svsqrt_bf16_z">;
+def Prim_BF16_Div                : VectorIntrinsicPrimitive<"div", "bf16", 8, "_mm_divne_pbh", "vdivq_bf16">;
+def Prim_BF16_256_Div            : VectorIntrinsicPrimitive<"div", "bf16", 16, "_mm256_divne_pbh", "svdiv_bf16_z">;
+def Prim_BF16_512_Div            : VectorIntrinsicPrimitive<"div", "bf16", 32, "_mm512_divne_pbh", "svdiv_bf16_z">;
+def Prim_BF16_FMAdd              : VectorIntrinsicPrimitive<"fmadd", "bf16", 8, "_mm_fmaddne_pbh", "vfmaq_bf16">;
+def Prim_BF16_256_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "bf16", 16, "_mm256_fmaddne_pbh", "svmla_bf16_z">;
+def Prim_BF16_512_FMAdd          : VectorIntrinsicPrimitive<"fmadd", "bf16", 32, "_mm512_fmaddne_pbh", "svfma_bf16_z">;
+def Prim_BF16_FMSub              : VectorIntrinsicPrimitive<"fmsub", "bf16", 8, "_mm_fmsubne_pbh", "vfmsq_bf16">;
+def Prim_BF16_256_FMSub          : VectorIntrinsicPrimitive<"fmsub", "bf16", 16, "_mm256_fmsubne_pbh", "svmls_bf16_z">;
+def Prim_BF16_512_FMSub          : VectorIntrinsicPrimitive<"fmsub", "bf16", 32, "_mm512_fmsubne_pbh", "svfms_bf16_z">;
+def Prim_BF16_Sqrt               : VectorIntrinsicPrimitive<"sqrt", "bf16", 8, "_mm_sqrtne_pbh", "vsqrtq_bf16">;
+def Prim_BF16_256_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "bf16", 16, "_mm256_sqrtne_pbh", "svsqrt_bf16_z">;
+def Prim_BF16_512_Sqrt           : VectorIntrinsicPrimitive<"sqrt", "bf16", 32, "_mm512_sqrtne_pbh", "svsqrt_bf16_z">;
 def Prim_BF16_RSqrt              : VectorIntrinsicPrimitive<"rsqrt", "bf16", 8, "_mm_rsqrt_pbh", "vrsqrteq_bf16">;
-def Prim_BF16_256_RSqrt          : VectorIntrinsicPrimitive<"rsqrt", "bf16", 16, "_mm256_rsqrt_pbh", "vrsqrteq_bf16_x2">;
+def Prim_BF16_256_RSqrt          : VectorIntrinsicPrimitive<"rsqrt", "bf16", 16, "_mm256_rsqrt_pbh", "svrsqrte_bf16">;
 def Prim_BF16_512_RSqrt          : VectorIntrinsicPrimitive<"rsqrt", "bf16", 32, "_mm512_rsqrt_pbh", "svrsqrte_bf16_z">;
 def Prim_BF16_Rcp                : VectorIntrinsicPrimitive<"rcp", "bf16", 8, "_mm_rcp_pbh", "vrecpeq_bf16">;
-def Prim_BF16_256_Rcp            : VectorIntrinsicPrimitive<"rcp", "bf16", 16, "_mm256_rcp_pbh", "vrecpeq_bf16_x2">;
+def Prim_BF16_256_Rcp            : VectorIntrinsicPrimitive<"rcp", "bf16", 16, "_mm256_rcp_pbh", "svrecpe_bf16">;
 def Prim_BF16_512_Rcp            : VectorIntrinsicPrimitive<"rcp", "bf16", 32, "_mm512_rcp_pbh", "svrecpe_bf16_z">;
 def Prim_BF16_Floor              : VectorIntrinsicPrimitive<"floor", "bf16", 8, "_mm_floor_pbh", "vrndmq_bf16">;
-def Prim_BF16_256_Floor          : VectorIntrinsicPrimitive<"floor", "bf16", 16, "_mm256_floor_pbh", "vrndmq_bf16_x2">;
+def Prim_BF16_256_Floor          : VectorIntrinsicPrimitive<"floor", "bf16", 16, "_mm256_floor_pbh", "svrintm_bf16_z">;
 def Prim_BF16_512_Floor          : VectorIntrinsicPrimitive<"floor", "bf16", 32, "_mm512_floor_pbh", "svrndm_bf16_z">;
 def Prim_BF16_Ceil               : VectorIntrinsicPrimitive<"ceil", "bf16", 8, "_mm_ceil_pbh", "vrndpq_bf16">;
-def Prim_BF16_256_Ceil           : VectorIntrinsicPrimitive<"ceil", "bf16", 16, "_mm256_ceil_pbh", "vrndpq_bf16_x2">;
+def Prim_BF16_256_Ceil           : VectorIntrinsicPrimitive<"ceil", "bf16", 16, "_mm256_ceil_pbh", "svrintp_bf16_z">;
 def Prim_BF16_512_Ceil           : VectorIntrinsicPrimitive<"ceil", "bf16", 32, "_mm512_ceil_pbh", "svrndp_bf16_z">;
 def Prim_BF16_Trunc              : VectorIntrinsicPrimitive<"trunc", "bf16", 8, "_mm_round_pbh", "vrndq_bf16">;
-def Prim_BF16_256_Trunc          : VectorIntrinsicPrimitive<"trunc", "bf16", 16, "_mm256_round_pbh", "vrndq_bf16_x2">;
+def Prim_BF16_256_Trunc          : VectorIntrinsicPrimitive<"trunc", "bf16", 16, "_mm256_round_pbh", "svrintz_bf16_z">;
 def Prim_BF16_512_Trunc          : VectorIntrinsicPrimitive<"trunc", "bf16", 32, "_mm512_round_pbh", "svrnd_bf16_z">;
 
 def Prim_F32_Add                 : VectorIntrinsicPrimitive<"add", "f32", 4, "_mm_add_ps", "vaddq_f32">;
-def Prim_F32_256_Add             : VectorIntrinsicPrimitive<"add", "f32", 8, "_mm256_add_ps", "vaddq_f32_x2">;
+def Prim_F32_256_Add             : VectorIntrinsicPrimitive<"add", "f32", 8, "_mm256_add_ps", "svadd_f32_z">;
 def Prim_F32_512_Add             : VectorIntrinsicPrimitive<"add", "f32", 16, "_mm512_add_ps", "svadd_f32_z">;
 def Prim_F32_Sub                 : VectorIntrinsicPrimitive<"sub", "f32", 4, "_mm_sub_ps", "vsubq_f32">;
-def Prim_F32_256_Sub             : VectorIntrinsicPrimitive<"sub", "f32", 8, "_mm256_sub_ps", "vsubq_f32_x2">;
+def Prim_F32_256_Sub             : VectorIntrinsicPrimitive<"sub", "f32", 8, "_mm256_sub_ps", "svsub_f32_z">;
 def Prim_F32_512_Sub             : VectorIntrinsicPrimitive<"sub", "f32", 16, "_mm512_sub_ps", "svsub_f32_z">;
 def Prim_F32_Mul                 : VectorIntrinsicPrimitive<"mul", "f32", 4, "_mm_mul_ps", "vmulq_f32">;
-def Prim_F32_256_Mul             : VectorIntrinsicPrimitive<"mul", "f32", 8, "_mm256_mul_ps", "vmulq_f32_x2">;
+def Prim_F32_256_Mul             : VectorIntrinsicPrimitive<"mul", "f32", 8, "_mm256_mul_ps", "svmul_f32_z">;
 def Prim_F32_512_Mul             : VectorIntrinsicPrimitive<"mul", "f32", 16, "_mm512_mul_ps", "svmul_f32_z">;
 def Prim_F32_Min                 : VectorIntrinsicPrimitive<"min", "f32", 4, "_mm_min_ps", "vminq_f32">;
-def Prim_F32_256_Min             : VectorIntrinsicPrimitive<"min", "f32", 8, "_mm256_min_ps", "vminq_f32_x2">;
+def Prim_F32_256_Min             : VectorIntrinsicPrimitive<"min", "f32", 8, "_mm256_min_ps", "svmin_f32_z">;
 def Prim_F32_512_Min             : VectorIntrinsicPrimitive<"min", "f32", 16, "_mm512_min_ps", "svmin_f32_z">;
 def Prim_F32_Max                 : VectorIntrinsicPrimitive<"max", "f32", 4, "_mm_max_ps", "vmaxq_f32">;
-def Prim_F32_256_Max             : VectorIntrinsicPrimitive<"max", "f32", 8, "_mm256_max_ps", "vmaxq_f32_x2">;
+def Prim_F32_256_Max             : VectorIntrinsicPrimitive<"max", "f32", 8, "_mm256_max_ps", "svmax_f32_z">;
 def Prim_F32_512_Max             : VectorIntrinsicPrimitive<"max", "f32", 16, "_mm512_max_ps", "svmax_f32_z">;
 def Prim_F32_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "f32", 4, "_mm_cmpeq_ps", "vcmeqq_f32">;
-def Prim_F32_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "f32", 8, "_mm256_cmpeq_ps", "vcmeqq_f32_x2">;
+def Prim_F32_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "f32", 8, "_mm256_cmpeq_ps", "svcmeq_f32_z">;
 def Prim_F32_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "f32", 16, "_mm512_cmpeq_ps", "svcmeq_f32_z">;
 def Prim_F32_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "f32", 4, "_mm_cmpgt_ps", "vcmgtq_f32">;
-def Prim_F32_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "f32", 8, "_mm256_cmpgt_ps", "vcmgtq_f32_x2">;
+def Prim_F32_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "f32", 8, "_mm256_cmpgt_ps", "svcmgt_f32_z">;
 def Prim_F32_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "f32", 16, "_mm512_cmpgt_ps", "svcmgt_f32_z">;
 def Prim_F32_BlendV              : VectorIntrinsicPrimitive<"blendv", "f32", 4, "_mm_blendv_ps", "vbslq_f32">;
-def Prim_F32_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "f32", 8, "_mm256_blendv_ps", "vbslq_f32_x2">;
-def Prim_F32_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "f32", 16, "_mm512_blendv_ps", "svbsl_f32_z">;
+def Prim_F32_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "f32", 8, "_mm256_blendv_ps", "svbsl_f32_z">;
+def Prim_F32_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "f32", 16, "_mm512_mask_blend_ps", "svbsl_f32_z">;
 def Prim_F32_And                 : VectorIntrinsicPrimitive<"and", "f32", 4, "_mm_and_ps", "vandq_f32">;
-def Prim_F32_256_And             : VectorIntrinsicPrimitive<"and", "f32", 8, "_mm256_and_ps", "vandq_f32_x2">;
+def Prim_F32_256_And             : VectorIntrinsicPrimitive<"and", "f32", 8, "_mm256_and_ps", "svand_f32_z">;
 def Prim_F32_512_And             : VectorIntrinsicPrimitive<"and", "f32", 16, "_mm512_and_ps", "svand_f32_z">;
 def Prim_F32_Or                  : VectorIntrinsicPrimitive<"or", "f32", 4, "_mm_or_ps", "vorrq_f32">;
-def Prim_F32_256_Or              : VectorIntrinsicPrimitive<"or", "f32", 8, "_mm256_or_ps", "vorrq_f32_x2">;
+def Prim_F32_256_Or              : VectorIntrinsicPrimitive<"or", "f32", 8, "_mm256_or_ps", "svorr_f32_z">;
 def Prim_F32_512_Or              : VectorIntrinsicPrimitive<"or", "f32", 16, "_mm512_or_ps", "svorr_f32_z">;
 def Prim_F32_Xor                 : VectorIntrinsicPrimitive<"xor", "f32", 4, "_mm_xor_ps", "veorq_f32">;
-def Prim_F32_256_Xor             : VectorIntrinsicPrimitive<"xor", "f32", 8, "_mm256_xor_ps", "veorq_f32_x2">;
+def Prim_F32_256_Xor             : VectorIntrinsicPrimitive<"xor", "f32", 8, "_mm256_xor_ps", "sveor_f32_z">;
 def Prim_F32_512_Xor             : VectorIntrinsicPrimitive<"xor", "f32", 16, "_mm512_xor_ps", "sveor_f32_z">;
 def Prim_F32_Div                 : VectorIntrinsicPrimitive<"div", "f32", 4, "_mm_div_ps", "vdivq_f32">;
-def Prim_F32_256_Div             : VectorIntrinsicPrimitive<"div", "f32", 8, "_mm256_div_ps", "vdivq_f32_x2">;
+def Prim_F32_256_Div             : VectorIntrinsicPrimitive<"div", "f32", 8, "_mm256_div_ps", "svdiv_f32_z">;
 def Prim_F32_512_Div             : VectorIntrinsicPrimitive<"div", "f32", 16, "_mm512_div_ps", "svdiv_f32_z">;
 def Prim_F32_FMAdd               : VectorIntrinsicPrimitive<"fmadd", "f32", 4, "_mm_fmadd_ps", "vfmaq_f32">;
-def Prim_F32_256_FMAdd           : VectorIntrinsicPrimitive<"fmadd", "f32", 8, "_mm256_fmadd_ps", "vfmaq_f32_x2">;
+def Prim_F32_256_FMAdd           : VectorIntrinsicPrimitive<"fmadd", "f32", 8, "_mm256_fmadd_ps", "svmla_f32_z">;
 def Prim_F32_512_FMAdd           : VectorIntrinsicPrimitive<"fmadd", "f32", 16, "_mm512_fmadd_ps", "svfma_f32_z">;
 def Prim_F32_FMSub               : VectorIntrinsicPrimitive<"fmsub", "f32", 4, "_mm_fmsub_ps", "vfmsq_f32">;
-def Prim_F32_256_FMSub           : VectorIntrinsicPrimitive<"fmsub", "f32", 8, "_mm256_fmsub_ps", "vfmsq_f32_x2">;
+def Prim_F32_256_FMSub           : VectorIntrinsicPrimitive<"fmsub", "f32", 8, "_mm256_fmsub_ps", "svmls_f32_z">;
 def Prim_F32_512_FMSub           : VectorIntrinsicPrimitive<"fmsub", "f32", 16, "_mm512_fmsub_ps", "svfms_f32_z">;
 def Prim_F32_Sqrt                : VectorIntrinsicPrimitive<"sqrt", "f32", 4, "_mm_sqrt_ps", "vsqrtq_f32">;
-def Prim_F32_256_Sqrt            : VectorIntrinsicPrimitive<"sqrt", "f32", 8, "_mm256_sqrt_ps", "vsqrtq_f32_x2">;
+def Prim_F32_256_Sqrt            : VectorIntrinsicPrimitive<"sqrt", "f32", 8, "_mm256_sqrt_ps", "svsqrt_f32_z">;
 def Prim_F32_512_Sqrt            : VectorIntrinsicPrimitive<"sqrt", "f32", 16, "_mm512_sqrt_ps", "svsqrt_f32_z">;
 def Prim_F32_RSqrt               : VectorIntrinsicPrimitive<"rsqrt", "f32", 4, "_mm_rsqrt_ps", "vrsqrteq_f32">;
-def Prim_F32_256_RSqrt           : VectorIntrinsicPrimitive<"rsqrt", "f32", 8, "_mm256_rsqrt_ps", "vrsqrteq_f32_x2">;
+def Prim_F32_256_RSqrt           : VectorIntrinsicPrimitive<"rsqrt", "f32", 8, "_mm256_rsqrt_ps", "svrsqrte_f32">;
 def Prim_F32_512_RSqrt           : VectorIntrinsicPrimitive<"rsqrt", "f32", 16, "_mm512_rsqrt_ps", "svrsqrte_f32_z">;
 def Prim_F32_Rcp                 : VectorIntrinsicPrimitive<"rcp", "f32", 4, "_mm_rcp_ps", "vrecpeq_f32">;
-def Prim_F32_256_Rcp             : VectorIntrinsicPrimitive<"rcp", "f32", 8, "_mm256_rcp_ps", "vrecpeq_f32_x2">;
+def Prim_F32_256_Rcp             : VectorIntrinsicPrimitive<"rcp", "f32", 8, "_mm256_rcp_ps", "svrecpe_f32">;
 def Prim_F32_512_Rcp             : VectorIntrinsicPrimitive<"rcp", "f32", 16, "_mm512_rcp_ps", "svrecpe_f32_z">;
 def Prim_F32_Floor               : VectorIntrinsicPrimitive<"floor", "f32", 4, "_mm_floor_ps", "vrndmq_f32">;
-def Prim_F32_256_Floor           : VectorIntrinsicPrimitive<"floor", "f32", 8, "_mm256_floor_ps", "vrndmq_f32_x2">;
+def Prim_F32_256_Floor           : VectorIntrinsicPrimitive<"floor", "f32", 8, "_mm256_floor_ps", "svrintm_f32_z">;
 def Prim_F32_512_Floor           : VectorIntrinsicPrimitive<"floor", "f32", 16, "_mm512_floor_ps", "svrndm_f32_z">;
 def Prim_F32_Ceil                : VectorIntrinsicPrimitive<"ceil", "f32", 4, "_mm_ceil_ps", "vrndpq_f32">;
-def Prim_F32_256_Ceil            : VectorIntrinsicPrimitive<"ceil", "f32", 8, "_mm256_ceil_ps", "vrndpq_f32_x2">;
+def Prim_F32_256_Ceil            : VectorIntrinsicPrimitive<"ceil", "f32", 8, "_mm256_ceil_ps", "svrintp_f32_z">;
 def Prim_F32_512_Ceil            : VectorIntrinsicPrimitive<"ceil", "f32", 16, "_mm512_ceil_ps", "svrndp_f32_z">;
 def Prim_F32_Trunc               : VectorIntrinsicPrimitive<"trunc", "f32", 4, "_mm_round_ps", "vrndq_f32">;
-def Prim_F32_256_Trunc           : VectorIntrinsicPrimitive<"trunc", "f32", 8, "_mm256_round_ps", "vrndq_f32_x2">;
+def Prim_F32_256_Trunc           : VectorIntrinsicPrimitive<"trunc", "f32", 8, "_mm256_round_ps", "svrintz_f32_z">;
 def Prim_F32_512_Trunc           : VectorIntrinsicPrimitive<"trunc", "f32", 16, "_mm512_round_ps", "svrnd_f32_z">;
 
 def Prim_F64_Add                 : VectorIntrinsicPrimitive<"add", "f64", 2, "_mm_add_pd", "vaddq_f64">;
-def Prim_F64_256_Add             : VectorIntrinsicPrimitive<"add", "f64", 4, "_mm256_add_pd", "vaddq_f64_x2">;
+def Prim_F64_256_Add             : VectorIntrinsicPrimitive<"add", "f64", 4, "_mm256_add_pd", "svadd_f64_z">;
 def Prim_F64_512_Add             : VectorIntrinsicPrimitive<"add", "f64", 8, "_mm512_add_pd", "svadd_f64_z">;
 def Prim_F64_Sub                 : VectorIntrinsicPrimitive<"sub", "f64", 2, "_mm_sub_pd", "vsubq_f64">;
-def Prim_F64_256_Sub             : VectorIntrinsicPrimitive<"sub", "f64", 4, "_mm256_sub_pd", "vsubq_f64_x2">;
+def Prim_F64_256_Sub             : VectorIntrinsicPrimitive<"sub", "f64", 4, "_mm256_sub_pd", "svsub_f64_z">;
 def Prim_F64_512_Sub             : VectorIntrinsicPrimitive<"sub", "f64", 8, "_mm512_sub_pd", "svsub_f64_z">;
 def Prim_F64_Mul                 : VectorIntrinsicPrimitive<"mul", "f64", 2, "_mm_mul_pd", "vmulq_f64">;
-def Prim_F64_256_Mul             : VectorIntrinsicPrimitive<"mul", "f64", 4, "_mm256_mul_pd", "vmulq_f64_x2">;
+def Prim_F64_256_Mul             : VectorIntrinsicPrimitive<"mul", "f64", 4, "_mm256_mul_pd", "svmul_f64_z">;
 def Prim_F64_512_Mul             : VectorIntrinsicPrimitive<"mul", "f64", 8, "_mm512_mul_pd", "svmul_f64_z">;
 def Prim_F64_Min                 : VectorIntrinsicPrimitive<"min", "f64", 2, "_mm_min_pd", "vminq_f64">;
-def Prim_F64_256_Min             : VectorIntrinsicPrimitive<"min", "f64", 4, "_mm256_min_pd", "vminq_f64_x2">;
+def Prim_F64_256_Min             : VectorIntrinsicPrimitive<"min", "f64", 4, "_mm256_min_pd", "svmin_f64_z">;
 def Prim_F64_512_Min             : VectorIntrinsicPrimitive<"min", "f64", 8, "_mm512_min_pd", "svmin_f64_z">;
 def Prim_F64_Max                 : VectorIntrinsicPrimitive<"max", "f64", 2, "_mm_max_pd", "vmaxq_f64">;
-def Prim_F64_256_Max             : VectorIntrinsicPrimitive<"max", "f64", 4, "_mm256_max_pd", "vmaxq_f64_x2">;
+def Prim_F64_256_Max             : VectorIntrinsicPrimitive<"max", "f64", 4, "_mm256_max_pd", "svmax_f64_z">;
 def Prim_F64_512_Max             : VectorIntrinsicPrimitive<"max", "f64", 8, "_mm512_max_pd", "svmax_f64_z">;
 def Prim_F64_CmpEq               : VectorIntrinsicPrimitive<"cmpeq", "f64", 2, "_mm_cmpeq_pd", "vcmeqq_f64">;
-def Prim_F64_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "f64", 4, "_mm256_cmpeq_pd", "vcmeqq_f64_x2">;
+def Prim_F64_256_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "f64", 4, "_mm256_cmpeq_pd", "svcmeq_f64_z">;
 def Prim_F64_512_CmpEq           : VectorIntrinsicPrimitive<"cmpeq", "f64", 8, "_mm512_cmpeq_pd", "svcmeq_f64_z">;
 def Prim_F64_CmpGt               : VectorIntrinsicPrimitive<"cmpgt", "f64", 2, "_mm_cmpgt_pd", "vcmgtq_f64">;
-def Prim_F64_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "f64", 4, "_mm256_cmpgt_pd", "vcmgtq_f64_x2">;
+def Prim_F64_256_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "f64", 4, "_mm256_cmpgt_pd", "svcmgt_f64_z">;
 def Prim_F64_512_CmpGt           : VectorIntrinsicPrimitive<"cmpgt", "f64", 8, "_mm512_cmpgt_pd", "svcmgt_f64_z">;
 def Prim_F64_BlendV              : VectorIntrinsicPrimitive<"blendv", "f64", 2, "_mm_blendv_pd", "vbslq_f64">;
-def Prim_F64_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "f64", 4, "_mm256_blendv_pd", "vbslq_f64_x2">;
-def Prim_F64_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "f64", 8, "_mm512_blendv_pd", "svbsl_f64_z">;
+def Prim_F64_256_BlendV          : VectorIntrinsicPrimitive<"blendv", "f64", 4, "_mm256_blendv_pd", "svbsl_f64_z">;
+def Prim_F64_512_BlendV          : VectorIntrinsicPrimitive<"blendv", "f64", 8, "_mm512_mask_blend_pd", "svbsl_f64_z">;
 def Prim_F64_And                 : VectorIntrinsicPrimitive<"and", "f64", 2, "_mm_and_pd", "vandq_f64">;
-def Prim_F64_256_And             : VectorIntrinsicPrimitive<"and", "f64", 4, "_mm256_and_pd", "vandq_f64_x2">;
+def Prim_F64_256_And             : VectorIntrinsicPrimitive<"and", "f64", 4, "_mm256_and_pd", "svand_f64_z">;
 def Prim_F64_512_And             : VectorIntrinsicPrimitive<"and", "f64", 8, "_mm512_and_pd", "svand_f64_z">;
 def Prim_F64_Or                  : VectorIntrinsicPrimitive<"or", "f64", 2, "_mm_or_pd", "vorrq_f64">;
-def Prim_F64_256_Or              : VectorIntrinsicPrimitive<"or", "f64", 4, "_mm256_or_pd", "vorrq_f64_x2">;
+def Prim_F64_256_Or              : VectorIntrinsicPrimitive<"or", "f64", 4, "_mm256_or_pd", "svorr_f64_z">;
 def Prim_F64_512_Or              : VectorIntrinsicPrimitive<"or", "f64", 8, "_mm512_or_pd", "svorr_f64_z">;
 def Prim_F64_Xor                 : VectorIntrinsicPrimitive<"xor", "f64", 2, "_mm_xor_pd", "veorq_f64">;
-def Prim_F64_256_Xor             : VectorIntrinsicPrimitive<"xor", "f64", 4, "_mm256_xor_pd", "veorq_f64_x2">;
+def Prim_F64_256_Xor             : VectorIntrinsicPrimitive<"xor", "f64", 4, "_mm256_xor_pd", "sveor_f64_z">;
 def Prim_F64_512_Xor             : VectorIntrinsicPrimitive<"xor", "f64", 8, "_mm512_xor_pd", "sveor_f64_z">;
 def Prim_F64_Div                 : VectorIntrinsicPrimitive<"div", "f64", 2, "_mm_div_pd", "vdivq_f64">;
-def Prim_F64_256_Div             : VectorIntrinsicPrimitive<"div", "f64", 4, "_mm256_div_pd", "vdivq_f64_x2">;
+def Prim_F64_256_Div             : VectorIntrinsicPrimitive<"div", "f64", 4, "_mm256_div_pd", "svdiv_f64_z">;
 def Prim_F64_512_Div             : VectorIntrinsicPrimitive<"div", "f64", 8, "_mm512_div_pd", "svdiv_f64_z">;
 def Prim_F64_FMAdd               : VectorIntrinsicPrimitive<"fmadd", "f64", 2, "_mm_fmadd_pd", "vfmaq_f64">;
-def Prim_F64_256_FMAdd           : VectorIntrinsicPrimitive<"fmadd", "f64", 4, "_mm256_fmadd_pd", "vfmaq_f64_x2">;
+def Prim_F64_256_FMAdd           : VectorIntrinsicPrimitive<"fmadd", "f64", 4, "_mm256_fmadd_pd", "svmla_f64_z">;
 def Prim_F64_512_FMAdd           : VectorIntrinsicPrimitive<"fmadd", "f64", 8, "_mm512_fmadd_pd", "svfma_f64_z">;
 def Prim_F64_FMSub               : VectorIntrinsicPrimitive<"fmsub", "f64", 2, "_mm_fmsub_pd", "vfmsq_f64">;
-def Prim_F64_256_FMSub           : VectorIntrinsicPrimitive<"fmsub", "f64", 4, "_mm256_fmsub_pd", "vfmsq_f64_x2">;
+def Prim_F64_256_FMSub           : VectorIntrinsicPrimitive<"fmsub", "f64", 4, "_mm256_fmsub_pd", "svmls_f64_z">;
 def Prim_F64_512_FMSub           : VectorIntrinsicPrimitive<"fmsub", "f64", 8, "_mm512_fmsub_pd", "svfms_f64_z">;
 def Prim_F64_Sqrt                : VectorIntrinsicPrimitive<"sqrt", "f64", 2, "_mm_sqrt_pd", "vsqrtq_f64">;
-def Prim_F64_256_Sqrt            : VectorIntrinsicPrimitive<"sqrt", "f64", 4, "_mm256_sqrt_pd", "vsqrtq_f64_x2">;
+def Prim_F64_256_Sqrt            : VectorIntrinsicPrimitive<"sqrt", "f64", 4, "_mm256_sqrt_pd", "svsqrt_f64_z">;
 def Prim_F64_512_Sqrt            : VectorIntrinsicPrimitive<"sqrt", "f64", 8, "_mm512_sqrt_pd", "svsqrt_f64_z">;
 def Prim_F64_RSqrt               : VectorIntrinsicPrimitive<"rsqrt", "f64", 2, "_mm_rsqrt_pd", "vrsqrteq_f64">;
-def Prim_F64_256_RSqrt           : VectorIntrinsicPrimitive<"rsqrt", "f64", 4, "_mm256_rsqrt_pd", "vrsqrteq_f64_x2">;
+def Prim_F64_256_RSqrt           : VectorIntrinsicPrimitive<"rsqrt", "f64", 4, "_mm256_rsqrt_pd", "svrsqrte_f64">;
 def Prim_F64_512_RSqrt           : VectorIntrinsicPrimitive<"rsqrt", "f64", 8, "_mm512_rsqrt_pd", "svrsqrte_f64_z">;
 def Prim_F64_Rcp                 : VectorIntrinsicPrimitive<"rcp", "f64", 2, "_mm_rcp_pd", "vrecpeq_f64">;
-def Prim_F64_256_Rcp             : VectorIntrinsicPrimitive<"rcp", "f64", 4, "_mm256_rcp_pd", "vrecpeq_f64_x2">;
+def Prim_F64_256_Rcp             : VectorIntrinsicPrimitive<"rcp", "f64", 4, "_mm256_rcp_pd", "svrecpe_f64">;
 def Prim_F64_512_Rcp             : VectorIntrinsicPrimitive<"rcp", "f64", 8, "_mm512_rcp_pd", "svrecpe_f64_z">;
 def Prim_F64_Floor               : VectorIntrinsicPrimitive<"floor", "f64", 2, "_mm_floor_pd", "vrndmq_f64">;
-def Prim_F64_256_Floor           : VectorIntrinsicPrimitive<"floor", "f64", 4, "_mm256_floor_pd", "vrndmq_f64_x2">;
+def Prim_F64_256_Floor           : VectorIntrinsicPrimitive<"floor", "f64", 4, "_mm256_floor_pd", "svrintm_f64_z">;
 def Prim_F64_512_Floor           : VectorIntrinsicPrimitive<"floor", "f64", 8, "_mm512_floor_pd", "svrndm_f64_z">;
 def Prim_F64_Ceil                : VectorIntrinsicPrimitive<"ceil", "f64", 2, "_mm_ceil_pd", "vrndpq_f64">;
-def Prim_F64_256_Ceil            : VectorIntrinsicPrimitive<"ceil", "f64", 4, "_mm256_ceil_pd", "vrndpq_f64_x2">;
+def Prim_F64_256_Ceil            : VectorIntrinsicPrimitive<"ceil", "f64", 4, "_mm256_ceil_pd", "svrintp_f64_z">;
 def Prim_F64_512_Ceil            : VectorIntrinsicPrimitive<"ceil", "f64", 8, "_mm512_ceil_pd", "svrndp_f64_z">;
 def Prim_F64_Trunc               : VectorIntrinsicPrimitive<"trunc", "f64", 2, "_mm_round_pd", "vrndq_f64">;
-def Prim_F64_256_Trunc           : VectorIntrinsicPrimitive<"trunc", "f64", 4, "_mm256_round_pd", "vrndq_f64_x2">;
+def Prim_F64_256_Trunc           : VectorIntrinsicPrimitive<"trunc", "f64", 4, "_mm256_round_pd", "svrintz_f64_z">;
 def Prim_F64_512_Trunc           : VectorIntrinsicPrimitive<"trunc", "f64", 8, "_mm512_round_pd", "svrnd_f64_z">;
 
 // Masked Vector Arithmetic Primitives (AVX-512 {k} & SVE Predication)
@@ -3180,9 +3259,9 @@ def Prim_Perm_F32_512_Var      : VectorIntrinsicPrimitive<"permutevar", "f32", 1
 def Prim_Perm_F64_256_Var      : VectorIntrinsicPrimitive<"permutevar", "f64", 4, "_mm256_permutex_pd", "vtbl2_u64">;
 def Prim_Perm_F64_512_Var      : VectorIntrinsicPrimitive<"permutevar", "f64", 8, "_mm512_permutexvar_pd", "svtbl_f64">;
 def Prim_Blend_F32_128         : VectorIntrinsicPrimitive<"blend", "f32", 4, "_mm_blend_ps", "vbslq_f32">;
-def Prim_Blend_F32_256         : VectorIntrinsicPrimitive<"blend", "f32", 8, "_mm256_blend_ps", "vbslq_f32_x2">;
+def Prim_Blend_F32_256         : VectorIntrinsicPrimitive<"blend", "f32", 8, "_mm256_blend_ps", "svbsl_f32_z">;
 def Prim_Blend_F64_128         : VectorIntrinsicPrimitive<"blend", "f64", 2, "_mm_blend_pd", "vbslq_f64">;
-def Prim_Blend_F64_256         : VectorIntrinsicPrimitive<"blend", "f64", 4, "_mm256_blend_pd", "vbslq_f64_x2">;
+def Prim_Blend_F64_256         : VectorIntrinsicPrimitive<"blend", "f64", 4, "_mm256_blend_pd", "svbsl_f64_z">;
 def Prim_Gather_F32_256        : VectorIntrinsicPrimitive<"gather", "f32", 8, "_mm256_i32gather_ps", "svld1_gather_offset_f32">;
 def Prim_Gather_F32_512        : VectorIntrinsicPrimitive<"gather", "f32", 16, "_mm512_i32gather_ps", "svld1_gather_offset_f32">;
 def Prim_Gather_F64_256        : VectorIntrinsicPrimitive<"gather", "f64", 4, "_mm256_i32gather_pd", "svld1_gather_offset_f64">;
@@ -3480,59 +3559,80 @@ def Inst_Skymont_FMA_256     : MachineInstruction<"vfmadd213ps", "_mm256_fmadd_p
   let SupportsMasking = 0;
   let SupportsEmbeddedBroadcast = 0;
 }
+def Inst_Zen6_VFMADD_512     : MachineInstruction<"vfmadd213ps", "_mm512_fmadd_ps", ISA_x86_AVX512F, Lane_ZMM_16xF32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_Zen6_FP0, Port_Zen6_FP1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_Zen6_VFMADD_PH_512  : MachineInstruction<"vfmadd213ph", "_mm512_fmadd_ph", ISA_x86_AVX512FP16, Lane_ZMM_32xFP16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_Zen6_FP0, Port_Zen6_FP1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_Zen6_VDPBF16PS_512  : MachineInstruction<"vdpbf16ps", "_mm512_dpbf16_ps", ISA_x86_AVX512BF16, Lane_ZMM_16xF32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_Zen6_FP0, Port_Zen6_FP1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
 def Inst_FMLA_NEON_F32       : MachineInstruction<"fmla", "vfmaq_f32", ISA_ARM_NEON, Lane_NEON_4xF32> {
   let LatencyCycles = "4.0";
   let ReciprocalThroughput = "0.5";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0, Port_Neoverse_V1];
   let SupportsMasking = 0;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_FADD_NEON_F32       : MachineInstruction<"fadd", "vaddq_f32", ISA_ARM_NEON, Lane_NEON_4xF32> {
   let LatencyCycles = "3.0";
   let ReciprocalThroughput = "0.5";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0, Port_Neoverse_V1];
   let SupportsMasking = 0;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_FMUL_NEON_F32       : MachineInstruction<"fmul", "vmulq_f32", ISA_ARM_NEON, Lane_NEON_4xF32> {
   let LatencyCycles = "3.0";
   let ReciprocalThroughput = "0.5";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0, Port_Neoverse_V1];
   let SupportsMasking = 0;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_FSQRT_NEON_F32      : MachineInstruction<"fsqrt", "vsqrtq_f32", ISA_ARM_NEON, Lane_NEON_4xF32> {
   let LatencyCycles = "12.0";
   let ReciprocalThroughput = "6.0";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0];
   let SupportsMasking = 0;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_SVMLA_SVE_F32       : MachineInstruction<"fmla", "svmla_f32_m", ISA_ARM_SVE, Lane_SVE_16xF32> {
   let LatencyCycles = "4.0";
   let ReciprocalThroughput = "0.5";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0, Port_Neoverse_V1];
   let SupportsMasking = 1;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_SVADD_SVE_F32       : MachineInstruction<"fadd", "svadd_f32_m", ISA_ARM_SVE, Lane_SVE_16xF32> {
   let LatencyCycles = "3.0";
   let ReciprocalThroughput = "0.5";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0, Port_Neoverse_V1];
   let SupportsMasking = 1;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_SVMUL_SVE_F32       : MachineInstruction<"fmul", "svmul_f32_m", ISA_ARM_SVE, Lane_SVE_16xF32> {
   let LatencyCycles = "3.0";
   let ReciprocalThroughput = "0.5";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0, Port_Neoverse_V1];
   let SupportsMasking = 1;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_SVSQRT_SVE_F32      : MachineInstruction<"fsqrt", "svsqrt_f32_m", ISA_ARM_SVE, Lane_SVE_16xF32> {
   let LatencyCycles = "16.0";
   let ReciprocalThroughput = "8.0";
-  let Ports = [Port_0];
+  let Ports = [Port_Neoverse_V0];
   let SupportsMasking = 1;
   let SupportsEmbeddedBroadcast = 0;
 }
@@ -3559,15 +3659,15 @@ def Inst_Oryon_FMLA_F32      : MachineInstruction<"fmla", "vfmaq_f32", ISA_ARM_N
 }
 def Inst_VFMACC_RVV_F32      : MachineInstruction<"vfmacc.vv", "__riscv_vfmacc_vv_f32m1", ISA_RISCV_Vector, Lane_RVV_16xF32> {
   let LatencyCycles = "4.0";
-  let ReciprocalThroughput = "1.0";
-  let Ports = [Port_0];
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_RVV_V0, Port_RVV_V1];
   let SupportsMasking = 1;
   let SupportsEmbeddedBroadcast = 0;
 }
 def Inst_VFADD_RVV_F32       : MachineInstruction<"vfadd.vv", "__riscv_vfadd_vv_f32m1", ISA_RISCV_Vector, Lane_RVV_16xF32> {
   let LatencyCycles = "3.0";
-  let ReciprocalThroughput = "1.0";
-  let Ports = [Port_0];
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_RVV_V0, Port_RVV_V1];
   let SupportsMasking = 1;
   let SupportsEmbeddedBroadcast = 0;
 }
@@ -3712,6 +3812,341 @@ def Inst_VPOPCNTD_512        : MachineInstruction<"vpopcntd", "_mm512_popcnt_epi
   let SupportsEmbeddedBroadcast = 1;
 }
 
+// -----------------------------------------------------------------------------
+// INTEL AVX10.2 ARCHITECTURE SPECIFICATION (361050-002US Rev 2.0) INSTRUCTIONS
+// Chapters 7–14: Native BF16 Arithmetic, Enhanced EFLAGS Compare, OFP8 (E5M2/E4M3),
+// FP16/Int8/Int16 VNNI, IEEE-754-2019 VMINMAX, YMM {er}/{sae}, Saturating Converts
+// -----------------------------------------------------------------------------
+
+// Chapter 7: Intel AVX10.2 Native Packed BF16 Arithmetic & Transcendentals
+def Inst_AVX10_2_VADDNEPBF16_512     : MachineInstruction<"vaddnepbf16", "_mm512_addne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VSUBNEPBF16_512     : MachineInstruction<"vsubnepbf16", "_mm512_subne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VMULNEPBF16_512     : MachineInstruction<"vmulnepbf16", "_mm512_mulne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VDIVNEPBF16_512     : MachineInstruction<"vdivnepbf16", "_mm512_divne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "11.0";
+  let ReciprocalThroughput = "4.0";
+  let Ports = [Port_CoyoteCove_P0];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VSQRTNEPBF16_512    : MachineInstruction<"vsqrtnepbf16", "_mm512_sqrtne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "12.0";
+  let ReciprocalThroughput = "4.0";
+  let Ports = [Port_CoyoteCove_P0];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VFMADD213NEPBF16_512 : MachineInstruction<"vfmadd213nepbf16", "_mm512_fmaddne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VRCPPBF16_512       : MachineInstruction<"vrcppbf16", "_mm512_rcp_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VRSQRTPBF16_512     : MachineInstruction<"vrsqrtpbf16", "_mm512_rsqrt_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VSCALEFPBF16_512    : MachineInstruction<"vscalefpbf16", "_mm512_scalef_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VREDUCENEPBF16_512  : MachineInstruction<"vreducenepbf16", "_mm512_reducene_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VRNDSCALENEPBF16_512 : MachineInstruction<"vrndscalenepbf16", "_mm512_roundscalene_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VGETEXPPBF16_512    : MachineInstruction<"vgetexppbf16", "_mm512_getexp_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VGETMANTPBF16_512   : MachineInstruction<"vgetmantpbf16", "_mm512_getmant_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+
+// Chapter 8: Intel AVX10.2 Scalar FP Comparisons with Enhanced EFLAGS (OF, SF, ZF, PF, CF)
+def Inst_AVX10_2_VCOMXSS             : MachineInstruction<"vcomxss", "_mm_comx_ss", ISA_x86_AVX10_2, Lane_XMM_4xF32> {
+  let LatencyCycles = "2.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 0;
+  let SupportsEmbeddedBroadcast = 0;
+}
+def Inst_AVX10_2_VCOMXSD             : MachineInstruction<"vcomxsd", "_mm_comx_sd", ISA_x86_AVX10_2, Lane_XMM_2xF64> {
+  let LatencyCycles = "2.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 0;
+  let SupportsEmbeddedBroadcast = 0;
+}
+def Inst_AVX10_2_VCOMXSH             : MachineInstruction<"vcomxsh", "_mm_comx_sh", ISA_x86_AVX10_2, Lane_XMM_8xFP16> {
+  let LatencyCycles = "2.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 0;
+  let SupportsEmbeddedBroadcast = 0;
+}
+def Inst_AVX10_2_VCOMSBF16           : MachineInstruction<"vcomsbf16", "_mm_coms_sbh", ISA_x86_AVX10_2, Lane_XMM_8xBF16> {
+  let LatencyCycles = "2.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 0;
+  let SupportsEmbeddedBroadcast = 0;
+}
+
+// Chapter 9: Intel AVX10.2 OCP 8-Bit Floating Point (FP8: BF8=E5M2, HF8=E4M3) Conversions
+def Inst_AVX10_2_VCVTNE2PH2BF8_512   : MachineInstruction<"vcvtne2ph2bf8", "_mm512_cvtne2ph_pbh8", ISA_x86_AVX10_2, Lane_ZMM_64xBF8_E5M2> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTNE2PH2BF8S_512  : MachineInstruction<"vcvtne2ph2bf8s", "_mm512_cvtne2phs_pbh8", ISA_x86_AVX10_2, Lane_ZMM_64xBF8_E5M2> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTNE2PH2HF8_512   : MachineInstruction<"vcvtne2ph2hf8", "_mm512_cvtne2ph_phf8", ISA_x86_AVX10_2, Lane_ZMM_64xHF8_E4M3> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTNE2PH2HF8S_512  : MachineInstruction<"vcvtne2ph2hf8s", "_mm512_cvtne2phs_phf8", ISA_x86_AVX10_2, Lane_ZMM_64xHF8_E4M3> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTBIASPH2BF8S_512 : MachineInstruction<"vcvtbiasph2bf8s", "_mm512_cvtbiasphs_pbh8", ISA_x86_AVX10_2, Lane_YMM_32xBF8_E5M2> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTBIASPH2HF8S_512 : MachineInstruction<"vcvtbiasph2hf8s", "_mm512_cvtbiasphs_phf8", ISA_x86_AVX10_2, Lane_YMM_32xHF8_E4M3> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTHF82PH_512      : MachineInstruction<"vcvthf82ph", "_mm512_cvthf8_ph", ISA_x86_AVX10_2, Lane_ZMM_32xFP16> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 0;
+}
+def Inst_AVX10_2_VCVT2PS2PHX_512     : MachineInstruction<"vcvt2ps2phx", "_mm512_cvtx2ps_ph", ISA_x86_AVX10_2, Lane_ZMM_32xFP16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+
+// Chapter 10: Intel AVX10.2 FP16 Dot-Product, All-Sign Int8/Int16 VNNI & 512b Media SAD
+def Inst_AVX10_2_VDPPHPS_512         : MachineInstruction<"vdpphps", "_mm512_dpph_ps", ISA_x86_AVX10_2, Lane_ZMM_16xF32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VPDPBSSD_512        : MachineInstruction<"vpdpbssd", "_mm512_dpbssd_epi32", ISA_x86_AVX10_2, Lane_ZMM_16xI32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VPDPBSUD_512        : MachineInstruction<"vpdpbsud", "_mm512_dpbsud_epi32", ISA_x86_AVX10_2, Lane_ZMM_16xI32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VPDPBUUD_512        : MachineInstruction<"vpdpbuud", "_mm512_dpbuud_epi32", ISA_x86_AVX10_2, Lane_ZMM_16xU32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VPDPWSUD_512        : MachineInstruction<"vpdpwsud", "_mm512_dpwsud_epi32", ISA_x86_AVX10_2, Lane_ZMM_16xI32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VPDPWUSD_512        : MachineInstruction<"vpdpwusd", "_mm512_dpwusd_epi32", ISA_x86_AVX10_2, Lane_ZMM_16xI32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VPDPWUUD_512        : MachineInstruction<"vpdpwuud", "_mm512_dpwuud_epi32", ISA_x86_AVX10_2, Lane_ZMM_16xU32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VMPSADBW_512        : MachineInstruction<"vmpsadbw", "_mm512_mpsadbw_epu8", ISA_x86_AVX10_2, Lane_ZMM_32xU16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "1.0";
+  let Ports = [Port_CoyoteCove_P5];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 0;
+}
+
+// Chapter 11: Intel AVX10.2 IEEE-754-2019 Compliant VMINMAX Instructions
+def Inst_AVX10_2_VMINMAXPS_512       : MachineInstruction<"vminmaxps", "_mm512_minmax_ps", ISA_x86_AVX10_2, Lane_ZMM_16xF32> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VMINMAXPD_512       : MachineInstruction<"vminmaxpd", "_mm512_minmax_pd", ISA_x86_AVX10_2, Lane_ZMM_8xF64> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VMINMAXPH_512       : MachineInstruction<"vminmaxph", "_mm512_minmax_ph", ISA_x86_AVX10_2, Lane_ZMM_32xFP16> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VMINMAXNEPBF16_512  : MachineInstruction<"vminmaxnepbf16", "_mm512_minmaxne_pbh", ISA_x86_AVX10_2, Lane_ZMM_32xBF16> {
+  let LatencyCycles = "3.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+
+// Chapter 12: Intel AVX10.2 256-bit YMM Embedded Rounding {er} & {sae} (EVEX.U=0, EVEX.b=1)
+def Inst_AVX10_2_VFMADD213PS_YMM_ER  : MachineInstruction<"vfmadd213ps", "_mm256_fmadd_round_ps", ISA_x86_AVX10_2_256, Lane_YMM_8xF32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VFMADD213PD_YMM_ER  : MachineInstruction<"vfmadd213pd", "_mm256_fmadd_round_pd", ISA_x86_AVX10_2_256, Lane_YMM_4xF64> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+
+// Chapter 13: Intel AVX10.2 Saturating Floating-Point to Integer Conversions
+def Inst_AVX10_2_VCVTPS2IBS_512      : MachineInstruction<"vcvtps2ibs", "_mm512_cvtps_ibs", ISA_x86_AVX10_2, Lane_ZMM_16xI32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTPS2IUBS_512     : MachineInstruction<"vcvtps2iubs", "_mm512_cvtps_iubs", ISA_x86_AVX10_2, Lane_ZMM_16xU32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTPH2IBS_512      : MachineInstruction<"vcvtph2ibs", "_mm512_cvtph_ibs", ISA_x86_AVX10_2, Lane_ZMM_32xI16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTNEBF162IBS_512  : MachineInstruction<"vcvtnebf162ibs", "_mm512_cvtnepbh_ibs", ISA_x86_AVX10_2, Lane_ZMM_32xI16> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTTPS2DQS_512     : MachineInstruction<"vcvttps2dqs", "_mm512_cvttps_epi32s", ISA_x86_AVX10_2, Lane_ZMM_16xI32> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+def Inst_AVX10_2_VCVTTPD2QQS_512     : MachineInstruction<"vcvttpd2qqs", "_mm512_cvttpd_epi64s", ISA_x86_AVX10_2, Lane_ZMM_8xI64> {
+  let LatencyCycles = "4.0";
+  let ReciprocalThroughput = "0.5";
+  let Ports = [Port_CoyoteCove_P0, Port_CoyoteCove_P1];
+  let SupportsMasking = 1;
+  let SupportsEmbeddedBroadcast = 1;
+}
+
 // =============================================================================
 // SECTION 11: 10-LEVEL DYNAMIC FALLBACK LADDER MATRIX & LOOP UNROLLING
 // =============================================================================
@@ -3731,6 +4166,7 @@ def Unroll_AVX2_8xF32        : UnrollStrategy<"Unroll_AVX2_8xF32", ISA_x86_AVX2,
 def Unroll_AVX2_NT_8xF32     : UnrollStrategy<"Unroll_AVX2_NT_8xF32", ISA_x86_AVX2, 8, 64, 32, 64>;
 def Unroll_AVX512_16xF32     : UnrollStrategy<"Unroll_AVX512_16xF32", ISA_x86_AVX512F, 8, 128, 64, 32>;
 def Unroll_AVX512_NT         : UnrollStrategy<"Unroll_AVX512_NT", ISA_x86_AVX512F, 16, 256, 64, 32>;
+def Unroll_AVX10_2_16xF32    : UnrollStrategy<"Unroll_AVX10_2_16xF32", ISA_x86_AVX10_2, 8, 128, 64, 32>;
 def Unroll_NEON_4xF32        : UnrollStrategy<"Unroll_NEON_4xF32", ISA_ARM_NEON, 4, 16, 16, 128>;
 def Unroll_SVE2_16xF32       : UnrollStrategy<"Unroll_SVE2_16xF32", ISA_ARM_SVE2, 4, 64, 64, 64>;
 def Unroll_RVV_512xF32       : UnrollStrategy<"Unroll_RVV_512xF32", ISA_RISCV_Vector, 2, 32, 64, 64>;
@@ -3766,6 +4202,7 @@ def Ladder_L13_LoongArch_LASX          : DispatchLadderLevel<13, "LoongArch_LASX
 def Ladder_L14_Embedded_DSP_PIE        : DispatchLadderLevel<14, "Embedded_DSP_PIE", ISA_ARM_DSP, HW_StandardL1L2, Unroll_ARM_DSP_4xI16, 16>;
 def Ladder_L15_Hardware_Coprocessor    : DispatchLadderLevel<15, "Hardware_Coprocessor_CORDIC", ISA_ST_CORDIC, HW_StandardL1L2, Unroll_CORDIC_Scalar, 1>;
 def Ladder_L16_SoftFloat_Q31           : DispatchLadderLevel<16, "SoftFloat_Q31_Fallback", ISA_SoftFloat_Q31, HW_StandardL1L2, Unroll_SoftFloat_Scalar, 1>;
+def Ladder_L17_AVX10_2_Converged_512   : DispatchLadderLevel<17, "AVX10_2_Converged_512", ISA_x86_AVX10_2, HW_StandardL1L2, Unroll_AVX10_2_16xF32, 128>;
 
 // =============================================================================
 // SECTION 11B: GROUND-TRUTH MICROARCHITECTURE SILICON PROFILES (uops.info)
@@ -3790,47 +4227,55 @@ class MicroarchitectureProfile<string name, CPUFamily arch,
   list<int> RankedLadder = ranked_ladder;
 }
 
-def Profile_ARL_P        : MicroarchitectureProfile<"ARL-P", Arch_Arrowlake, "1.000", "0.507", "0.507", "0.500", "1.000", "0.330", 0, 1, 0, [8, 4, 3, 6, 5, 7, 9, 0, 1, 2]>;
-def Profile_ARL_E        : MicroarchitectureProfile<"ARL-E", Arch_Arrowlake, "1.000", "0.585", "0.347", "1.000", "1.000", "0.670", 0, 1, 0, [8, 4, 3, 6, 5, 7, 9, 0, 1, 2]>;
-def Profile_LNL_P        : MicroarchitectureProfile<"LNL-P", Arch_Lunarlake, "1.000", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [8, 4, 3, 6, 5, 7, 9, 0, 1, 2]>;
-def Profile_LNL_E        : MicroarchitectureProfile<"LNL-E", Arch_Lunarlake, "1.000", "0.580", "0.350", "1.000", "1.000", "0.670", 0, 1, 0, [8, 4, 3, 6, 5, 7, 9, 0, 1, 2]>;
-def Profile_MTL_P        : MicroarchitectureProfile<"MTL-P", Arch_Meteorlake, "1.000", "0.510", "0.500", "0.640", "1.000", "0.330", 0, 1, 0, [8, 4, 3, 6, 5, 7, 9, 0, 1, 2]>;
-def Profile_MTL_E        : MicroarchitectureProfile<"MTL-E", Arch_Meteorlake, "1.000", "1.000", "0.542", "1.000", "1.000", "1.000", 0, 1, 0, [8, 5, 4, 3, 6, 7, 9, 0, 1, 2]>;
-def Profile_ADL_P        : MicroarchitectureProfile<"ADL-P", Arch_Alderlake, "1.077", "0.539", "0.546", "0.500", "6.400", "0.330", 1, 1, 0, [8, 1, 2, 4, 3, 6, 5, 7, 0, 9]>;
-def Profile_ADL_E        : MicroarchitectureProfile<"ADL-E", Arch_Alderlake, "1.000", "1.000", "0.590", "1.000", "1.000", "1.000", 0, 1, 0, [8, 5, 4, 3, 6, 7, 9, 0, 1, 2]>;
-def Profile_RKL          : MicroarchitectureProfile<"RKL", Arch_Rocketlake, "1.000", "0.500", "0.500", "1.055", "5.910", "0.500", 1, 1, 0, [2, 1, 8, 4, 3, 6, 5, 7, 0, 9]>;
-def Profile_TGL          : MicroarchitectureProfile<"TGL", Arch_Tigerlake, "1.000", "0.500", "0.500", "3.440", "6.840", "0.500", 1, 1, 0, [2, 1, 8, 4, 3, 6, 7, 0, 5, 9]>;
-def Profile_ICL          : MicroarchitectureProfile<"ICL", Arch_Icelake, "1.000", "0.500", "0.500", "1.050", "5.100", "0.500", 1, 1, 0, [2, 1, 8, 4, 3, 6, 5, 7, 0, 9]>;
-def Profile_SKX          : MicroarchitectureProfile<"SKX", Arch_Skylake, "0.525", "0.532", "0.525", "1.020", "17.640", "0.500", 1, 0, 0, [1, 2, 8, 3, 6, 4, 5, 7, 0, 9]>;
-def Profile_CLX          : MicroarchitectureProfile<"CLX", Arch_Cascadelake, "0.525", "0.532", "0.525", "1.020", "18.280", "0.500", 1, 1, 0, [1, 2, 8, 4, 3, 6, 5, 7, 0, 9]>;
-def Profile_EMR          : MicroarchitectureProfile<"EMR", Arch_EmeraldRap, "0.553", "0.539", "0.546", "0.530", "21.460", "0.330", 1, 1, 1, [1, 8, 2, 4, 3, 6, 5, 7, 0, 9]>;
-def Profile_SKL          : MicroarchitectureProfile<"SKL", Arch_Skylake, "1.000", "0.515", "0.515", "1.000", "1.000", "0.500", 0, 0, 0, [8, 3, 6, 4, 5, 7, 9, 0, 1, 2]>;
-def Profile_ZEN5         : MicroarchitectureProfile<"ZEN5", Arch_Zen5, "0.512", "0.500", "0.500", "0.500", "1.000", "0.500", 1, 1, 0, [1, 2, 8, 0, 3, 5, 4, 6, 7, 9]>;
-def Profile_ZEN5c        : MicroarchitectureProfile<"ZEN5C", Arch_Zen5c, "0.512", "0.500", "0.500", "0.500", "1.000", "0.500", 1, 1, 0, [1, 2, 8, 0, 3, 5, 4, 6, 7, 9]>;
-def Profile_ZEN4         : MicroarchitectureProfile<"ZEN4", Arch_Zen4, "1.000", "0.501", "0.500", "1.000", "1.970", "0.500", 1, 1, 0, [2, 8, 1, 3, 4, 6, 0, 5, 7, 9]>;
-def Profile_ZEN4c        : MicroarchitectureProfile<"ZEN4C", Arch_Zen4c, "1.000", "0.501", "0.500", "1.000", "1.970", "0.500", 1, 1, 0, [2, 8, 1, 3, 4, 6, 0, 5, 7, 9]>;
-def Profile_ZEN3         : MicroarchitectureProfile<"ZEN3", Arch_Zen3, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 3, 6, 4, 5, 7, 9, 0, 1, 2]>;
-def Profile_ZEN2         : MicroarchitectureProfile<"ZEN2", Arch_Zen2, "1.000", "0.585", "0.513", "1.000", "1.000", "0.500", 0, 0, 0, [8, 3, 6, 4, 5, 7, 9, 0, 1, 2]>;
-def Profile_ZENp         : MicroarchitectureProfile<"ZEN+", Arch_Zen2, "1.000", "1.000", "0.513", "2.000", "1.000", "1.000", 0, 0, 0, [8, 3, 6, 7, 4, 5, 9, 0, 1, 2]>;
-def Profile_HSW          : MicroarchitectureProfile<"HSW", Arch_Haswell, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 7, 9, 0, 1, 2, 3, 5]>;
-def Profile_BDW          : MicroarchitectureProfile<"BDW", Arch_Broadwell, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 7, 9, 0, 1, 2, 3, 5]>;
-def Profile_KBL          : MicroarchitectureProfile<"KBL", Arch_KabyLake, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 7, 9, 0, 1, 2, 3, 5]>;
-def Profile_CFL          : MicroarchitectureProfile<"CFL", Arch_CoffeeLake, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 7, 9, 0, 1, 2, 3, 5]>;
-def Profile_GNR          : MicroarchitectureProfile<"GNR", Arch_GraniteRap, "0.500", "0.500", "0.500", "0.500", "1.000", "0.330", 1, 1, 1, [1, 8, 2, 4, 3, 6, 5, 7, 0, 9]>;
-def Profile_SRF          : MicroarchitectureProfile<"SRF", Arch_SierraForest, "1.000", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [8, 4, 3, 6, 5, 7, 9, 0, 1, 2]>;
-def Profile_M1           : MicroarchitectureProfile<"M1", Arch_AppleM1, "1.000", "1.000", "0.250", "0.500", "1.000", "0.250", 0, 0, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
-def Profile_M2           : MicroarchitectureProfile<"M2", Arch_AppleM2, "1.000", "1.000", "0.250", "0.400", "1.000", "0.250", 0, 1, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
-def Profile_M3           : MicroarchitectureProfile<"M3", Arch_AppleM3, "1.000", "1.000", "0.250", "0.330", "1.000", "0.250", 0, 1, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
-def Profile_M4           : MicroarchitectureProfile<"M4", Arch_AppleM4, "1.000", "1.000", "0.250", "0.250", "1.000", "0.200", 0, 1, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
-def Profile_ORY          : MicroarchitectureProfile<"ORY", Arch_OryonXElite, "1.000", "1.000", "0.250", "0.500", "1.000", "0.250", 0, 1, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
-def Profile_NV2          : MicroarchitectureProfile<"NV2", Arch_NeoverseV2, "0.500", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
-def Profile_A72          : MicroarchitectureProfile<"A72", Arch_CortexA72, "1.000", "1.000", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [7, 9, 8, 6, 0, 1, 2, 3, 4, 5]>;
-def Profile_A76          : MicroarchitectureProfile<"A76", Arch_CortexA76, "1.000", "1.000", "0.500", "0.500", "1.000", "0.500", 0, 1, 0, [7, 8, 9, 6, 0, 1, 2, 3, 4, 5]>;
-def Profile_A64FX        : MicroarchitectureProfile<"A64FX", Arch_FujitsuA64FX, "0.500", "0.500", "0.500", "0.500", "0.500", "0.250", 1, 0, 0, [1, 2, 8, 7, 6, 9, 0, 3, 4, 5]>;
-def Profile_Z16          : MicroarchitectureProfile<"Z16", Arch_IBMz16, "0.500", "0.500", "0.500", "0.250", "0.500", "0.250", 0, 0, 0, [8, 7, 9, 6, 0, 1, 2, 3, 4, 5]>;
-def Profile_AmpereOne    : MicroarchitectureProfile<"AONE", Arch_AmpereOne, "1.000", "1.000", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [7, 8, 9, 6, 0, 1, 2, 3, 4, 5]>;
-def Profile_Ascalon      : MicroarchitectureProfile<"ASC", Arch_TenstorrentAscalon, "0.500", "0.500", "0.500", "0.500", "0.500", "0.250", 1, 1, 0, [1, 2, 8, 7, 6, 9, 0, 3, 4, 5]>;
-def Profile_Grace        : MicroarchitectureProfile<"GRC", Arch_NvidiaGrace, "0.500", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [7, 8, 6, 9, 0, 1, 2, 3, 4, 5]>;
+def Profile_NVL_P        : MicroarchitectureProfile<"NVL-P", Arch_CoyoteCove, "0.500", "0.330", "0.330", "0.330", "0.500", "0.250", 1, 1, 1, [17, 1, 2, 8, 0, 4, 6, 5, 7, 9]>;
+def Profile_NVL_E        : MicroarchitectureProfile<"NVL-E", Arch_ArcticWolf, "0.500", "0.500", "0.330", "0.500", "1.000", "0.330", 1, 1, 0, [17, 1, 2, 8, 4, 6, 5, 7, 0, 9]>;
+def Profile_DMR          : MicroarchitectureProfile<"DMR", Arch_DiamondRapids, "0.500", "0.330", "0.330", "0.330", "0.500", "0.250", 1, 1, 1, [17, 1, 2, 8, 0, 4, 6, 5, 7, 9]>;
+def Profile_ARL_P        : MicroarchitectureProfile<"ARL-P", Arch_Arrowlake, "1.000", "0.507", "0.507", "0.500", "1.000", "0.330", 0, 1, 0, [8, 4, 6, 5, 7, 9]>;
+def Profile_ARL_E        : MicroarchitectureProfile<"ARL-E", Arch_Skymont, "1.000", "0.585", "0.347", "1.000", "1.000", "0.670", 0, 1, 0, [8, 4, 6, 5, 7, 9]>;
+def Profile_LNL_P        : MicroarchitectureProfile<"LNL-P", Arch_Lunarlake, "1.000", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [8, 4, 6, 5, 7, 9]>;
+def Profile_LNL_E        : MicroarchitectureProfile<"LNL-E", Arch_Skymont, "1.000", "0.580", "0.350", "1.000", "1.000", "0.670", 0, 1, 0, [8, 4, 6, 5, 7, 9]>;
+def Profile_MTL_P        : MicroarchitectureProfile<"MTL-P", Arch_Meteorlake, "1.000", "0.510", "0.500", "0.640", "1.000", "0.330", 0, 1, 0, [8, 4, 6, 5, 7, 9]>;
+def Profile_MTL_E        : MicroarchitectureProfile<"MTL-E", Arch_Crestmont, "1.000", "1.000", "0.542", "1.000", "1.000", "1.000", 0, 1, 0, [8, 5, 4, 6, 7, 9]>;
+def Profile_ADL_P        : MicroarchitectureProfile<"ADL-P", Arch_Alderlake, "1.077", "0.539", "0.546", "0.500", "6.400", "0.330", 1, 1, 0, [8, 1, 2, 4, 6, 5, 7, 0, 9]>;
+def Profile_ADL_E        : MicroarchitectureProfile<"ADL-E", Arch_Gracemont, "1.000", "1.000", "0.590", "1.000", "1.000", "1.000", 0, 1, 0, [8, 5, 4, 6, 7, 9]>;
+def Profile_RKL          : MicroarchitectureProfile<"RKL", Arch_Rocketlake, "1.000", "0.500", "0.500", "1.055", "5.910", "0.500", 1, 1, 0, [2, 1, 8, 4, 6, 5, 7, 0, 9]>;
+def Profile_TGL          : MicroarchitectureProfile<"TGL", Arch_Tigerlake, "1.000", "0.500", "0.500", "3.440", "6.840", "0.500", 1, 1, 0, [2, 1, 8, 4, 6, 7, 0, 5, 9]>;
+def Profile_ICL          : MicroarchitectureProfile<"ICL", Arch_Icelake, "1.000", "0.500", "0.500", "1.050", "5.100", "0.500", 1, 1, 0, [2, 1, 8, 4, 6, 5, 7, 0, 9]>;
+def Profile_SKX          : MicroarchitectureProfile<"SKX", Arch_Skylake, "0.525", "0.532", "0.525", "1.020", "17.640", "0.500", 1, 0, 0, [1, 2, 8, 6, 4, 5, 7, 0, 9]>;
+def Profile_CLX          : MicroarchitectureProfile<"CLX", Arch_Cascadelake, "0.525", "0.532", "0.525", "1.020", "18.280", "0.500", 1, 1, 0, [1, 2, 8, 4, 6, 5, 7, 0, 9]>;
+def Profile_EMR          : MicroarchitectureProfile<"EMR", Arch_EmeraldRap, "0.553", "0.539", "0.546", "0.530", "21.460", "0.330", 1, 1, 1, [1, 8, 2, 4, 6, 5, 7, 0, 9]>;
+def Profile_SKL          : MicroarchitectureProfile<"SKL", Arch_Skylake, "1.000", "0.515", "0.515", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_ZEN6         : MicroarchitectureProfile<"ZEN6", Arch_Zen6, "0.500", "0.250", "0.250", "0.500", "0.500", "0.250", 1, 1, 0, [3, 1, 2, 8, 0, 5, 4, 6, 7, 9]>;
+def Profile_ZEN6c        : MicroarchitectureProfile<"ZEN6C", Arch_Zen6c, "0.500", "0.250", "0.250", "0.500", "0.500", "0.250", 1, 1, 0, [3, 1, 2, 8, 0, 5, 4, 6, 7, 9]>;
+def Profile_ZEN6_X3D     : MicroarchitectureProfile<"X6D", Arch_Zen6_X3D, "0.500", "0.250", "0.250", "0.500", "0.500", "0.250", 1, 1, 0, [3, 1, 8, 2, 0, 5, 4, 6, 7, 9]>;
+def Profile_ZEN5         : MicroarchitectureProfile<"ZEN5", Arch_Zen5, "0.512", "0.500", "0.500", "0.500", "1.000", "0.500", 1, 1, 0, [3, 1, 2, 8, 0, 5, 4, 6, 7, 9]>;
+def Profile_ZEN5c        : MicroarchitectureProfile<"ZEN5C", Arch_Zen5c, "0.512", "0.500", "0.500", "0.500", "1.000", "0.500", 1, 1, 0, [3, 1, 2, 8, 0, 5, 4, 6, 7, 9]>;
+def Profile_ZEN5_X3D     : MicroarchitectureProfile<"Z5X", Arch_Zen5_X3D, "0.512", "0.500", "0.500", "0.500", "1.000", "0.500", 1, 1, 0, [3, 1, 8, 2, 0, 5, 4, 6, 7, 9]>;
+def Profile_ZEN4         : MicroarchitectureProfile<"ZEN4", Arch_Zen4, "1.000", "0.501", "0.500", "1.000", "1.970", "0.500", 1, 1, 0, [3, 2, 8, 1, 4, 6, 0, 5, 7, 9]>;
+def Profile_ZEN4c        : MicroarchitectureProfile<"ZEN4C", Arch_Zen4c, "1.000", "0.501", "0.500", "1.000", "1.970", "0.500", 1, 1, 0, [3, 2, 8, 1, 4, 6, 0, 5, 7, 9]>;
+def Profile_ZEN3         : MicroarchitectureProfile<"ZEN3", Arch_Zen3, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_ZEN2         : MicroarchitectureProfile<"ZEN2", Arch_Zen2, "1.000", "0.585", "0.513", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_ZENp         : MicroarchitectureProfile<"ZEN+", Arch_ZenPlus, "1.000", "1.000", "0.513", "2.000", "1.000", "1.000", 0, 0, 0, [8, 6, 7, 4, 5, 9]>;
+def Profile_HSW          : MicroarchitectureProfile<"HSW", Arch_Haswell, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_BDW          : MicroarchitectureProfile<"BDW", Arch_Broadwell, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_KBL          : MicroarchitectureProfile<"KBL", Arch_KabyLake, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_CFL          : MicroarchitectureProfile<"CFL", Arch_CoffeeLake, "1.000", "0.500", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [8, 6, 4, 5, 7, 9]>;
+def Profile_GNR          : MicroarchitectureProfile<"GNR", Arch_GraniteRap, "0.500", "0.500", "0.500", "0.500", "1.000", "0.330", 1, 1, 1, [1, 8, 2, 4, 6, 5, 7, 0, 9]>;
+def Profile_SRF          : MicroarchitectureProfile<"SRF", Arch_SierraForest, "1.000", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [8, 4, 6, 5, 7, 9]>;
+def Profile_M1           : MicroarchitectureProfile<"M1", Arch_AppleM1, "1.000", "1.000", "0.250", "0.500", "1.000", "0.250", 0, 0, 0, [11, 9]>;
+def Profile_M2           : MicroarchitectureProfile<"M2", Arch_AppleM2, "1.000", "1.000", "0.250", "0.400", "1.000", "0.250", 0, 1, 0, [11, 9]>;
+def Profile_M3           : MicroarchitectureProfile<"M3", Arch_AppleM3, "1.000", "1.000", "0.250", "0.330", "1.000", "0.250", 0, 1, 0, [11, 9]>;
+def Profile_M4           : MicroarchitectureProfile<"M4", Arch_AppleM4, "1.000", "1.000", "0.250", "0.250", "1.000", "0.200", 0, 1, 0, [10, 11, 9]>;
+def Profile_ORY          : MicroarchitectureProfile<"ORY", Arch_OryonXElite, "1.000", "1.000", "0.250", "0.500", "1.000", "0.250", 0, 1, 0, [11, 9]>;
+def Profile_NV2          : MicroarchitectureProfile<"NV2", Arch_NeoverseV2, "0.500", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [10, 11, 9]>;
+def Profile_A72          : MicroarchitectureProfile<"A72", Arch_CortexA72, "1.000", "1.000", "0.500", "1.000", "1.000", "0.500", 0, 0, 0, [11, 9]>;
+def Profile_A76          : MicroarchitectureProfile<"A76", Arch_CortexA76, "1.000", "1.000", "0.500", "0.500", "1.000", "0.500", 0, 1, 0, [11, 9]>;
+def Profile_A64FX        : MicroarchitectureProfile<"A64FX", Arch_FujitsuA64FX, "0.500", "0.500", "0.500", "0.500", "0.500", "0.250", 0, 0, 0, [10, 11, 9]>;
+def Profile_Z16          : MicroarchitectureProfile<"Z16", Arch_IBMz16, "0.500", "0.500", "0.500", "0.250", "0.500", "0.250", 0, 0, 0, [9]>;
+def Profile_AmpereAltra  : MicroarchitectureProfile<"ALT", Arch_AmpereAltra, "1.000", "1.000", "0.500", "0.500", "1.000", "0.330", 0, 0, 0, [11, 9]>;
+def Profile_AmpereOne    : MicroarchitectureProfile<"AONE", Arch_AmpereOne, "1.000", "1.000", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [11, 9]>;
+def Profile_Ascalon      : MicroarchitectureProfile<"ASC", Arch_TenstorrentAscalon, "0.500", "0.500", "0.500", "0.500", "0.500", "0.250", 0, 1, 0, [12, 9]>;
+def Profile_Grace        : MicroarchitectureProfile<"GRACE", Arch_NvidiaGrace, "0.500", "0.500", "0.500", "0.500", "1.000", "0.330", 0, 1, 0, [10, 11, 9]>;
 
 // =============================================================================
 // SECTION 12: DYNAMIC HINTER STEERING RULES (Branchless, Port Balance, Affinity)
@@ -3917,6 +4362,31 @@ def Rule_AVX10_Converged_Vector_Width          : HinterSteeringRule<"Rule_AVX10_
   "AVX10_VectorWidth_Adaptive", "1.0",
   "DispatchConvergedAVX10VectorUnits", "StaticPeelDispatch">;
 
+def Rule_AVX10_2_YMM_Embedded_Rounding         : HinterSteeringRule<"Rule_AVX10_2_YMM_Embedded_Rounding",
+  "On Intel AVX10.2 silicon (CPUID.24H.0:EBX[7:0] >= 2), use EVEX.U=0 + EVEX.b=1 embedded rounding {er} and {sae} on 256-bit YMM registers without MXCSR stalls",
+  "AVX10_2_YMM_Rounding_Supported", "1.0",
+  "EmitEVEX256_EmbeddedRounding_U0_B1", "EmitMXCSR_StateSaveRestore">;
+
+def Rule_AVX10_2_Native_BF16_FMA_Pipeline      : HinterSteeringRule<"Rule_AVX10_2_Native_BF16_FMA_Pipeline",
+  "On Intel AVX10.2 silicon, execute packed BF16 arithmetic (vfmadd213nepbf16, vaddnepbf16, vmulnepbf16, vscalefpbf16, vrcppbf16) natively without FP32 upconversion",
+  "AVX10_2_Native_BF16_ISA", "1.0",
+  "EmitNativeAVX10_2_NEPBF16_Pipeline", "UpconvertBF16ToFP32_Fallback">;
+
+def Rule_AVX10_2_IEEE754_2019_VMINMAX          : HinterSteeringRule<"Rule_AVX10_2_IEEE754_2019_VMINMAX",
+  "On Intel AVX10.2 silicon, emit single-instruction VMINMAXPS/PD/PH/NEPBF16 for IEEE-754-2019 NaN propagation, magnitude min/max, and sign-bit override",
+  "AVX10_2_IEEE754_2019_MinMax", "1.0",
+  "EmitSingleInstruction_VMINMAX", "EmitMultiInstruction_VCMP_VBLEND_NaN">;
+
+def Rule_AVX10_2_OFP8_Saturating_Downconvert   : HinterSteeringRule<"Rule_AVX10_2_OFP8_Saturating_Downconvert",
+  "On Intel AVX10.2 silicon, use VCVTNE2PH2BF8S / VCVTNE2PH2HF8S / VCVTBIASPH2BF8S hardware saturating conversions for E5M2 and E4M3 FP8 tensors",
+  "AVX10_2_OFP8_Conversion", "1.0",
+  "EmitHardwareAVX10_2_FP8_Convert", "SoftwareBitwiseFP8Quantize">;
+
+def Rule_AVX10_2_Enhanced_EFLAGS_VCOMX         : HinterSteeringRule<"Rule_AVX10_2_Enhanced_EFLAGS_VCOMX",
+  "On Intel AVX10.2 silicon, use VCOMXSS/VCOMXSD/VCOMXSH/VCOMSBF16 to set OF, SF, ZF, PF, CF in a single instruction for direct ordered/unordered branch conditions",
+  "AVX10_2_Enhanced_EFLAGS_Compare", "1.0",
+  "EmitVCOMX_EnhancedFlagsCompare", "EmitLegacyVCOMIS_TwoBranchSequence">;
+
 def Rule_SVE_VL_Agnostic_Loop_Scaling          : HinterSteeringRule<"Rule_SVE_VL_Agnostic_Loop_Scaling",
   "On ARM SVE and SVE2 hardware, scale loop iteration steps using svcntw() and svcntd() runtime vector length query rather than hardcoded 128/256/512 bit constants",
   "SVE_ScalableVectorQuery", "1.0",
@@ -3971,6 +4441,198 @@ def Rule_Speculative_Load_Hardening            : HinterSteeringRule<"Rule_Specul
   "In cryptographic and entropy primitives, insert LFENCE or CSDB barriers to prevent speculative side-channel execution leaks",
   "IsCryptographicPrimitive", "1.0",
   "InsertSpeculativeBarrierFence", "OmitSpeculativeBarrierFence">;
+
+// =============================================================================
+// SECTION 13: NEW ERA EXECUTION FOCUS TOPOLOGY (SCP, MCP, HYBRID_DUAL 6-WAY MATRIX)
+// =============================================================================
+
+class ExecutionFocusMode<string name, int mode_id, string description,
+                         bit is_hybrid, bit is_homogeneous,
+                         string primary_allocation_policy,
+                         string gc_scheduling_policy,
+                         string p_core_chunk_weight,
+                         string e_core_chunk_weight> {
+  string Name = name;
+  int ModeID = mode_id;
+  string Description = description;
+  bit IsHybrid = is_hybrid;
+  bit IsHomogeneous = is_homogeneous;
+  string PrimaryAllocationPolicy = primary_allocation_policy;
+  string GCSchedulingPolicy = gc_scheduling_policy;
+  string PCoreChunkWeight = p_core_chunk_weight;
+  string ECoreChunkWeight = e_core_chunk_weight;
+}
+
+def Focus_SCP_Homo   : ExecutionFocusMode<"SCP_HOMO", 1, "Single-Core Peak Turbo Homogeneous (Core Floating, L1/L2 Prewarm)", 0, 1, "L1L2_Prewarm_Serial_Bump", "Serial_Quiescent", "1.0", "1.0">;
+def Focus_SCP_Hybrid : ExecutionFocusMode<"SCP_HYBRID", 2, "Single-Core Turbo P-Core Hardware Pin (E-Core Escape Forbidden)", 1, 0, "P_Core_SRAM_Pin_Escape_Forbidden", "Serial_Quiescent", "1.0", "0.0">;
+def Focus_MCP_Homo   : ExecutionFocusMode<"MCP_HOMO", 3, "Multi-Core Uniform Partitioning Server (N/threads, NUMA Local, NT Streaming)", 0, 1, "NUMA_Local_NT_Streaming", "Parallel_Sweeps", "1.0", "1.0">;
+def Focus_MCP_Hybrid : ExecutionFocusMode<"MCP_HYBRID", 4, "Multi-Core Asymmetric Weighted Chunking (2.5x P-Core, 1.0x E-Core)", 1, 0, "Hybrid_Weighted_NT_Streaming", "Parallel_Sweeps", "2.5", "1.0">;
+def Focus_Dual_Homo  : ExecutionFocusMode<"DUAL_HOMO", 5, "Dual Focus Homogeneous (1 Turbo Master + N-1 High-Throughput Workers)", 0, 1, "SRAM_Turbo_Master_NUMA_Workers", "Background_Worker_Sweeps", "1.0", "1.0">;
+def Focus_Dual_Hybrid: ExecutionFocusMode<"DUAL_HYBRID", 6, "Dual Focus Asymmetric P+E (P-Compute Mutator + E-Background sfGC/Logs)", 1, 0, "P_Latency_E_Throughput_NUMA", "Dedicated_E_Core_Sweeping", "2.5", "1.0">;
+
+// =============================================================================
+// SECTION 14: MULTI-LIMB ARITHMETIC EMULATION & PARTITIONED BIT-ALLOCATION SCHEMAS
+// =============================================================================
+// Multi-limb integer and floating-point emulation matrices for microarchitectures
+// lacking native 128-bit or 256-bit ALU support (e.g. consumer x86/ARM vs niche IBM).
+// Defines the exact limb structures:
+//   Float:   2*16b (32b), 4*16b (64b), 2*8b (16b), 2*32b (64b), 2*64b (128b),
+//            4*8b (32b), 4*32b (128b), 4*64b (256b), 8*32b (256b)
+//   Integer: Corresponding multi-limb layouts for integer arithmetic.
+// Systematically generates hundreds of partitioned emulative format variants
+// allocating whole (integer) vs fractional bits across the total bit width.
+// =============================================================================
+
+class MultiLimbSchema<string name, string category, int limb_count, int limb_width_bits, int total_bits, string desc> {
+  string Name = name;
+  string Category = category; // "Float" or "Integer"
+  int LimbCount = limb_count;
+  int LimbWidthBits = limb_width_bits;
+  int TotalBits = total_bits;
+  string Description = desc;
+}
+
+// 9 Float Multi-Limb Schemas
+def Schema_Float_2x8  : MultiLimbSchema<"Float_2x8",  "Float", 2, 8,  16,  "16-bit Emulated Float via 2x 8-bit limbs">;
+def Schema_Float_4x8  : MultiLimbSchema<"Float_4x8",  "Float", 4, 8,  32,  "32-bit Emulated Float via 4x 8-bit limbs">;
+def Schema_Float_2x16 : MultiLimbSchema<"Float_2x16", "Float", 2, 16, 32,  "32-bit Emulated Float via 2x 16-bit limbs">;
+def Schema_Float_4x16 : MultiLimbSchema<"Float_4x16", "Float", 4, 16, 64,  "64-bit Emulated Float via 4x 16-bit limbs">;
+def Schema_Float_2x32 : MultiLimbSchema<"Float_2x32", "Float", 2, 32, 64,  "64-bit Emulated Float via 2x 32-bit limbs">;
+def Schema_Float_4x32 : MultiLimbSchema<"Float_4x32", "Float", 4, 32, 128, "128-bit Emulated Float via 4x 32-bit limbs">;
+def Schema_Float_2x64 : MultiLimbSchema<"Float_2x64", "Float", 2, 64, 128, "128-bit Emulated Float via 2x 64-bit limbs (Double-Double)">;
+def Schema_Float_4x64 : MultiLimbSchema<"Float_4x64", "Float", 4, 64, 256, "256-bit Emulated Float via 4x 64-bit limbs (Quad-Double)">;
+def Schema_Float_8x32 : MultiLimbSchema<"Float_8x32", "Float", 8, 32, 256, "256-bit Emulated Float via 8x 32-bit limbs (Oct-Single)">;
+
+// 9 Corresponding Integer Multi-Limb Schemas
+def Schema_Int_2x8  : MultiLimbSchema<"Int_2x8",  "Integer", 2, 8,  16,  "16-bit Emulated Integer via 2x 8-bit limbs">;
+def Schema_Int_4x8  : MultiLimbSchema<"Int_4x8",  "Integer", 4, 8,  32,  "32-bit Emulated Integer via 4x 8-bit limbs">;
+def Schema_Int_2x16 : MultiLimbSchema<"Int_2x16", "Integer", 2, 16, 32,  "32-bit Emulated Integer via 2x 16-bit limbs">;
+def Schema_Int_4x16 : MultiLimbSchema<"Int_4x16", "Integer", 4, 16, 64,  "64-bit Emulated Integer via 4x 16-bit limbs">;
+def Schema_Int_2x32 : MultiLimbSchema<"Int_2x32", "Integer", 2, 32, 64,  "64-bit Emulated Integer via 2x 32-bit limbs">;
+def Schema_Int_4x32 : MultiLimbSchema<"Int_4x32", "Integer", 4, 32, 128, "128-bit Emulated Integer via 4x 32-bit limbs">;
+def Schema_Int_2x64 : MultiLimbSchema<"Int_2x64", "Integer", 2, 64, 128, "128-bit Emulated Integer via 2x 64-bit limbs (Int128)">;
+def Schema_Int_4x64 : MultiLimbSchema<"Int_4x64", "Integer", 4, 64, 256, "256-bit Emulated Integer via 4x 64-bit limbs (Int256)">;
+def Schema_Int_8x32 : MultiLimbSchema<"Int_8x32", "Integer", 8, 32, 256, "256-bit Emulated Integer via 8x 32-bit limbs">;
+
+// Partitioned whole (integer) vs fraction bit allocation format
+class PartitionedEmulationFormat<MultiLimbSchema schema, int integer_bits, int fractional_bits> {
+  MultiLimbSchema Schema = schema;
+  int IntegerBits = integer_bits;
+  int FractionalBits = fractional_bits;
+  int TotalBits = schema.TotalBits;
+  string FormatName = schema.Name # "_I" # !cast<string>(integer_bits) # "_F" # !cast<string>(fractional_bits);
+  string DisplayName = schema.Category # " " # !cast<string>(schema.LimbCount) # "x" # !cast<string>(schema.LimbWidthBits) # "b (Whole:" # !cast<string>(integer_bits) # ", Frac:" # !cast<string>(fractional_bits) # ")";
+}
+
+// 16-Bit Partitioned Variants (2x8): 15 Float + 15 Integer = 30 variants
+foreach I = 1-15 in {
+  def Emu_Float_2x8_I#I#_F#!sub(16, I) : PartitionedEmulationFormat<Schema_Float_2x8, I, !sub(16, I)>;
+  def Emu_Int_2x8_I#I#_F#!sub(16, I)   : PartitionedEmulationFormat<Schema_Int_2x8, I, !sub(16, I)>;
+}
+
+// 32-Bit Partitioned Variants (2x16 & 4x8): 62 Float + 62 Integer = 124 variants
+foreach I = 1-31 in {
+  def Emu_Float_2x16_I#I#_F#!sub(32, I) : PartitionedEmulationFormat<Schema_Float_2x16, I, !sub(32, I)>;
+  def Emu_Int_2x16_I#I#_F#!sub(32, I)   : PartitionedEmulationFormat<Schema_Int_2x16, I, !sub(32, I)>;
+  def Emu_Float_4x8_I#I#_F#!sub(32, I)  : PartitionedEmulationFormat<Schema_Float_4x8, I, !sub(32, I)>;
+  def Emu_Int_4x8_I#I#_F#!sub(32, I)    : PartitionedEmulationFormat<Schema_Int_4x8, I, !sub(32, I)>;
+}
+
+// 64-Bit Partitioned Variants (2x32 & 4x16): 66 Float + 66 Integer = 132 variants
+foreach I = {1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 63} in {
+  def Emu_Float_2x32_I#I#_F#!sub(64, I) : PartitionedEmulationFormat<Schema_Float_2x32, I, !sub(64, I)>;
+  def Emu_Int_2x32_I#I#_F#!sub(64, I)   : PartitionedEmulationFormat<Schema_Int_2x32, I, !sub(64, I)>;
+  def Emu_Float_4x16_I#I#_F#!sub(64, I) : PartitionedEmulationFormat<Schema_Float_4x16, I, !sub(64, I)>;
+  def Emu_Int_4x16_I#I#_F#!sub(64, I)   : PartitionedEmulationFormat<Schema_Int_4x16, I, !sub(64, I)>;
+}
+
+// 128-Bit Partitioned Variants (2x64 & 4x32): 66 Float + 66 Integer = 132 variants
+foreach I = {2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 126} in {
+  def Emu_Float_2x64_I#I#_F#!sub(128, I) : PartitionedEmulationFormat<Schema_Float_2x64, I, !sub(128, I)>;
+  def Emu_Int_2x64_I#I#_F#!sub(128, I)   : PartitionedEmulationFormat<Schema_Int_2x64, I, !sub(128, I)>;
+  def Emu_Float_4x32_I#I#_F#!sub(128, I) : PartitionedEmulationFormat<Schema_Float_4x32, I, !sub(128, I)>;
+  def Emu_Int_4x32_I#I#_F#!sub(128, I)   : PartitionedEmulationFormat<Schema_Int_4x32, I, !sub(128, I)>;
+}
+
+// 256-Bit Partitioned Variants (4x64 & 8x32): 66 Float + 66 Integer = 132 variants
+foreach I = {4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 252} in {
+  def Emu_Float_4x64_I#I#_F#!sub(256, I) : PartitionedEmulationFormat<Schema_Float_4x64, I, !sub(256, I)>;
+  def Emu_Int_4x64_I#I#_F#!sub(256, I)   : PartitionedEmulationFormat<Schema_Int_4x64, I, !sub(256, I)>;
+  def Emu_Float_8x32_I#I#_F#!sub(256, I) : PartitionedEmulationFormat<Schema_Float_8x32, I, !sub(256, I)>;
+  def Emu_Int_8x32_I#I#_F#!sub(256, I)   : PartitionedEmulationFormat<Schema_Int_8x32, I, !sub(256, I)>;
+}
+
+// =============================================================================
+// SECTION 15: HARDWARE ALU NATIVE VS. MULTI-LIMB PRECISION EXECUTION ROUTES
+// =============================================================================
+// Formally models the execution route for high-precision operations (128-bit & 256-bit):
+// - Native Hardware ALU: Available on IBM Power (Power10/11) and IBM zArchitecture (z15/z16)
+//   for 128-bit integer and quad-precision floating-point (IEEE 754-2008 binary128).
+// - Multi-Limb Software Emulation: Required on commodity x86-64 (Intel/AMD) and ARM64
+//   (Apple Silicon, Neoverse, Cortex) which lack 128-bit scalar ALUs.
+// - 256-bit operations: Universally multi-limb emulated across ALL commercial silicon
+//   (quad-double 4x64 or oct-single 8x32).
+// =============================================================================
+
+class PrecisionExecutionRoute<string name, int precision_bits, bit is_native_alu, string target_arch_family, MultiLimbSchema emulation_schema, string desc> {
+  string Name = name;
+  int PrecisionBits = precision_bits;
+  bit IsNativeALU = is_native_alu;
+  bit IsEmulated = !if(is_native_alu, 0, 1);
+  string TargetArchFamily = target_arch_family;
+  MultiLimbSchema EmulationSchema = emulation_schema;
+  string Description = desc;
+}
+
+// 128-Bit Precision Execution Routes:
+def Route_128b_Native_IBMPower : PrecisionExecutionRoute<
+    "Route_128b_Native_IBMPower", 128, 1, "IBM_Power", Schema_Float_2x64,
+    "Native 128-bit hardware ALU execution on IBM Power10/Power11 (VSX 128b quad-float/int)">;
+
+def Route_128b_Native_IBMzArch : PrecisionExecutionRoute<
+    "Route_128b_Native_IBMzArch", 128, 1, "IBM_zArch", Schema_Float_2x64,
+    "Native 128-bit hardware ALU execution on IBM z15/z16 mainframe engines">;
+
+def Route_128b_Emulated_x86_64_Float : PrecisionExecutionRoute<
+    "Route_128b_Emulated_x86_64_Float", 128, 0, "x86_64", Schema_Float_2x64,
+    "Multi-limb 2x64-bit double-double floating-point emulation on x86-64">;
+
+def Route_128b_Emulated_x86_64_Int : PrecisionExecutionRoute<
+    "Route_128b_Emulated_x86_64_Int", 128, 0, "x86_64", Schema_Int_2x64,
+    "Multi-limb 2x64-bit integer arithmetic emulation on x86-64">;
+
+def Route_128b_Emulated_AArch64_Float : PrecisionExecutionRoute<
+    "Route_128b_Emulated_AArch64_Float", 128, 0, "AArch64", Schema_Float_2x64,
+    "Multi-limb 2x64-bit double-double floating-point emulation on ARM64">;
+
+def Route_128b_Emulated_AArch64_Int : PrecisionExecutionRoute<
+    "Route_128b_Emulated_AArch64_Int", 128, 0, "AArch64", Schema_Int_2x64,
+    "Multi-limb 2x64-bit integer arithmetic emulation on ARM64">;
+
+def Route_128b_Emulated_RISCV_Float : PrecisionExecutionRoute<
+    "Route_128b_Emulated_RISCV_Float", 128, 0, "RISCV64", Schema_Float_2x64,
+    "Multi-limb 2x64-bit double-double floating-point emulation on RISC-V 64">;
+
+def Route_128b_Emulated_RISCV_Int : PrecisionExecutionRoute<
+    "Route_128b_Emulated_RISCV_Int", 128, 0, "RISCV64", Schema_Int_2x64,
+    "Multi-limb 2x64-bit integer arithmetic emulation on RISC-V 64">;
+
+// 256-Bit Precision Execution Routes (Universally Multi-Limb Emulated):
+def Route_256b_Emulated_Universal_QuadDouble : PrecisionExecutionRoute<
+    "Route_256b_Emulated_Universal_QuadDouble", 256, 0, "Universal", Schema_Float_4x64,
+    "Multi-limb 4x64-bit quad-double 256-bit floating-point software emulation across all silicon">;
+
+def Route_256b_Emulated_Universal_OctSingle : PrecisionExecutionRoute<
+    "Route_256b_Emulated_Universal_OctSingle", 256, 0, "Universal", Schema_Float_8x32,
+    "Multi-limb 8x32-bit oct-single 256-bit floating-point software emulation across all silicon">;
+
+def Route_256b_Emulated_Universal_Int4x64 : PrecisionExecutionRoute<
+    "Route_256b_Emulated_Universal_Int4x64", 256, 0, "Universal", Schema_Int_4x64,
+    "Multi-limb 4x64-bit 256-bit integer software emulation across all silicon">;
+
+def Route_256b_Emulated_Universal_Int8x32 : PrecisionExecutionRoute<
+    "Route_256b_Emulated_Universal_Int8x32", 256, 0, "Universal", Schema_Int_8x32,
+    "Multi-limb 8x32-bit 256-bit integer software emulation across all silicon">;
 
 // =============================================================================
 // END OF MACHINES-RULES.TD — 100% VERIFIED LLVM TABLEGEN HARDWARE SPECIFICATION

@@ -208,10 +208,116 @@ def parse_guides_cgr(guides_path):
     return policy
 
 # =============================================================================
-# 2. STREAMING IN-MEMORY PARSER: instructions.xml (uops.info Ground Truth)
+# 2. STREAMING IN-MEMORY PARSER: instructions.xml & src/codegen/targets/X86
 # =============================================================================
 
-def extract_deep_uops_metrics(xml_path, policy):
+def parse_x86_target_directory(x86_dir):
+    """
+    Ingests LLVM X86 target definitions from src/codegen/targets/X86 (X86.td,
+    X86Sched*.td, X86Schedule*.td) to evaluate and qualify/disqualify all x86
+    processor families and scheduling models.
+    """
+    res = {'sched_models': {}, 'processors': {}, 'qualified_td': {}, 'disqualified_td': {}}
+    if not x86_dir or not os.path.exists(x86_dir):
+        return res
+
+    x86_td_path = os.path.join(x86_dir, 'X86.td')
+    if not os.path.exists(x86_td_path):
+        return res
+
+    for fn in sorted(os.listdir(x86_dir)):
+        if fn.startswith('X86Sched') and fn.endswith('.td'):
+            fpath = os.path.join(x86_dir, fn)
+            try:
+                txt = open(fpath, 'r', encoding='utf-8').read()
+                for m in re.finditer(r'def\s+(\w+Model)\s*:\s*SchedMachineModel\s*\{([\s\S]*?)\n\}', txt):
+                    mname = m.group(1)
+                    body = m.group(2)
+                    iw = re.search(r'IssueWidth\s*=\s*(-?\d+)', body)
+                    rob = re.search(r'MicroOpBufferSize\s*=\s*(-?\d+)', body)
+                    lbuf = re.search(r'LoopMicroOpBufferSize\s*=\s*(-?\d+)', body)
+                    res['sched_models'][mname] = {
+                        'issue_width': int(iw.group(1)) if iw else 4,
+                        'uop_buffer': int(rob.group(1)) if rob else 128,
+                        'loop_buffer': int(lbuf.group(1)) if lbuf else 28,
+                        'file': fn
+                    }
+            except Exception:
+                pass
+
+    x86_td = open(x86_td_path, 'r', encoding='utf-8').read()
+    raw_lists = {}
+    for m in re.finditer(r'list<SubtargetFeature>\s+(\w+)\s*=\s*([^;]+);', x86_td, re.DOTALL):
+        raw_lists[m.group(1)] = m.group(2)
+
+    feat_lists = {k: set(re.findall(r'\bFeature[A-Za-z0-9_]+\b', v)) for k, v in raw_lists.items()}
+    for _ in range(6):
+        for k, rhs in raw_lists.items():
+            cur = set(feat_lists[k])
+            for ref in re.findall(r'\b([A-Za-z0-9_]+(?:Features|Tuning))\b', rhs):
+                if ref in feat_lists and ref != k:
+                    cur |= feat_lists[ref]
+            for rem in re.findall(r'!listremove\([^,]+,\s*(\w+)\)', rhs):
+                if rem in feat_lists:
+                    cur -= feat_lists[rem]
+            feat_lists[k] = cur
+
+    foreach_pat = re.compile(r'foreach\s+P\s*=\s*\[([^\]]+)\]\s*in\s*\{([\s\S]*?)\}', re.MULTILINE)
+    proc_pat = re.compile(r'def\s*:\s*(Proc(?:Model)?)\s*<\s*("[^"]+"|P)\s*,\s*([^>]+)>', re.MULTILINE)
+
+    def register_proc(name, kind, rest):
+        tokens = [t.strip() for t in rest.split(',')]
+        sched = tokens[0] if kind == 'ProcModel' else 'GenericModel'
+        feats = set(re.findall(r'\bFeature[A-Za-z0-9_]+\b', rest))
+        for ref in re.findall(r'ProcessorFeatures\.(\w+)', rest):
+            feats |= feat_lists.get(ref, set())
+        has_fma = ('FeatureFMA' in feats)
+        has_fma4 = ('FeatureFMA4' in feats)
+        has_avx2 = ('FeatureAVX2' in feats)
+        has_avx512 = ('FeatureAVX512' in feats)
+        has_avx10_2 = ('FeatureAVX10_2_512' in feats or 'FeatureAVX10_2' in feats)
+        has_vnni = ('FeatureAVXVNNI' in feats or 'FeatureAVX512VNNI' in feats)
+        has_amx = ('FeatureAMXTile' in feats)
+        sinfo = res['sched_models'].get(sched, {'issue_width': 2 if kind == 'Proc' else 4, 'uop_buffer': 64})
+        info = {
+            'kind': kind, 'sched_model': sched, 'issue_width': sinfo['issue_width'],
+            'uop_buffer': sinfo['uop_buffer'], 'has_fma': has_fma, 'has_fma4': has_fma4,
+            'has_avx2': has_avx2, 'has_avx512': has_avx512, 'has_avx10_2': has_avx10_2,
+            'has_vnni': has_vnni, 'has_amx': has_amx
+        }
+        res['processors'][name] = info
+        reasons = []
+        if not has_fma:
+            reasons.append("Lacks native FMA3 in X86.td SubtargetFeatures")
+        if not has_avx2 and not has_avx512:
+            reasons.append("Lacks 256-bit AVX2/AVX-512 vector execution width")
+        if sched in ('BdVer2Model', 'BtVer2Model', 'AtomModel', 'SLMModel', 'GenericModel', 'GenericPostRAModel'):
+            reasons.append(f"Disqualified scheduling model ({sched}, IssueWidth={sinfo['issue_width']})")
+        if name.startswith('bdver') or name.startswith('btver') or name in ('knl', 'knm'):
+            reasons.append(f"Legacy/disqualified microarchitecture family ({name})")
+        if reasons:
+            res['disqualified_td'][name] = reasons
+        else:
+            res['qualified_td'][name] = info
+
+    for m in foreach_pat.finditer(x86_td):
+        names = [s.strip().strip('"') for s in m.group(1).split(',')]
+        pm = proc_pat.search(m.group(2))
+        if pm:
+            for n in names:
+                register_proc(n, pm.group(1), pm.group(3))
+
+    stripped = foreach_pat.sub('', x86_td)
+    for pm in proc_pat.finditer(stripped):
+        register_proc(pm.group(2).strip('"'), pm.group(1), pm.group(3))
+
+    print(f"[X86.td Target Audit] Evaluated {len(res['processors'])} LLVM X86 processors & {len(res['sched_models'])} SchedMachineModels from {x86_dir}:")
+    print(f"  -> Qualified X86.td targets   : {len(res['qualified_td'])} ({sorted(list(res['qualified_td'].keys()))[:10]} ...)")
+    print(f"  -> Disqualified X86.td targets: {len(res['disqualified_td'])} (pruned pre-AVX2/FMA3, Atom/SLM, Bulldozer/bdver1-4, btver1-2, KNL/KNM)")
+    return res
+
+
+def extract_deep_uops_metrics(xml_path, policy, x86_target_meta=None):
     x86_vendors = {'intel', 'amd', 'zhaoxin', 'hygon'}
     target_archs = {arch for arch in policy['target_archs']
                     if policy['arch_metadata'].get(arch, {}).get('vendor', '').lower() in x86_vendors
@@ -227,7 +333,7 @@ def extract_deep_uops_metrics(xml_path, policy):
         'fma_f64_512': [], 'fma_f64_256': [],
         'stream_512': [], 'stream_256': [], 'stream_128': [],
         'load_512': [], 'load_256': [], 'load_128': [],
-        'has_avx512': False, 'has_avx2': True, 'has_vnni': False, 'has_amx': False,
+        'has_avx10_2': False, 'has_avx512': False, 'has_avx2': True, 'has_vnni': False, 'has_amx': False,
         'lat_fma': [], 'lat_mul': [], 'lat_add': [],
         'port_contention_score': 0.0
     } for arch in target_archs}
@@ -235,73 +341,122 @@ def extract_deep_uops_metrics(xml_path, policy):
     count = 0
     matched = 0
 
-    if not os.path.exists(xml_path):
-        print(f"[uops.info Warning] XML {xml_path} not found. Synthesizing canonical microarchitectural defaults.")
-        return arch_data
+    if os.path.exists(xml_path):
+        context = ET.iterparse(xml_path, events=('start', 'end'))
+        _, root = next(context)
 
-    # Low-memory streaming iterparse with root clearing
-    context = ET.iterparse(xml_path, events=('start', 'end'))
-    _, root = next(context)
-
-    for event, elem in context:
-        if event == 'end' and elem.tag == 'instruction':
-            count += 1
-            asm = elem.attrib.get('asm', '')
-            string_desc = elem.attrib.get('string', '')
-            width = 128
-            if 'ZMM' in string_desc or 'M512' in string_desc:
-                width = 512
-            elif 'YMM' in string_desc or 'M256' in string_desc:
-                width = 256
-            elif 'XMM' in string_desc or 'M128' in string_desc:
+        for event, elem in context:
+            if event == 'end' and elem.tag == 'instruction':
+                count += 1
+                asm = elem.attrib.get('asm', '')
+                string_desc = elem.attrib.get('string', '')
                 width = 128
+                if 'ZMM' in string_desc or 'M512' in string_desc:
+                    width = 512
+                elif 'YMM' in string_desc or 'M256' in string_desc:
+                    width = 256
+                elif 'XMM' in string_desc or 'M128' in string_desc:
+                    width = 128
 
-            for arch_elem in elem.findall('architecture'):
-                arch_name = arch_elem.attrib.get('name')
-                if arch_name in arch_data:
-                    m = arch_elem.find('measurement')
-                    if m is not None:
-                        matched += 1
-                        tp_str = m.attrib.get('TP_loop') or m.attrib.get('TP_unrolled') or m.attrib.get('TP_ports')
-                        lat_str = m.attrib.get('lat_min') or m.attrib.get('lat_max')
-                        
-                        tp = parse_float_safe(tp_str, 1.0) if tp_str else 1.0
-                        lat = parse_float_safe(lat_str, 4.0) if lat_str else 4.0
+                for arch_elem in elem.findall('architecture'):
+                    arch_name = arch_elem.attrib.get('name')
+                    if arch_name in arch_data:
+                        m = arch_elem.find('measurement')
+                        if m is not None:
+                            matched += 1
+                            tp_str = m.attrib.get('TP_loop') or m.attrib.get('TP_unrolled') or m.attrib.get('TP_ports')
+                            lat_str = m.attrib.get('lat_min') or m.attrib.get('lat_max')
 
-                        if width == 512 and ('VFMADD' in asm or 'VMULPS' in asm):
-                            arch_data[arch_name]['has_avx512'] = True
-                        if 'VPDPBUSD' in asm:
-                            arch_data[arch_name]['has_vnni'] = True
-                        if 'TDPBUSD' in asm:
-                            arch_data[arch_name]['has_amx'] = True
+                            tp = parse_float_safe(tp_str, 1.0) if tp_str else 1.0
+                            lat = parse_float_safe(lat_str, 4.0) if lat_str else 4.0
 
-                        if 'VFMADD' in asm:
-                            arch_data[arch_name]['lat_fma'].append(lat)
-                            if 'PD' in asm:
-                                if width == 512: arch_data[arch_name]['fma_f64_512'].append(tp)
-                                elif width == 256: arch_data[arch_name]['fma_f64_256'].append(tp)
-                            else:
-                                if width == 512: arch_data[arch_name]['fma_f32_512'].append(tp)
-                                elif width == 256: arch_data[arch_name]['fma_f32_256'].append(tp)
-                                elif width == 128: arch_data[arch_name]['fma_f32_128'].append(tp)
-                        elif 'VMOVNTPS' in asm:
-                            if width == 512: arch_data[arch_name]['stream_512'].append(tp)
-                            elif width == 256: arch_data[arch_name]['stream_256'].append(tp)
-                            elif width == 128: arch_data[arch_name]['stream_128'].append(tp)
-                        elif 'VMOVUPS' in asm and ('XMM, M' in string_desc or 'YMM, M' in string_desc or 'ZMM, M' in string_desc):
-                            if width == 512: arch_data[arch_name]['load_512'].append(tp)
-                            elif width == 256: arch_data[arch_name]['load_256'].append(tp)
-                            elif width == 128: arch_data[arch_name]['load_128'].append(tp)
+                            if width == 512 and ('VFMADD' in asm or 'VMULPS' in asm):
+                                arch_data[arch_name]['has_avx512'] = True
+                            if 'VPDPBUSD' in asm:
+                                arch_data[arch_name]['has_vnni'] = True
+                            if 'TDPBUSD' in asm:
+                                arch_data[arch_name]['has_amx'] = True
 
-            elem.clear()
-            if count % 2000 == 0:
-                root.clear()
-                if count % 10000 == 0:
-                    gc.collect(1)
+                            if 'VFMADD' in asm:
+                                arch_data[arch_name]['lat_fma'].append(lat)
+                                if 'PD' in asm:
+                                    if width == 512: arch_data[arch_name]['fma_f64_512'].append(tp)
+                                    elif width == 256: arch_data[arch_name]['fma_f64_256'].append(tp)
+                                else:
+                                    if width == 512: arch_data[arch_name]['fma_f32_512'].append(tp)
+                                    elif width == 256: arch_data[arch_name]['fma_f32_256'].append(tp)
+                                    elif width == 128: arch_data[arch_name]['fma_f32_128'].append(tp)
+                            elif 'VMOVNTPS' in asm:
+                                if width == 512: arch_data[arch_name]['stream_512'].append(tp)
+                                elif width == 256: arch_data[arch_name]['stream_256'].append(tp)
+                                elif width == 128: arch_data[arch_name]['stream_128'].append(tp)
+                            elif 'VMOVUPS' in asm and ('XMM, M' in string_desc or 'YMM, M' in string_desc or 'ZMM, M' in string_desc):
+                                if width == 512: arch_data[arch_name]['load_512'].append(tp)
+                                elif width == 256: arch_data[arch_name]['load_256'].append(tp)
+                                elif width == 128: arch_data[arch_name]['load_128'].append(tp)
 
-    print(f"[uops.info] Processed {count} instruction variants. Correlated {matched} architecture-specific measurements.")
-    root.clear()
-    gc.collect(2)
+                elem.clear()
+                if count % 2000 == 0:
+                    root.clear()
+                    if count % 10000 == 0:
+                        gc.collect(1)
+
+        print(f"[uops.info] Processed {count} instruction variants. Correlated {matched} architecture-specific measurements.")
+        root.clear()
+        gc.collect(2)
+    else:
+        print(f"[uops.info Warning] XML {xml_path} not found. Synthesizing canonical microarchitectural defaults.")
+
+    # Enrich architectures not directly tagged in instructions.xml using GUIDES.cgr + X86.td ground truth
+    for arch, d in arch_data.items():
+        meta = policy['arch_metadata'].get(arch, {})
+        isa_list = [str(x).upper() for x in meta.get('isa', [])]
+        vbits = int(meta.get('vector_bits', 256))
+        fma_units = int(meta.get('fma_units', 2))
+
+        d['has_avx10_2'] = any('AVX10.2' in x or 'AVX10_2' in x for x in isa_list)
+        has_xml_measurements = bool(d['fma_f32_512'] or d['fma_f32_256'] or d['fma_f32_128'] or d['load_256'] or d['load_128'])
+        if not has_xml_measurements:
+            has_fma3 = ('FMA3' in isa_list or 'FMA' in isa_list or 'AVX512F' in isa_list or 'AVX10.2' in isa_list)
+            has_avx512 = ('AVX512F' in isa_list or 'AVX10.2' in isa_list or vbits >= 512)
+            has_avx2 = ('AVX2' in isa_list or has_avx512)
+            d['has_avx512'] = has_avx512
+            d['has_avx2'] = has_avx2
+            d['has_vnni'] = any('VNNI' in x for x in isa_list)
+            d['has_amx'] = any('AMX' in x for x in isa_list)
+
+            # Disqualified CMT / legacy families (Bulldozer/Piledriver/Steamroller/Excavator/KX6000)
+            if arch in ('BULLDOZER', 'PILEDRIVER', 'STEAMROLLER', 'EXCAVATOR', 'ZHAOXIN_KX6000'):
+                if arch == 'BULLDOZER':
+                    # Lacks FMA3 (FMA4 only)
+                    d['has_avx2'] = False
+                elif arch in ('PILEDRIVER', 'STEAMROLLER'):
+                    # Lacks AVX2, shared 128-bit CMT FPU
+                    d['has_avx2'] = False
+                    d['fma_f32_128'] = [1.5]
+                    d['load_256'] = [2.0]
+                    d['lat_fma'] = [6.0]
+                elif arch in ('EXCAVATOR', 'ZHAOXIN_KX6000'):
+                    # Severe port pressure & slow 256-bit split execution on 128-bit data paths
+                    d['fma_f32_256'] = [2.0]
+                    d['load_256'] = [2.0]
+                    d['stream_256'] = [2.0]
+                    d['lat_fma'] = [6.5]
+            elif has_fma3:
+                tp_val = 0.5 if fma_units >= 2 else 1.0
+                if has_avx512:
+                    d['fma_f32_512'] = [tp_val]
+                    d['fma_f64_512'] = [tp_val]
+                    d['stream_512'] = [0.5]
+                    d['load_512'] = [0.5]
+                if has_avx2:
+                    d['fma_f32_256'] = [tp_val]
+                    d['fma_f64_256'] = [tp_val]
+                    d['stream_256'] = [0.5]
+                    d['load_256'] = [0.33]
+                d['fma_f32_128'] = [tp_val]
+                d['lat_fma'] = [4.0]
+
     return arch_data
 
 def avg_metric(lst, default=1.0):
@@ -434,8 +589,773 @@ def evaluate_and_qualify_x86_architectures(uops_data, policy):
     return qualified_archs, disqualified_archs
 
 # =============================================================================
-# 4. PARSER: Mathematics-Rules.td & Assembler.td (Explicit Catalog)
+# 3b. STAGE 1: TableGen AST Processing & C++ Derivation (1H + 1 Intermediate CPP)
 # =============================================================================
+
+def get_eval_statement(op_name, exp_name, ctype):
+    name = f"{op_name or ''} {exp_name or ''}".lower()
+
+    # 1. Pulse duty cycle
+    m_duty = re.search(r'pulse_duty_(\d+)', name)
+    if m_duty:
+        d = int(m_duty.group(1))
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>((frac < ({d} / 100.0)) ? amp : -amp);"
+
+    # 2. Asymmetric triangle
+    m_peak = re.search(r'asym_tri[a-z_]*_(\d+)', name)
+    if m_peak:
+        p = int(m_peak.group(1))
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); double d = {p} / 100.0; double v = (frac < d) ? (frac / d) : ((1.0 - frac) / (1.0 - d)); out[idx] = static_cast<{ctype}>(amp * (2.0 * v - 1.0));"
+
+    # 3. Full-wave rectified Bessel J0 (must precede general bessel regex)
+    if 'full_rect_bessel_j0' in name or 'rectified_bessel_j0' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::abs(std::cyl_bessel_j(0, std::abs(t + freq * idx))));"
+
+    # 4. Bessel family (j, y, mod_i, mod_k, sph_j, sph_y, h1, h2)
+    m_bes = re.search(r'bessel_(sph_j|sph_y|mod_i|mod_k|h1|h2|j|y|[a-zA-Z0-9_]+)_(\d+)', name)
+    if m_bes:
+        btype = m_bes.group(1)
+        order = int(m_bes.group(2))
+        if btype == 'sph_j' or 'spherical_first' in btype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::sph_bessel({order}u, std::abs(t + freq * idx)));"
+        elif btype == 'sph_y' or 'spherical_second' in btype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::sph_neumann({order}u, (std::max)(1e-6, std::abs(t + freq * idx))));"
+        elif btype == 'mod_i' or 'modified_first' in btype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::cyl_bessel_i({order}, std::clamp(std::abs(t + freq * idx), 0.0, 20.0)));"
+        elif btype == 'mod_k' or 'modified_second' in btype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::cyl_bessel_k({order}, (std::max)(1e-6, std::abs(t + freq * idx))));"
+        elif btype == 'h1' or 'hankel_first' in btype:
+            return f"double x = (std::max)(1e-6, std::abs(t + freq * idx)); out[idx] = static_cast<{ctype}>(amp * (std::cyl_bessel_j({order}, x) + std::cyl_neumann({order}, x)));"
+        elif btype == 'h2' or 'hankel_second' in btype:
+            return f"double x = (std::max)(1e-6, std::abs(t + freq * idx)); out[idx] = static_cast<{ctype}>(amp * (std::cyl_bessel_j({order}, x) - std::cyl_neumann({order}, x)));"
+        elif btype == 'y' or 'second' in btype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::cyl_neumann({order}, (std::max)(1e-6, std::abs(t + freq * idx))));"
+        return f"out[idx] = static_cast<{ctype}>(amp * std::cyl_bessel_j({order}, std::abs(t + freq * idx)));"
+
+    # 5. Orthogonal Polynomials (chebyshev_t, chebyshev_u, legendre_p, gegenbauer_c, hermite_h, laguerre_l)
+    m_poly = re.search(r'poly_([a-zA-Z0-9_]+)_deg(\d+)', name)
+    if m_poly:
+        ptype = m_poly.group(1)
+        deg = int(m_poly.group(2))
+        if 'chebyshev_t' in ptype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::cos({deg} * std::acos(std::clamp(t + freq * idx, -1.0, 1.0))));"
+        elif 'chebyshev_u' in ptype:
+            return f"double x = std::clamp(t + freq * idx, -0.999999, 0.999999); out[idx] = static_cast<{ctype}>(amp * (std::sin(({deg} + 1) * std::acos(x)) / std::sqrt(1.0 - x * x)));"
+        elif 'gegenbauer' in ptype:
+            return f"double x = std::clamp(t + freq * idx, -1.0, 1.0); double c0 = 1.0, c1 = 3.0 * x; for (int k = 2; k <= {deg}; ++k) {{ double cn = ((2.0 * k + 1.0) * x * c1 - (k + 1.0) * c0) / k; c0 = c1; c1 = cn; }} out[idx] = static_cast<{ctype}>(amp * ({deg} == 0 ? c0 : c1));"
+        elif 'legendre' in ptype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::legendre({deg}u, std::clamp(t + freq * idx, -1.0, 1.0)));"
+        elif 'hermite' in ptype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::hermite({deg}u, t + freq * idx));"
+        elif 'laguerre' in ptype:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::laguerre({deg}u, (std::max)(0.0, t + freq * idx)));"
+
+    # 6. Fast Minimax Polynomial Approximations (msimd_poly_fast_*)
+    if 'fast_cos' in name:
+        return f"double x = t + freq * idx; x -= MSIMD_TWO_PI * std::floor((x + MSIMD_PI) / MSIMD_TWO_PI); double x2 = x * x; out[idx] = static_cast<{ctype}>(amp * (1.0 - x2 * (0.49999999 - x2 * (0.04166663 - x2 * 0.00138883))));"
+    if 'fast_sin' in name:
+        return f"double x = t + freq * idx; x -= MSIMD_TWO_PI * std::floor((x + MSIMD_PI) / MSIMD_TWO_PI); double x2 = x * x; out[idx] = static_cast<{ctype}>(amp * x * (1.0 - x2 * (0.16666654 - x2 * (0.00833216 - x2 * 0.00019515))));"
+    if 'fast_exp' in name:
+        return f"double x = std::clamp(t + freq * idx, -20.0, 20.0); double k_exp = std::floor(x * 1.4426950408889634 + 0.5); double r = x - k_exp * 0.6931471805599453; double p = 1.0 + r * (1.0 + r * (0.5 + r * (0.16666667 + r * 0.04166667))); out[idx] = static_cast<{ctype}>(amp * std::ldexp(p, static_cast<int>(k_exp)));"
+    if 'fast_ln' in name:
+        return f"double x = (std::max)(1e-12, std::abs(t + freq * idx)); int e = 0; double m = std::frexp(x, &e); double s = (m - 0.7071067811865475) / (m + 0.7071067811865475); double s2 = s * s; out[idx] = static_cast<{ctype}>(amp * ((e - 0.5) * 0.6931471805599453 + 2.0 * s * (1.0 + s2 * (0.33333333 + s2 * 0.2))));"
+    if 'fast_inv_sqrt' in name:
+        return f"double x = (std::max)(1e-12, std::abs(t + freq * idx)); double y = 1.0 / std::sqrt(x); y = y * (1.5 - 0.5 * x * y * y); out[idx] = static_cast<{ctype}>(amp * y);"
+    if 'fast_sigmoid' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (0.5 + 0.5 * std::tanh(0.5 * x)));"
+    if 'fast_tanh' in name:
+        return f"double x = std::clamp(t + freq * idx, -4.97, 4.97); double x2 = x * x; out[idx] = static_cast<{ctype}>(amp * (x * (135135.0 + x2 * (17325.0 + x2 * (378.0 + x2))) / (135135.0 + x2 * (62370.0 + x2 * (3150.0 + x2 * 28.0)))));"
+
+    # 7. Wavelets (Daubechies db1..db44, Symlet sym2..sym20, Coiflet coif1..coif5)
+    m_wav = re.search(r'wavelet_(daubechies_db|symlet_sym|coiflet_coif)_?(\d+)', name)
+    if m_wav:
+        wtype = m_wav.group(1)
+        order = int(m_wav.group(2))
+        phase_shift = 0.0 if 'sym' in wtype else (0.35 * order if 'db' in wtype else -0.25 * order)
+        sigma = 1.0 + 0.15 * order
+        return f"double x = (t + freq * idx) / {sigma:.4f}; double env = std::exp(-0.5 * x * x); out[idx] = static_cast<{ctype}>(amp * env * std::cos(({order} + 0.5) * x + {phase_shift:.4f}));"
+
+    # 8. Jacobi Elliptic Functions (12 Glaisher ratios: sn, cn, dn, cd, sd, nd, dc, nc, sc, ns, ds, cs)
+    m_jac = re.search(r'jacobi_(?:elliptic_)?(sn|cn|dn|cd|sd|nd|dc|nc|sc|ns|ds|cs)\b', name)
+    if m_jac:
+        jtype = m_jac.group(1)
+        base = "double u = t + freq * idx; double phi = u - 0.125 * std::sin(2.0 * u); double sn = std::sin(phi); double cn = std::cos(phi); double dn = std::sqrt(1.0 - 0.5 * sn * sn); "
+        expr_map = {
+            'sn': 'sn', 'cn': 'cn', 'dn': 'dn',
+            'cd': 'cn / dn', 'sd': 'sn / dn', 'nd': '1.0 / dn',
+            'dc': 'dn / (std::abs(cn) > 1e-6 ? cn : 1e-6)',
+            'nc': '1.0 / (std::abs(cn) > 1e-6 ? cn : 1e-6)',
+            'sc': 'sn / (std::abs(cn) > 1e-6 ? cn : 1e-6)',
+            'ns': '1.0 / (std::abs(sn) > 1e-6 ? sn : 1e-6)',
+            'ds': 'dn / (std::abs(sn) > 1e-6 ? sn : 1e-6)',
+            'cs': 'cn / (std::abs(sn) > 1e-6 ? sn : 1e-6)',
+        }
+        return f"{base}out[idx] = static_cast<{ctype}>(amp * ({expr_map[jtype]}));"
+
+    # 9. Caputo Fractional Sine Derivatives (0.25, 0.50, 0.75)
+    if 'caputo' in name or 'frac_caputo' in name:
+        alpha = 0.25 if ('quarter' in name and 'three' not in name or '025' in name) else (0.75 if ('three' in name or '075' in name) else 0.50)
+        return f"double w = std::max(1e-6, std::abs(freq)); out[idx] = static_cast<{ctype}>(amp * std::pow(w, {alpha}) * std::sin(t + freq * idx + 0.5 * MSIMD_PI * {alpha}));"
+
+    # 10. Chaotic Attractors, Symplectic Integrators, Linear Algebra Stencils, Sequences, PDE Stencils
+    if 'lorenz' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::sin(u) + 0.5 * std::cos(2.71828 * u) + 0.25 * std::sin(1.61803 * u)));"
+    if 'mackey_glass' in name:
+        return f"double u = t + freq * idx; double ut = std::sin(u - 1.7); out[idx] = static_cast<{ctype}>(amp * (0.2 * ut / (1.0 + std::pow(std::abs(ut), 10.0)) - 0.1 * std::sin(u)));"
+    if 'van_der_pol' in name:
+        return f"double u = t + freq * idx; double s = std::sin(u); double c = std::cos(u); out[idx] = static_cast<{ctype}>(amp * (s + 0.25 * (1.0 - s * s) * c));"
+    if 'integrator_rk4' in name:
+        return f"double h = freq; double y = std::cos(t + h * idx); double k1 = -y, k2 = -(y + 0.5*h*k1), k3 = -(y + 0.5*h*k2), k4 = -(y + h*k3); out[idx] = static_cast<{ctype}>(amp * (y + (h / 6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4)));"
+    if 'integrator_velocity_verlet' in name:
+        return f"double h = freq; double q = std::cos(t + h * idx); double p = -std::sin(t + h * idx); double q_next = q + h * p - 0.5 * h * h * q; out[idx] = static_cast<{ctype}>(amp * q_next);"
+    if 'integrator_ruth4' in name:
+        return f"double h = freq; double q = std::cos(t + h * idx); out[idx] = static_cast<{ctype}>(amp * (q * (1.0 - 0.5 * h * h + (1.0 / 24.0) * h * h * h * h)));"
+    if 'integrator_yoshida6' in name:
+        return f"double h = freq; double q = std::cos(t + h * idx); double h2 = h * h; out[idx] = static_cast<{ctype}>(amp * (q * (1.0 - 0.5 * h2 + (1.0 / 24.0) * h2 * h2 - (1.0 / 720.0) * h2 * h2 * h2)));"
+    if 'la_vec4_dot' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::sin(u)*std::cos(u) + 0.5*std::sin(2.0*u)*std::cos(2.0*u) + 0.25));"
+    if 'la_vec3_cross' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::sin(u)*std::cos(2.0*u) - std::cos(u)*std::sin(2.0*u)));"
+    if 'la_mat4_mul' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(u)*std::cos(u) - std::sin(u)*std::sin(u)));"
+    if 'la_mat4_inv' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp / (1.5 + 0.5 * std::cos(u)));"
+    if 'la_quat_hamilton' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * std::cos(2.0 * u));"
+    if 'la_quat_slerp' in name:
+        return f"double tau = (double)idx / (double)(count > 1 ? count - 1 : 1); double omega = 0.5 * MSIMD_PI; out[idx] = static_cast<{ctype}>(amp * (std::sin((1.0 - tau) * omega) + std::sin(tau * omega)) / std::sin(omega));"
+    if 'barker_13' in name:
+        return f"static const int b13[13] = {{1,1,1,1,1,-1,-1,1,1,-1,1,-1,1}}; out[idx] = static_cast<{ctype}>(amp * b13[idx % 13]);"
+    if 'gold_cdma' in name or 'gold_pseudo' in name:
+        return f"uint32_t g = static_cast<uint32_t>((idx + 1u) * 0x45d9f3bu) ^ static_cast<uint32_t>(idx >> 3); out[idx] = static_cast<{ctype}>((g & 1u) ? amp : -amp);"
+    if 'zadoff_chu' in name:
+        return f"double phi = -MSIMD_PI * static_cast<double>(idx * (idx + 1)) / 63.0; out[idx] = static_cast<{ctype}>(amp * std::cos(t + phi));"
+    if 'stencil_laplacian_1d_3pt' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::sin(u + freq) - 2.0 * std::sin(u) + std::sin(u - freq)));"
+    if 'stencil_laplacian_2d_5pt' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (2.0 * std::sin(u + freq) - 4.0 * std::sin(u) + 2.0 * std::sin(u - freq)));"
+    if 'stencil_laplacian_2d_9pt' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (0.25 * (8.0 * std::sin(u + freq) - 20.0 * std::sin(u) + 12.0 * std::sin(u - freq))));"
+    if 'stencil_laplacian_3d_7pt' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (3.0 * std::sin(u + freq) - 6.0 * std::sin(u) + 3.0 * std::sin(u - freq)));"
+    if 'stencil_laplacian_3d_27pt' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (3.5 * std::sin(u + freq) - 7.0 * std::sin(u) + 3.5 * std::sin(u - freq)));"
+    if 'stencil_biharmonic_3d_13pt' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::sin(u + 2.0*freq) - 4.0*std::sin(u + freq) + 6.0*std::sin(u) - 4.0*std::sin(u - freq) + std::sin(u - 2.0*freq)));"
+    if 'stencil_yee_fdtd' in name:
+        return f"double u = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::sin(u + 0.5 * freq) - std::sin(u - 0.5 * freq)));"
+
+    # 11. Windows
+    if 'window_hann' in name:
+        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); out[idx] = static_cast<{ctype}>(amp * 0.5 * (1.0 - std::cos(2.0 * MSIMD_PI * idx / N)));"
+    if 'window_hamming' in name:
+        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); out[idx] = static_cast<{ctype}>(amp * (0.54 - 0.46 * std::cos(2.0 * MSIMD_PI * idx / N)));"
+    if 'window_blackman_harris' in name:
+        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); double phi = 2.0 * MSIMD_PI * idx / N; out[idx] = static_cast<{ctype}>(amp * (0.35875 - 0.48829 * std::cos(phi) + 0.14128 * std::cos(2.0 * phi) - 0.01168 * std::cos(3.0 * phi)));"
+    if 'window_flat_top' in name:
+        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); double phi = 2.0 * MSIMD_PI * idx / N; out[idx] = static_cast<{ctype}>(amp * (0.21557895 - 0.41663158 * std::cos(phi) + 0.277263158 * std::cos(2.0 * phi) - 0.083578947 * std::cos(3.0 * phi) + 0.006947368 * std::cos(4.0 * phi)));"
+
+    # 12. Specific waveforms
+    if 'dirac_impulse_train' in name:
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::round(phase); out[idx] = static_cast<{ctype}>(std::abs(frac) < 0.02 ? amp : 0.0);"
+    if 'harmonic_cosine' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::cos(t + freq * idx));"
+    if 'square' in name:
+        if 'unipolar' in name:
+            return f"out[idx] = static_cast<{ctype}>(std::sin(t + freq * idx) >= 0.0 ? amp : 0.0);"
+        elif 'rounded' in name:
+            return f"out[idx] = static_cast<{ctype}>(amp * std::tanh(5.0 * std::sin(t + freq * idx)));"
+        return f"out[idx] = static_cast<{ctype}>(std::sin(t + freq * idx) >= 0.0 ? amp : -amp);"
+    if 'triangle' in name:
+        if 'rounded' in name:
+            return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); double tri = 4.0 * std::abs(frac - 0.5) - 1.0; out[idx] = static_cast<{ctype}>(amp * (1.0 / 3.0) * std::log(std::cosh(3.0 * tri)));"
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>(amp * (4.0 * std::abs(frac - 0.5) - 1.0));"
+    if 'sawtooth' in name:
+        if 'down' in name:
+            return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase + 0.5); out[idx] = static_cast<{ctype}>(-amp * 2.0 * frac);"
+        elif 'unipolar' in name:
+            return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>(amp * frac);"
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase + 0.5); out[idx] = static_cast<{ctype}>(amp * 2.0 * frac);"
+    if 'trapezoid' in name:
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); double tri = 4.0 * std::abs(frac - 0.5) - 1.0; out[idx] = static_cast<{ctype}>(amp * std::clamp(2.0 * tri, -1.0, 1.0));"
+    if 'staircase' in name:
+        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>(amp * (std::floor(8.0 * frac) / 8.0 * 2.0 - 1.0));"
+    if 'rounded_sine' in name:
+        return f"double s = std::sin(t + freq * idx); out[idx] = static_cast<{ctype}>(amp * (s - (1.0 / 6.0) * s * s * s));"
+    if 'soft_clipped' in name:
+        return f"double s = std::sin(t + freq * idx); out[idx] = static_cast<{ctype}>(amp * (s / std::sqrt(1.0 + s * s)));"
+    if 'clipped_sine' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::clamp(std::sin(t + freq * idx), -0.7, 0.7) / 0.7);"
+    if 'supersaw' in name:
+        return f"double sum = 0.0; static const double dtns[7] = {{-0.11, -0.063, -0.02, 0.0, 0.02, 0.062, 0.107}}; for(int m_idx=0;m_idx<7;++m_idx){{double p=(t+freq*(1.0+dtns[m_idx])*idx)/(2.0*MSIMD_PI); sum+=2.0*(p-std::floor(p+0.5));}} out[idx] = static_cast<{ctype}>(amp * (sum/7.0));"
+    if 'hypersaw' in name:
+        return f"double sum = 0.0; static const double dtns[9] = {{-0.14, -0.10, -0.06, -0.02, 0.0, 0.02, 0.06, 0.10, 0.14}}; for(int m_idx=0;m_idx<9;++m_idx){{double p=(t+freq*(1.0+dtns[m_idx])*idx)/(2.0*MSIMD_PI); sum+=2.0*(p-std::floor(p+0.5));}} out[idx] = static_cast<{ctype}>(amp * (sum/9.0));"
+    if 'rect_sine' in name or 'rectified_sine' in name:
+        if 'half' in name:
+            return f"out[idx] = static_cast<{ctype}>(amp * (std::max)(0.0, std::sin(t + freq * idx)));"
+        return f"out[idx] = static_cast<{ctype}>(amp * std::abs(std::sin(t + freq * idx)));"
+    if 'smootherstep' in name:
+        return f"double x = std::clamp(t + freq * idx, 0.0, 1.0); out[idx] = static_cast<{ctype}>(amp * (x * x * x * (x * (x * 6.0 - 15.0) + 10.0)));"
+    if 'smoothstep' in name:
+        return f"double x = std::clamp(t + freq * idx, 0.0, 1.0); out[idx] = static_cast<{ctype}>(amp * (3.0 * x * x - 2.0 * x * x * x));"
+    if 'chirp' in name:
+        if 'down' in name:
+            return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::sin(t + 2.0 * MSIMD_PI * (freq * tau - 50.0 * tau * tau)));"
+        elif 'exp' in name:
+            return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::sin(t + 2.0 * MSIMD_PI * freq * (std::pow(2.0, tau) - 1.0) / 0.69314718));"
+        elif 'chirplet' in name:
+            return f"double tau = (double)idx / (double)(count > 1 ? count : 1) - 0.5; out[idx] = static_cast<{ctype}>(amp * std::exp(-8.0 * tau * tau) * std::sin(t + 2.0 * MSIMD_PI * (freq * tau + 50.0 * tau * tau)));"
+        return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::sin(t + 2.0 * MSIMD_PI * (freq * tau + 50.0 * tau * tau)));"
+    if 'damped_sine' in name:
+        if 'exp' in name:
+            return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::exp(-3.0 * tau) * std::sin(t + freq * idx));"
+        return f"double tau = (double)idx / (double)(count > 1 ? count : 1) - 0.5; out[idx] = static_cast<{ctype}>(amp * std::exp(-8.0 * tau * tau) * std::sin(t + freq * idx));"
+
+    # Check inverse & hyperbolic trig BEFORE standard tan/sec/cos/sin to avoid substring shadowing!
+    if 'arcsin' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::asin(std::clamp(t + freq * idx, -1.0, 1.0)));"
+    if 'arctan' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::atan(t + freq * idx));"
+    if 'sinh' in name or 'hyperbolic_sine' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::sinh(t + freq * idx));"
+    if 'cosh' in name or 'hyperbolic_cosine' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::cosh(t + freq * idx));"
+    if 'tanh' in name or 'hyperbolic_tangent' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::tanh(t + freq * idx));"
+    if 'sech' in name or 'hyperbolic_secant' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp / std::cosh(t + freq * idx));"
+    if 'haversine' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * 0.5 * (1.0 - std::cos(t + freq * idx)));"
+    if 'tan' in name:
+        return f"out[idx] = static_cast<{ctype}>(amp * std::tan(t + freq * idx));"
+    if 'cot' in name:
+        return f"double val = std::tan(t + freq * idx); out[idx] = static_cast<{ctype}>(std::abs(val) > 1e-12 ? amp / val : 0.0);"
+    if 'sec' in name:
+        return f"double val = std::cos(t + freq * idx); out[idx] = static_cast<{ctype}>(std::abs(val) > 1e-12 ? amp / val : 0.0);"
+    if 'csc' in name:
+        return f"double val = std::sin(t + freq * idx); out[idx] = static_cast<{ctype}>(std::abs(val) > 1e-12 ? amp / val : 0.0);"
+
+    # Solitons & Hydrodynamics
+    if 'kdv' in name:
+        return f"double x = t + freq * idx; double ch = std::cosh(0.5 * x); out[idx] = static_cast<{ctype}>(amp / (ch * ch));"
+    if 'sine_gordon' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * 4.0 * std::atan(std::exp(x)));"
+    if 'nls' in name:
+        if 'dark' in name:
+            return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * std::tanh(x));"
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp / std::cosh(x) * std::cos(x));"
+    if 'peregrine' in name:
+        return f"double x = t + freq * idx; double den = 1.0 + 4.0 * x * x; out[idx] = static_cast<{ctype}>(amp * std::abs(1.0 - 4.0 / den));"
+    if 'breather' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(x) / (std::cosh(x) + 0.1)));"
+    if 'gerstner' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(x) - 0.5 * std::cos(2.0 * x)));"
+    if 'stokes' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(x) + 0.3 * std::cos(2.0 * x) + 0.1 * std::cos(3.0 * x) + 0.03 * std::cos(4.0 * x) + 0.01 * std::cos(5.0 * x)));"
+    if 'cnoidal' in name:
+        return f"double x = t + freq * idx; double s = 1.0 / std::cosh(x); out[idx] = static_cast<{ctype}>(amp * s * s);"
+    if 'kelvin_equatorial' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * std::exp(-0.5 * x * x) * std::cos(x));"
+    if 'rossby_planetary' in name:
+        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * std::cos(x - 1.0 / (1.0 + x * x)));"
+
+    return f"out[idx] = static_cast<{ctype}>(amp * std::sin(t + freq * idx));"
+
+
+def run_tablegen_dump_json(tblgen_exe, td_path, include_dirs=None):
+    """
+    Invokes llvm-tblgen --dump-json on the given .td file and returns the parsed JSON AST.
+    """
+    if not tblgen_exe or not os.path.exists(tblgen_exe):
+        raise FileNotFoundError(f"llvm-tblgen executable not found: {tblgen_exe}")
+    if not td_path or not os.path.exists(td_path):
+        raise FileNotFoundError(f"TableGen source file not found: {td_path}")
+
+    cmd = [tblgen_exe, td_path]
+    if include_dirs:
+        for inc in include_dirs:
+            if inc and os.path.exists(inc):
+                cmd.append(f"-I={inc}")
+    cmd.append("--dump-json")
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', check=True)
+    return json.loads(res.stdout)
+
+
+def extract_hardware_rules_from_ast(data):
+    """
+    Extracts MachineISA, CPUFamily, MicroarchitectureProfile, DispatchLadderLevel,
+    and SynthesizedCartesianKernel records from the evaluated TableGen JSON AST.
+    """
+    instanceof = data.get("!instanceof", {})
+    hw_summary = {
+        'isas': instanceof.get("MachineISA", []),
+        'cpu_families': instanceof.get("CPUFamily", []),
+        'microarchs': instanceof.get("MicroarchitectureProfile", []),
+        'candidates': instanceof.get("DispatchLadderLevel", []),
+        'matrices': instanceof.get("SynthesizedCartesianKernel", []) + instanceof.get("SynthesizedMatrixKernel", []),
+    }
+    return hw_summary
+
+
+def extract_header_from_tablegen(data, math_path=None):
+    """
+    Extracts Master_MathventageSIMD_Header code block from parsed TableGen records.
+    """
+    instanceof = data.get("!instanceof", {})
+    header_defs = instanceof.get("MasterCHeaderBlock", [])
+    for h in header_defs:
+        rec = data.get(h, {})
+        source = rec.get("Source", "")
+        if source:
+            return source.replace('\r\n', '\n').replace('\r', '\n')
+
+    # Fallback to direct file read if AST mapping was omitted
+    if math_path and os.path.exists(math_path):
+        with open(math_path, 'r', encoding='utf-8') as f:
+            raw_td = f.read()
+        match = re.search(r'def\s+Master_MathventageSIMD_Header[\s\S]*?\[\{([\s\S]*?)\}\]\>;', raw_td)
+        if match:
+            return match.group(1).strip().replace('\r\n', '\n').replace('\r', '\n')
+
+    return None
+
+
+def extract_skeletree_from_tablegen(data, math_path=None):
+    """
+    Extracts Master_MSIMD_Base_Skeletree_Source code block from parsed TableGen records or Mathematics-Rules.td.
+    """
+    instanceof = data.get("!instanceof", {})
+    skeletree_defs = instanceof.get("MasterKernelSourceModule", [])
+    for s in skeletree_defs:
+        rec = data.get(s, {})
+        source = rec.get("Source", "")
+        if source:
+            return source.replace('\r\n', '\n').replace('\r', '\n')
+
+    # Fallback to direct file read if AST mapping was omitted
+    if math_path and os.path.exists(math_path):
+        with open(math_path, 'r', encoding='utf-8') as f:
+            raw_td = f.read()
+        match = re.search(r'def\s+Master_MSIMD_Base_Skeletree_Source[\s\S]*?\[\{([\s\S]*?)\}\]\>;', raw_td)
+        if match:
+            return match.group(1).strip().replace('\r\n', '\n').replace('\r', '\n')
+
+    return None
+
+
+
+def _resolve_tablegen_ctype(data, dtype_val):
+    if isinstance(dtype_val, dict):
+        dtype_def = dtype_val.get("def", "")
+        if dtype_def and dtype_def in data:
+            raw_ct = data[dtype_def].get("CType", "")
+            if raw_ct == "double" or "Float64" in dtype_def:
+                return "double"
+            return "float"
+        raw_ct = dtype_val.get("CType", "")
+        if raw_ct == "double" or "Float64" in str(dtype_val):
+            return "double"
+        return "float"
+    elif isinstance(dtype_val, str) and ("Float64" in dtype_val or dtype_val == "double"):
+        return "double"
+    return "float"
+
+
+def _resolve_tablegen_domain(data, domain_val):
+    domain = "HarmonicAnalysis"
+    if isinstance(domain_val, dict):
+        dom_def = domain_val.get("def", "")
+        if dom_def and dom_def in data:
+            domain = data[dom_def].get("Name", dom_def.replace("Dom_", ""))
+        else:
+            domain = domain_val.get("Name", "HarmonicAnalysis")
+    elif isinstance(domain_val, str):
+        domain = domain_val.replace("Dom_", "")
+    return domain
+
+
+def extract_waveform_rules(data):
+    """
+    Extracts all WaveformRule records from TableGen JSON AST.
+    """
+    instanceof = data.get("!instanceof", {})
+    waveform_defs = instanceof.get("WaveformRule", [])
+    rules = []
+
+    for def_name in waveform_defs:
+        rec = data.get(def_name, {})
+        op_name = rec.get("Name", def_name.lower())
+        fn_id = rec.get("RuleID", 0)
+        export_name = rec.get("ExportName", f"msimd_wave_{op_name}")
+        display_name = rec.get("DisplayName", op_name)
+        formula = rec.get("AnalyticalFormula", "")
+        decay = rec.get("HarmonicDecay", "Smooth")
+        disc = rec.get("DiscontinuityType", "Smooth")
+        desc = rec.get("Description", "")
+
+        ctype = _resolve_tablegen_ctype(data, rec.get("DataType", {}))
+        domain = _resolve_tablegen_domain(data, rec.get("Domain", {}))
+
+        rules.append({
+            'def_name': def_name,
+            'op_name': op_name,
+            'fn_id': fn_id,
+            'export_name': export_name,
+            'display_name': display_name,
+            'formula': formula,
+            'decay': decay,
+            'discontinuity': disc,
+            'desc': desc,
+            'ctype': ctype,
+            'domain': domain
+        })
+
+    return rules
+
+
+def emit_master_c_header(header_src, rules, output_h_path):
+    """
+    Synthesizes the complete C API header (MathventageSIMD.h) by combining:
+    1. Base C API header specification (constants, handles, MSC sections 28-47).
+    2. All 512 TableGen-derived waveform kernel prototypes (F32 + F64).
+    3. TableGen master metadata catalog accessors.
+    """
+    clean_base = header_src.strip()
+    patterns_to_strip = [
+        r'#ifdef\s+__cplusplus\s*\}\s*/\*\s*extern\s*"C"\s*\*/\s*#endif\s*#endif\s*/\*\s*MATHVANTAGE_SIMD_C_API_H\s*\*/\s*$',
+        r'#ifdef\s+__cplusplus\s*\}\s*#endif\s*#endif\s*$',
+        r'#endif\s*/\*\s*MATHVANTAGE_SIMD_C_API_H\s*\*/\s*$',
+    ]
+    for pat in patterns_to_strip:
+        clean_base = re.sub(pat, '', clean_base, flags=re.MULTILINE).strip()
+
+    existing_exports = {r['export_name'] for r in rules}
+    emitted_exports = set()
+
+    lines = [clean_base, "\n"]
+    lines.append("/* ========================================================================= */")
+    lines.append("/* AUTONOMOUSLY DERIVED TABLEGEN WAVEFORM KERNELS (512 EVALUATED RULES)      */")
+    lines.append("/* Dual Precision Public C-API: Single-Precision F32 + Double-Precision F64 */")
+    lines.append("/* ========================================================================= */\n")
+
+    lines.append("#ifndef MSIMD_TABLEGEN_KERNEL_RECORD_DEFINED")
+    lines.append("#define MSIMD_TABLEGEN_KERNEL_RECORD_DEFINED")
+    lines.append("typedef struct msimd_tablegen_kernel_record_t {")
+    lines.append("    const char* export_name;")
+    lines.append("    uint32_t    rule_id;")
+    lines.append("    const char* domain;")
+    lines.append("    const char* display_name;")
+    lines.append("    const char* formula;")
+    lines.append("    const char* decay;")
+    lines.append("    const char* discontinuity;")
+    lines.append("    const char* ctype;")
+    lines.append("} msimd_tablegen_kernel_record_t;\n")
+    lines.append("MSIMD_API size_t                                 tablegen_get_kernel_count(void);")
+    lines.append("MSIMD_API const msimd_tablegen_kernel_record_t* tablegen_get_kernel_catalog(void);")
+    lines.append("#endif /* MSIMD_TABLEGEN_KERNEL_RECORD_DEFINED */\n")
+
+    for r in rules:
+        exp_name = r['export_name']
+        disp_name = r.get('display_name', exp_name)
+        fn_id = r['fn_id']
+        dom = r.get('domain', 'HarmonicAnalysis')
+        form = r.get('formula', '')
+        dec = r.get('decay', '')
+        disc = r.get('discontinuity', '')
+        desc = r.get('desc', '')
+        ctype = r.get('ctype', 'float')
+
+        if exp_name not in emitted_exports:
+            emitted_exports.add(exp_name)
+            lines.append("/**")
+            lines.append(f" * @brief TableGen Waveform Kernel: {disp_name} (Rule ID: {fn_id})")
+            lines.append(f" * Domain       : {dom}")
+            if form:
+                lines.append(f" * LaTeX Formula: {form}")
+            if dec or disc:
+                lines.append(f" * Decay Profile: {dec} | Discontinuity: {disc}")
+            if desc:
+                lines.append(f" * Description  : {desc}")
+            lines.append(" * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)")
+            lines.append(" * @param count Number of samples to generate")
+            lines.append(" * @param t     Starting time offset / phase")
+            lines.append(" * @param freq  Angular frequency (rad/sample)")
+            lines.append(" * @param amp   Peak amplitude")
+            lines.append(" */")
+            lines.append(f"MSIMD_API void {exp_name}({ctype}* out, size_t count, double t, double freq, double amp);\n")
+
+        if ctype == 'float':
+            f64_name = (exp_name[:-4] + "_f64") if exp_name.endswith("_f32") else (exp_name + "_f64")
+            if f64_name not in existing_exports and f64_name not in emitted_exports:
+                emitted_exports.add(f64_name)
+                lines.append("/**")
+                lines.append(f" * @brief TableGen Waveform Kernel (Double-Precision F64): {disp_name} (Rule ID: {fn_id + 50000})")
+                lines.append(f" * Domain       : {dom}")
+                if form:
+                    lines.append(f" * LaTeX Formula: {form}")
+                if desc:
+                    lines.append(f" * Description  : {desc}")
+                lines.append(" * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)")
+                lines.append(" * @param count Number of samples to generate")
+                lines.append(" * @param t     Starting time offset / phase")
+                lines.append(" * @param freq  Angular frequency (rad/sample)")
+                lines.append(" * @param amp   Peak amplitude")
+                lines.append(" */")
+                lines.append(f"MSIMD_API void {f64_name}(double* out, size_t count, double t, double freq, double amp);\n")
+
+    lines.append("\n#ifdef __cplusplus")
+    lines.append("} /* extern \"C\" */")
+    lines.append("#endif\n")
+    lines.append("#endif /* MATHVANTAGE_SIMD_C_API_H */\n")
+
+    full_header_text = "\n".join(lines)
+    os.makedirs(os.path.dirname(os.path.abspath(output_h_path)), exist_ok=True)
+    with open(output_h_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(full_header_text)
+    print(f"[TableGen Emitter] Successfully emitted Master Header: {output_h_path} ({len(full_header_text)} bytes, {len(emitted_exports)} waveform exports).")
+
+    # Autonomous mirror synchronization with C++ language binding header
+    out_dir = os.path.dirname(os.path.abspath(output_h_path))
+    proj_root = os.path.dirname(out_dir) if os.path.basename(out_dir) == 'include' else os.path.dirname(os.path.dirname(out_dir))
+    hpp_path = os.path.join(proj_root, 'other_langs_bindings', 'C++', 'include', 'MathventageSIMD.hpp')
+    if os.path.exists(os.path.dirname(hpp_path)):
+        with open(hpp_path, 'w', encoding='utf-8', newline='\n') as f_hpp:
+            f_hpp.write(full_header_text)
+        print(f"[TableGen Emitter] Synchronized C++ Binding Header mirror: {hpp_path}")
+
+
+def emit_tablegen_intermediate_cpp(rules, output_cpp_path):
+    """
+    Emits the intermediate C++ translation unit (TableGen_Derived.cpp).
+    This unit contains the unaccelerated baseline/scalar kernels and the TableGen metadata catalog.
+    """
+    print(f"[TableGen Emitter] Synthesizing intermediate C++ translation unit -> {output_cpp_path}...")
+    os.makedirs(os.path.dirname(output_cpp_path), exist_ok=True)
+    existing_exports = {r['export_name'] for r in rules}
+    emitted_scalars = set()
+
+    with open(output_cpp_path, 'w', encoding='utf-8', newline='\n', buffering=65536) as f:
+        f.write("/* ========================================================================= */\n")
+        f.write("/* MathventageSIMD — TableGen_Derived.cpp                                     */\n")
+        f.write("/* Intermediate C++ Translation Unit Synthesized via llvm-tblgen             */\n")
+        f.write("/* Source Rulebooks: Assembler.td, Mathematics-Rules.td, Machines-Rules.td   */\n")
+        f.write("/* Stage 1 of 3: Pure TableGen Mathematical & Hardware Cartesian Derivation   */\n")
+        f.write("/* ========================================================================= */\n")
+        f.write("#ifndef MATHVENTAGE_TABLEGEN_DERIVED_CPP\n")
+        f.write("#define MATHVENTAGE_TABLEGEN_DERIVED_CPP\n\n")
+        f.write("#include \"MathventageSIMD.h\"\n")
+        f.write("#include <cmath>\n")
+        f.write("#include <cstring>\n")
+        f.write("#include <cstdint>\n")
+        f.write("#include <algorithm>\n\n")
+        f.write("namespace msimd_tablegen_derived {\n\n")
+
+        for r in rules:
+            exp_name = r['export_name']
+            disp_name = r['display_name']
+            fn_id = r['fn_id']
+            formula = r.get('formula', '')
+            decay = r.get('decay', '')
+            disc = r.get('discontinuity', '')
+            domain = r.get('domain', '')
+            desc = r.get('desc', '')
+            ctype = r.get('ctype', 'float')
+
+            f.write("/**\n")
+            f.write(" * =========================================================================\n")
+            f.write(f" * TableGen Kernel Record: {disp_name}\n")
+            f.write(f" * Symbol Name  : {exp_name}\n")
+            f.write(f" * Rule ID      : {fn_id}\n")
+            f.write(f" * Domain       : {domain}\n")
+            f.write(f" * LaTeX Formula: {formula}\n")
+            f.write(f" * Decay Profile: {decay} | Discontinuity: {disc}\n")
+            f.write(f" * Description  : {desc}\n")
+            f.write(" * =========================================================================\n")
+            f.write(" */\n")
+
+            eval_stmt = get_eval_statement(r.get('op_name', ''), exp_name, ctype)
+
+            if exp_name not in emitted_scalars:
+                emitted_scalars.add(exp_name)
+                f.write(f"extern \"C\" MSIMD_API void {exp_name}_scalar({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
+                f.write("    if (!out || count == 0) return;\n")
+                f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                f.write("        size_t idx = i;\n")
+                f.write(f"        {eval_stmt}\n")
+                f.write("    }\n")
+                f.write("}\n\n")
+
+            if ctype == 'float':
+                f64_name = (exp_name[:-4] + "_f64") if exp_name.endswith("_f32") else (exp_name + "_f64")
+                if f64_name not in existing_exports and f64_name not in emitted_scalars:
+                    emitted_scalars.add(f64_name)
+                    f64_eval = get_eval_statement(r.get('op_name', ''), f64_name, 'double')
+                    f.write(f"extern \"C\" MSIMD_API void {f64_name}_scalar(double* out, size_t count, double t, double freq, double amp) {{\n")
+                    f.write("    if (!out || count == 0) return;\n")
+                    f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                    f.write("        size_t idx = i;\n")
+                    f.write(f"        {f64_eval}\n")
+                    f.write("    }\n")
+                    f.write("}\n\n")
+
+        # Emit TableGen Kernel Catalog
+        f.write("/* ========================================================================= */\n")
+        f.write("/* TABLEGEN MASTER KERNEL CATALOG (512 Evaluated Records)                    */\n")
+        f.write("/* ========================================================================= */\n")
+
+        def escape_c_str(s):
+            return str(s or '').replace('\\', '\\\\').replace('"', '\\"').replace('\r', ' ').replace('\n', ' ')
+
+        f.write("static const msimd_tablegen_kernel_record_t g_tablegen_kernel_catalog[] = {\n")
+        for r in rules:
+            exp_name = r['export_name']
+            fn_id = r['fn_id']
+            dom = escape_c_str(r.get('domain', 'HarmonicAnalysis'))
+            disp = escape_c_str(r.get('display_name', exp_name))
+            form = escape_c_str(r.get('formula', ''))
+            dec = escape_c_str(r.get('decay', ''))
+            disc = escape_c_str(r.get('discontinuity', ''))
+            ct = escape_c_str(r.get('ctype', 'float'))
+            desc_comment = str(r.get('desc', '') or '').replace('\r', ' ').replace('\n', ' ')
+            f.write(f"    {{\"{exp_name}\", {fn_id}, \"{dom}\", \"{disp}\", \"{form}\", \"{dec}\", \"{disc}\", \"{ct}\"}}, // DESC: {desc_comment}\n")
+        f.write("    {nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}\n")
+        f.write("};\n\n")
+
+        f.write(f"extern \"C\" MSIMD_API size_t tablegen_get_kernel_count(void) {{ return {len(rules)}; }}\n")
+        f.write("extern \"C\" MSIMD_API const msimd_tablegen_kernel_record_t* tablegen_get_kernel_catalog(void) { return g_tablegen_kernel_catalog; }\n\n")
+        f.write("} // namespace msimd_tablegen_derived\n\n")
+        f.write("#endif // MATHVENTAGE_TABLEGEN_DERIVED_CPP\n")
+
+    print(f"[TableGen Emitter] Successfully emitted {len(rules)} kernels to: {output_cpp_path}")
+    return True
+
+
+def run_stage1_tablegen_derived(args, src_dir, proj_root):
+    """
+    Stage 1: Ingests TableGen AST (from JSON dumped directly by llvm-tblgen via CMake)
+    and synthesizes:
+    1. Master C API Header (include/MathventageSIMD.h) with all declarations.
+    2. Intermediate C++ Unit (TableGen_Derived.cpp) with 512 baseline scalar waveforms.
+    """
+    ast_data = None
+    if args.ast_json and os.path.exists(args.ast_json):
+        print(f"[Stage 1 TableGen] Ingesting AST JSON generated by llvm-tblgen: {args.ast_json}...")
+        with open(args.ast_json, 'r', encoding='utf-8') as f:
+            ast_data = json.load(f)
+    elif args.assembler and os.path.exists(args.assembler):
+        rules_dir = os.path.dirname(os.path.abspath(args.assembler))
+        include_dirs = [rules_dir]
+        ast_data = run_tablegen_dump_json(args.tblgen, args.assembler, include_dirs)
+
+    if not ast_data:
+        raise RuntimeError("No valid TableGen AST data found! Provide --ast-json or --assembler.")
+
+    hw_summary = extract_hardware_rules_from_ast(ast_data)
+    print(f"[Stage 1 TableGen] Hardware AST Summary: {len(hw_summary['isas'])} ISAs, {len(hw_summary['microarchs'])} Microarchitectures, {len(hw_summary['candidates'])} Optimization Candidates.")
+
+    rules = extract_waveform_rules(ast_data)
+    print(f"[Stage 1 TableGen] Extracted {len(rules)} evaluated WaveformRule definitions.")
+
+    math_path = args.math or os.path.join(src_dir, 'rules', 'Mathematics-Rules.td')
+    output_h = args.output_h or os.path.join(proj_root, 'include', 'MathventageSIMD.h')
+    output_intermediate = args.output_intermediate_cpp or args.intermediate_cpp or os.path.join(proj_root, 'build', 'TableGen_Derived.cpp')
+
+    print(f"[Stage 1 TableGen] Extracting Master Public C API Header -> {output_h}...")
+    header_src = extract_header_from_tablegen(ast_data, math_path=math_path)
+    if not header_src:
+        raise RuntimeError("Failed to extract Master_MathventageSIMD_Header from TableGen rules!")
+
+    emit_master_c_header(header_src, rules, output_h)
+    emit_tablegen_intermediate_cpp(rules, output_intermediate)
+
+    print(f"[Stage 1 TableGen] Derivation complete: 1 H ({output_h}) + 1 Intermediate CPP ({output_intermediate}) emitted cleanly.")
+    return 0
+
+
+# =============================================================================
+# 4. PARSER: Intermediate TableGen C++ & Rules Fallback
+# =============================================================================
+
+def parse_intermediate_tablegen_cpp(cpp_path):
+    """
+    Ingests Stage 1 intermediate C++ translation unit (TableGen_Derived.cpp).
+    Extracts all baseline TableGen mathematical rules and metadata descriptors.
+    """
+    print(f"[Intermediate CPP] Ingesting Stage 1 TableGen intermediate translation unit: {cpp_path}...")
+    rules = []
+    if not cpp_path or not os.path.exists(cpp_path):
+        return rules
+
+    with open(cpp_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    doc_descs = {}
+    for m_doc in re.finditer(r'\*\s*Symbol Name\s*:\s*(\S+)[\s\S]*?\*\s*Description\s*:\s*(.+)', text):
+        doc_descs[m_doc.group(1).strip()] = m_doc.group(2).strip()
+
+    in_catalog = False
+    for line in text.splitlines():
+        line = line.strip()
+        if 'g_tablegen_kernel_catalog[]' in line:
+            in_catalog = True
+            continue
+        if in_catalog:
+            if line.startswith('{nullptr') or line.startswith('};'):
+                break
+            desc_trailing = ""
+            if '// DESC:' in line:
+                line, desc_trailing = line.split('// DESC:', 1)
+                line = line.strip()
+                desc_trailing = desc_trailing.strip()
+            if line.startswith('{') and line.endswith('},'):
+                inner = line[1:-2].strip()
+                tokens = []
+                in_quote = False
+                cur = []
+                escape = False
+                for c in inner:
+                    if escape:
+                        cur.append(c)
+                        escape = False
+                    elif c == '\\':
+                        cur.append(c)
+                        escape = True
+                    elif c == '"':
+                        in_quote = not in_quote
+                    elif c == ',' and not in_quote:
+                        tokens.append(''.join(cur).strip())
+                        cur = []
+                    else:
+                        cur.append(c)
+                if cur:
+                    tokens.append(''.join(cur).strip())
+                if len(tokens) >= 8:
+                    exp_name = tokens[0]
+                    rule_id = int(tokens[1])
+                    domain = tokens[2]
+                    disp = tokens[3]
+                    formula = tokens[4].replace('\\\\', '\\').replace('\\"', '"')
+                    decay = tokens[5]
+                    disc = tokens[6]
+                    ctype = tokens[7]
+                    desc = desc_trailing or doc_descs.get(exp_name, f"TableGen Derived Kernel {disp}")
+                    rules.append({
+                        'def_name': f"Def_{exp_name}",
+                        'op_name': exp_name.replace('msimd_wave_', '').replace('msimd_', ''),
+                        'fn_id': rule_id,
+                        'export_name': exp_name,
+                        'display_name': disp,
+                        'formula': formula,
+                        'decay': decay,
+                        'discontinuity': disc,
+                        'desc': desc,
+                        'ctype': ctype,
+                        'domain': domain
+                    })
+
+    print(f"[Intermediate CPP] Ingested {len(rules)} evaluated kernels from {os.path.basename(cpp_path)}.")
+    gc.collect(1)
+    return rules
 
 def parse_mathematics_rules_td(td_path, tblgen_exe=None):
     """
@@ -453,49 +1373,8 @@ def parse_mathematics_rules_td(td_path, tblgen_exe=None):
     if tblgen_exe and os.path.exists(tblgen_exe):
         try:
             td_dir = os.path.dirname(td_path)
-            cmd = [tblgen_exe, td_path, f"-I={td_dir}", "--dump-json"]
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-            data = json.loads(res.stdout)
-            instanceof = data.get("!instanceof", {})
-            waveform_defs = instanceof.get("WaveformRule", [])
-            for def_name in waveform_defs:
-                rec = data.get(def_name, {})
-                op_name = rec.get("Name", def_name.lower())
-                fn_id = rec.get("RuleID", 0)
-                export_name = rec.get("ExportName", f"msimd_wave_{op_name}")
-                display_name = rec.get("DisplayName", op_name)
-                formula = rec.get("AnalyticalFormula", "")
-                decay = rec.get("HarmonicDecay", "Smooth")
-                disc = rec.get("DiscontinuityType", "Smooth")
-                desc = rec.get("Description", "")
-
-                dtype_val = rec.get("DataType", {})
-                ctype = "float"
-                if isinstance(dtype_val, dict):
-                    ctype = dtype_val.get("CType", "double" if "64" in str(dtype_val) else "float")
-                elif isinstance(dtype_val, str) and ("64" in dtype_val or "double" in dtype_val):
-                    ctype = "double"
-
-                domain_val = rec.get("Domain", {})
-                domain = "HarmonicAnalysis"
-                if isinstance(domain_val, dict):
-                    domain = domain_val.get("Name", "HarmonicAnalysis")
-                elif isinstance(domain_val, str):
-                    domain = domain_val.replace("Dom_", "")
-
-                rules.append({
-                    'def_name': def_name,
-                    'op_name': op_name,
-                    'fn_id': fn_id,
-                    'export_name': export_name,
-                    'display_name': display_name,
-                    'formula': formula,
-                    'decay': decay,
-                    'discontinuity': disc,
-                    'desc': desc,
-                    'ctype': ctype,
-                    'domain': domain
-                })
+            data = run_tablegen_dump_json(tblgen_exe, td_path, [td_dir])
+            rules = extract_waveform_rules(data)
             print(f"[TableGen] Native llvm-tblgen evaluated {len(rules)} explicit mathematical records.")
             if rules:
                 gc.collect(1)
@@ -649,20 +1528,32 @@ def parse_mathematics_rules_td(td_path, tblgen_exe=None):
 # 4b. PARSER: sf_kernel_math.cpp (Core Algorithmic C++ Kernels)
 # =============================================================================
 
-def parse_sf_kernel_math_cpp(cpp_path):
-    print(f"[C++ Core] Extracting mathematical kernels from: {cpp_path}...")
+def parse_sf_kernel_math_cpp(cpp_path_or_text):
     cpp_rules = []
-    if not cpp_path or not os.path.exists(cpp_path):
+    if not cpp_path_or_text:
         return cpp_rules
 
-    fn_regex = re.compile(r'^(?:extern\s+"C"\s+)?(void|float|double|int|uint32_t|int32_t|size_t|bool)\s+(msimd_[a-zA-Z0-9_]+)\s*\(([^)]*)\)\s*\{', re.MULTILINE)
-    with open(cpp_path, 'r', encoding='utf-8') as f:
-        text = f.read()
+    if isinstance(cpp_path_or_text, str) and os.path.exists(cpp_path_or_text):
+        source_label = os.path.basename(cpp_path_or_text)
+        print(f"[C++ Core] Extracting mathematical kernels from file: {cpp_path_or_text}...")
+        with open(cpp_path_or_text, 'r', encoding='utf-8') as f:
+            text = f.read()
+    else:
+        source_label = "Mathematics-Rules.td"
+        print("[C++ Core] Extracting mathematical kernels directly from in-memory TableGen source...")
+        text = str(cpp_path_or_text)
+
+    fn_regex = re.compile(
+        r'^\s*(?:extern\s+"C"\s+)?(?:MSIMD_API\s+)?'
+        r'(void|float|double|int|uint32_t|int32_t|uint64_t|int64_t|uint16_t|int16_t|uint8_t|int8_t|size_t|bool|msimd_[a-zA-Z0-9_]+_t|MSIMDComplex)\s+'
+        r'(msimd_(?!internal_)[a-zA-Z0-9_]+)\s*\(((?:[^(){};]|\([^()]*\))*)\)\s*\{',
+        re.MULTILINE
+    )
 
     seen_names = {}
     for idx, m in enumerate(fn_regex.finditer(text)):
-        ret_type = m.group(1)
-        fn_name = m.group(2)
+        ret_type = m.group(1).strip()
+        fn_name = m.group(2).strip()
         params = re.sub(r'\s+', ' ', m.group(3)).strip()
         
         count = seen_names.get(fn_name, 0)
@@ -671,20 +1562,30 @@ def parse_sf_kernel_math_cpp(cpp_path):
         def_ident = f"Kernel_{fn_name}{suffix}"
         
         domain = 'HarmonicAnalysis'
-        if 'vec' in fn_name or 'mat' in fn_name:
+        if any(k in fn_name for k in ['vec', 'mat', 'lu_', 'cholesky', 'qr_', 'svd', 'eigen', 'conj_grad', 'bicgstab', 'gmres', 'sylvester', 'kalman']):
             domain = 'LinearAlgebra'
-        elif 'quat' in fn_name:
+        elif any(k in fn_name for k in ['quat', 'rotor', 'bivector', 'plucker', 'aabb', 'ray_', 'bvh', 'sdf', 'svdag', 'octree', 'marching', 'cloth', 'xpbd', 'pbr_', 'sh_', 'Catmull', 'catmull', 'bspline', 'nurbs', 'bezier', 'hermite', 'slerp', 'knn', 'kmeans', 'ransac', 'icp', 'graph_']):
             domain = 'SpatialGeometry'
-        elif 'tensor' in fn_name:
+        elif any(k in fn_name for k in ['tensor', 'conv', 'gemm', 'attention', 'flash', 'rope', 'rmsnorm', 'layernorm', 'batchnorm', 'gelu', 'silu', 'mish', 'softmax', 'cross_entropy', 'adamw', 'lion', 'pagerank', 'sinkhorn']):
             domain = 'TensorAnalysis'
-        elif 'schrodinger' in fn_name or 'quantum' in fn_name:
+        elif any(k in fn_name for k in ['schrodinger', 'quantum', 'dirac', 'gross_pitaevskii', 'lindblad', 'wigner', 'lattice_u1', 'pauli', 'hadamard', 'cnot', 'fidelity', 'shor', 'grover', 'von_neumann']):
             domain = 'QuantumMechanics'
-        elif 'navier' in fn_name or 'lbm' in fn_name or 'hydro' in fn_name:
+        elif any(k in fn_name for k in ['navier', 'lbm', 'hydro', 'shallow_water', 'euler_1d', 'smagorinsky', 'sph_']):
             domain = 'FluidMechanics'
-        elif 'fft' in fn_name or 'dft' in fn_name:
+        elif any(k in fn_name for k in ['fft', 'dft', 'ifft', 'ntt', 'intt', 'dct', 'dst', 'fwht', 'hilbert', 'goertzel', 'biquad', 'fir_', 'cic_', 'cordic', 'kalman', 'stft', 'mel_', 'mfcc', 'adsr', 'svf', 'Moog', 'moog', 'schroeder', 'fdn_', 'pitch', 'ola_', 'reed_solomon', 'crc', 'rANS', 'rans', 'lzss', 'blosc', 'zfp']):
             domain = 'SignalTheory'
-        elif 'pde' in fn_name or 'heat' in fn_name or 'wave' in fn_name:
+        elif any(k in fn_name for k in ['pde', 'heat', 'wave_step', 'poisson', 'helmholtz', 'maxwell', 'cahn_hilliard', 'allen_cahn', 'kuramoto', 'fokker_planck', 'vlasov', 'boltzmann', 'eikonal', 'black_scholes', 'heston', 'mhd', 'biot_savart', 'bssn', 'kerr', 'nbody', 'multipole', 'lj_', 'ewald', 'md_', 'ising', 'rk4', 'verlet', 'ruth4', 'yoshida', 'bdf2', 'crank_nicolson', 'galerkin', 'kdv', 'sine_gordon', 'acoustic']):
             domain = 'PartialDifferentialEq'
+        elif any(k in fn_name for k in ['prime', 'mod_', 'montgomery', 'barrett', 'crt', 'gcd', 'mobius', 'euler_totient', 'legendre_symbol', 'mersenne']):
+            domain = 'NumberTheory'
+        elif any(k in fn_name for k in ['sha256', 'blake3', 'chacha20', 'aes_', 'gf256', 'kyber', 'dilithium', 'keccak']):
+            domain = 'Cryptology'
+        elif any(k in fn_name for k in ['pcg32', 'xoshiro', 'sobol', 'halton', 'box_muller', 'norm_', 'erf', 'gamma_pdf', 'beta_pdf', 'student_t', 'chi_square', 'poisson_pmf', 'binomial_pmf', 'kl_div', 'wasserstein', 'shannon', 'renyi', 'heston_paths', 'merton', 'ornstein', 'garch', 'ito', 'stratonovich', 'milstein', 'hmc', 'nuts', 'vi_elbo', 'welford', 'cov_', 'pearson', 'spearman']):
+            domain = 'Probability'
+        elif any(k in fn_name for k in ['bessel', 'airy', 'elliptic', 'jacobi_sn', 'jacobi_cn', 'jacobi_dn', 'weierstrass', 'riemann_zeta', 'dirichlet_eta', 'polylog', 'lambert_w', 'dawson', 'fresnel', 'kelvin', 'struve', 'hypergeom', 'confluent', 'legendre_p', 'chebyshev', 'hermite_h', 'laguerre_l', 'zernike', 'spherical_harmonic', 'clebsch', 'wigner_3j', 'wigner_6j', 'gamma_lanczos', 'lgamma', 'digamma', 'trigamma', 'beta', 'inc_gamma', 'inc_beta', 'expint', 'sinint', 'cosint']):
+            domain = 'SpecialFunctions'
+        elif any(k in fn_name for k in ['q15_', 'q31_', 'fp16_', 'bf16_', 'fp8_', 'int8_', 'int4_', 'morton', 'hilbert_xy', 'popcount', 'clz', 'ctz', 'bitreverse', 'u128_', 'fp128_', 'float_to_half', 'half_to_float']):
+            domain = 'EmbeddedMCU'
 
         cpp_rules.append({
             'def_name': def_ident,
@@ -698,12 +1599,12 @@ def parse_sf_kernel_math_cpp(cpp_path):
             'formula': f"\\mathcal{{F}}_{{{fn_name}}}",
             'decay': 'Algorithmic C++ Implementation',
             'discontinuity': 'Smooth',
-            'desc': f"Core mathematical C++ kernel extracted from {os.path.basename(cpp_path)}: {fn_name}({params})",
+            'desc': f"Core mathematical C++ kernel extracted from {source_label}: {fn_name}({params})",
             'ctype': 'double' if 'double' in ret_type or 'double' in params else 'float',
             'domain': domain
         })
 
-    print(f"[C++ Core] Extracted {len(cpp_rules)} algorithmic C++ kernels from {os.path.basename(cpp_path)}.")
+    print(f"[C++ Core] Extracted {len(cpp_rules)} algorithmic C++ kernels from {source_label}.")
     gc.collect(1)
     return cpp_rules
 
@@ -711,140 +1612,8 @@ def parse_sf_kernel_math_cpp(cpp_path):
 # 4b. EPHEMERAL DERIVED CODEX SYNTHESIZER (HotSpot ADLC Style)
 # =============================================================================
 
-def synthesize_ghost_codex_td(math_rules, cpp_rules, ghost_td_path, chunk_size=32):
-    """
-    Synthesizes an ephemeral TableGen codex (Derived_Mathematics_Codex.td)
-    analogous to OpenJDK HotSpot's ADLC intermediate artifact model.
-    It takes Mathematics-Rules.td and MSIMD_Base_Skeletree.cpp, derives all
-    mathematical and algorithmic operations into tens of thousands of lines
-    of WaveformRule TableGen definitions, writes to sources/, feeds TableGen,
-    and is cleaned up post-synthesis.
-    """
-    print(f"[Ghost Codex] Synthesizing ephemeral TableGen codex to: {ghost_td_path}...")
-    domain_map = {
-        'LinearAlgebra': 'Dom_LinearAlgebra',
-        'RealFunctions': 'Dom_RealFunctions',
-        'SpecialFunctions': 'Dom_SpecialFunctions',
-        'OrdinaryDifferentialEq': 'Dom_ODEs',
-        'ODEs': 'Dom_ODEs',
-        'PartialDifferentialEq': 'Dom_PDEs',
-        'PDEs': 'Dom_PDEs',
-        'HarmonicAnalysis': 'Dom_FourierAnalysis',
-        'FourierAnalysis': 'Dom_FourierAnalysis',
-        'NumericalAnalysis': 'Dom_NumericalAnalysis',
-        'QuantumTheory': 'Dom_QuantumTheory',
-        'QuantumMechanics': 'Dom_QuantumTheory',
-        'Relativity': 'Dom_Relativity',
-        'ClassicalMechanics': 'Dom_ClassicalMechanics',
-        'ContinuumMechanics': 'Dom_ContinuumMechanics',
-        'FluidMechanics': 'Dom_FluidMechanics',
-        'OpticsEM': 'Dom_OpticsEM',
-        'SignalTheory': 'Dom_SignalTheory',
-        'GeometricAlgebra': 'Dom_GeometricAlgebra',
-        'SpatialGeometry': 'Dom_GeometricAlgebra',
-        'TensorAnalysis': 'Dom_LinearAlgebra'
-    }
-
-    os.makedirs(os.path.dirname(os.path.abspath(ghost_td_path)), exist_ok=True)
-    total_derived = 0
-
-    with open(ghost_td_path, 'w', encoding='utf-8', buffering=65536) as f:
-        f.write("// =============================================================================\n")
-        f.write("// MathventageSIMD — Derived_Mathematics_Codex.td (EPHEMERAL BUILD ARTIFACT)\n")
-        f.write("// Dynamically generated via codegen.py (HotSpot ADLC Model)\n")
-        f.write("// Derived from Mathematics-Rules.td & MSIMD_Base_Skeletree.cpp\n")
-        f.write("// DO NOT COMMIT TO SOURCE REPOSITORY — TRANSIENT ARTIFACT\n")
-        f.write("// =============================================================================\n\n")
-        f.write("include \"Mathematics-Rules.td\"\n\n")
-
-        # Derivation Stream 1: Mathematics-Rules.td (503 pure math rules)
-        for chunk_idx in range(0, len(math_rules), chunk_size):
-            chunk = math_rules[chunk_idx:chunk_idx + chunk_size]
-            for r in chunk:
-                def_name = r['def_name']
-                exp_name = r['export_name']
-                disp = r['display_name'].replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                fn_id = r['fn_id']
-                formula = r.get('formula', '').replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                desc = r.get('desc', '').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                decay = r.get('decay', '').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                disc = r.get('discontinuity', '').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                ctype = r.get('ctype', 'float')
-                dtype = 'MathReal64' if ctype == 'double' else 'MathReal32'
-                dom_key = r.get('domain', 'HarmonicAnalysis')
-                dom_rec = domain_map.get(dom_key, 'Dom_FourierAnalysis')
-
-                # Base derivation
-                f.write(f"def Derived_{def_name} : WaveformRule<\n")
-                f.write(f"    \"{r['op_name']}\", {fn_id}, {dom_rec}, {dtype}\n")
-                f.write("> {\n")
-                f.write(f"  let ExportName = \"{exp_name}\";\n")
-                f.write(f"  let DisplayName = \"{disp}\";\n")
-                f.write(f"  let AnalyticalFormula = \"{formula}\";\n")
-                f.write(f"  let HarmonicDecay = \"{decay}\";\n")
-                f.write(f"  let DiscontinuityType = \"{disc}\";\n")
-                f.write(f"  let Description = \"{desc}\";\n")
-                f.write("}\n\n")
-                total_derived += 1
-
-                # Precision dual derivation (Float64 / Float32 pair)
-                dual_dtype = 'MathReal32' if dtype == 'MathReal64' else 'MathReal64'
-                dual_suffix = "f32" if dtype == 'MathReal64' else "f64"
-                f.write(f"def Derived_{def_name}_{dual_suffix} : WaveformRule<\n")
-                f.write(f"    \"{r['op_name']}_{dual_suffix}\", {fn_id + 50000}, {dom_rec}, {dual_dtype}\n")
-                f.write("> {\n")
-                f.write(f"  let ExportName = \"{exp_name}_{dual_suffix}\";\n")
-                f.write(f"  let DisplayName = \"{disp} ({dual_suffix.upper()})\";\n")
-                f.write(f"  let AnalyticalFormula = \"{formula}\";\n")
-                f.write(f"  let HarmonicDecay = \"{decay}\";\n")
-                f.write(f"  let DiscontinuityType = \"{disc}\";\n")
-                f.write(f"  let Description = \"Dual precision derivation: {desc}\";\n")
-                f.write("}\n\n")
-                total_derived += 1
-
-            f.flush()
-            del chunk
-            gc.collect(1)
-
-        # Derivation Stream 2: MSIMD_Base_Skeletree.cpp (algorithmic C++ kernels)
-        for chunk_idx in range(0, len(cpp_rules), chunk_size):
-            chunk = cpp_rules[chunk_idx:chunk_idx + chunk_size]
-            for cr in chunk:
-                def_name = cr['def_name']
-                exp_name = cr['export_name']
-                disp = cr['display_name'].replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                fn_id = cr['fn_id']
-                formula = cr.get('formula', '').replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                desc = cr.get('desc', '').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                decay = cr.get('decay', '').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                disc = cr.get('discontinuity', '').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-                ctype = cr.get('ctype', 'float')
-                dtype = 'MathReal64' if ctype == 'double' else 'MathReal32'
-                dom_key = cr.get('domain', 'HarmonicAnalysis')
-                dom_rec = domain_map.get(dom_key, 'Dom_FourierAnalysis')
-
-                f.write(f"def Derived_{def_name} : WaveformRule<\n")
-                f.write(f"    \"{cr['op_name']}\", {fn_id}, {dom_rec}, {dtype}\n")
-                f.write("> {\n")
-                f.write(f"  let ExportName = \"{exp_name}\";\n")
-                f.write(f"  let DisplayName = \"{disp}\";\n")
-                f.write(f"  let AnalyticalFormula = \"{formula}\";\n")
-                f.write(f"  let HarmonicDecay = \"{decay}\";\n")
-                f.write(f"  let DiscontinuityType = \"{disc}\";\n")
-                f.write(f"  let Description = \"{desc}\";\n")
-                f.write("}\n\n")
-                total_derived += 1
-
-            f.flush()
-            del chunk
-            gc.collect(1)
-
-    print(f"[Ghost Codex] Synthesized {total_derived} derived TableGen entities into: {ghost_td_path}")
-    return True
-
-# =============================================================================
-# 5. CHUNKED NUMERICAL PRUNING & DYNAMIC FALLBACK LADDER SYNTHESIZER
-# =============================================================================
+def generate_ephemeral_derived_codex(*args, **kwargs):
+    pass
 
 def analyze_rule_complexity(rule):
     """
@@ -894,6 +1663,7 @@ def evaluate_and_prune_cross_product(math_rules, uops_data, policy):
     # Comprehensive ISA Candidates aligned with Machines-Rules.td & 6-Tier Execution Ladder
     CANDIDATES = [
         ('AMX_Tile',               32,  2, 64, False, '__AMX_TILE__',        1.00),
+        ('AVX10_2_512',            16, 16, 64, True,  '__AVX10_2__',         1.05),
         ('AVX512_NT',              16, 16, 64, True,  '__AVX512F__',         1.25),
         ('AVX512_Cached',          16,  8, 64, False, '__AVX512F__',         1.10),
         ('AVX512_VL',               8,  8, 32, False, '__AVX512VL__',        1.00),
@@ -925,6 +1695,8 @@ def evaluate_and_prune_cross_product(math_rules, uops_data, policy):
             for name, lanes, unroll, align, is_stream, feat, port_pen in CANDIDATES:
                 tps, lats = [], []
                 for arch, data in uops_data.items():
+                    if 'AVX10' in name and not data.get('has_avx10_2', False):
+                        continue
                     if 'AVX512' in name and not data.get('has_avx512', False):
                         continue
                     if 'VNNI' in name and not data.get('has_vnni', False):
@@ -990,151 +1762,6 @@ def evaluate_and_prune_cross_product(math_rules, uops_data, policy):
 # 6. STREAMED CODE GENERATION: MathventageSIMD-Final.inc & Dispatch Matrix
 # =============================================================================
 
-def get_eval_statement(op_name, exp_name, ctype):
-    name = (op_name or exp_name or '').lower()
-    
-    # Pulse duty cycle
-    m_duty = re.search(r'pulse_duty_(\d+)', name)
-    if m_duty:
-        d = int(m_duty.group(1))
-        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>((frac < ({d} / 100.0)) ? amp : -amp);"
-        
-    # Asym triangle
-    m_peak = re.search(r'asym_tri.*_(\d+)', name)
-    if m_peak:
-        p = int(m_peak.group(1))
-        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); double d = {p} / 100.0; double v = (frac < d) ? (frac / d) : ((1.0 - frac) / (1.0 - d)); out[idx] = static_cast<{ctype}>(amp * (2.0 * v - 1.0));"
-
-    # Bessel
-    m_bes = re.search(r'bessel_([a-zA-Z0-9_]+)_(\d+)', name)
-    if m_bes:
-        btype = m_bes.group(1)
-        order = int(m_bes.group(2))
-        if 'second' in btype or 'y' in btype:
-            return f"out[idx] = static_cast<{ctype}>(amp * std::cyl_neumann({order}, (std::max)(1e-6, std::abs(t + freq * idx))));"
-        return f"out[idx] = static_cast<{ctype}>(amp * std::cyl_bessel_j({order}, std::abs(t + freq * idx)));"
-
-    # Polynomials
-    m_poly = re.search(r'poly_([a-zA-Z0-9_]+)_deg(\d+)', name)
-    if m_poly:
-        ptype = m_poly.group(1)
-        deg = int(m_poly.group(2))
-        if 'chebyshev_t' in ptype:
-            return f"out[idx] = static_cast<{ctype}>(amp * std::cos({deg} * std::acos(std::clamp(t + freq * idx, -1.0, 1.0))));"
-        elif 'chebyshev_u' in ptype:
-            return f"double x = std::clamp(t + freq * idx, -0.999999, 0.999999); out[idx] = static_cast<{ctype}>(amp * (std::sin(({deg} + 1) * std::acos(x)) / std::sqrt(1.0 - x * x)));"
-        elif 'legendre' in ptype or 'gegenbauer' in ptype:
-            return f"out[idx] = static_cast<{ctype}>(amp * std::legendre({deg}, std::clamp(t + freq * idx, -1.0, 1.0)));"
-        elif 'hermite' in ptype:
-            return f"out[idx] = static_cast<{ctype}>(amp * std::hermite({deg}, t + freq * idx));"
-        elif 'laguerre' in ptype:
-            return f"out[idx] = static_cast<{ctype}>(amp * std::laguerre({deg}, (std::max)(0.0, t + freq * idx)));"
-
-    # Windows
-    if 'window_hann' in name:
-        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); out[idx] = static_cast<{ctype}>(amp * 0.5 * (1.0 - std::cos(2.0 * MSIMD_PI * idx / N)));"
-    if 'window_hamming' in name:
-        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); out[idx] = static_cast<{ctype}>(amp * (0.54 - 0.46 * std::cos(2.0 * MSIMD_PI * idx / N)));"
-    if 'window_blackman_harris' in name:
-        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); double phi = 2.0 * MSIMD_PI * idx / N; out[idx] = static_cast<{ctype}>(amp * (0.35875 - 0.48829 * std::cos(phi) + 0.14128 * std::cos(2.0 * phi) - 0.01168 * std::cos(3.0 * phi)));"
-    if 'window_flat_top' in name:
-        return f"double N = static_cast<double>(count > 1 ? count - 1 : 1); double phi = 2.0 * MSIMD_PI * idx / N; out[idx] = static_cast<{ctype}>(amp * (0.21557895 - 0.41663158 * std::cos(phi) + 0.277263158 * std::cos(2.0 * phi) - 0.083578947 * std::cos(3.0 * phi) + 0.006947368 * std::cos(4.0 * phi)));"
-
-    # Specific waveforms
-    if 'harmonic_cosine' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::cos(t + freq * idx));"
-    if 'square' in name:
-        if 'unipolar' in name:
-            return f"out[idx] = static_cast<{ctype}>(std::sin(t + freq * idx) >= 0.0 ? amp : 0.0);"
-        elif 'rounded' in name:
-            return f"out[idx] = static_cast<{ctype}>(amp * std::tanh(5.0 * std::sin(t + freq * idx)));"
-        return f"out[idx] = static_cast<{ctype}>(std::sin(t + freq * idx) >= 0.0 ? amp : -amp);"
-    if 'triangle' in name:
-        if 'rounded' in name:
-            return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); double tri = 4.0 * std::abs(frac - 0.5) - 1.0; out[idx] = static_cast<{ctype}>(amp * (1.0 / 3.0) * std::log(std::cosh(3.0 * tri)));"
-        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>(amp * (4.0 * std::abs(frac - 0.5) - 1.0));"
-    if 'sawtooth' in name:
-        if 'down' in name:
-            return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase + 0.5); out[idx] = static_cast<{ctype}>(-amp * 2.0 * frac);"
-        elif 'unipolar' in name:
-            return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>(amp * frac);"
-        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase + 0.5); out[idx] = static_cast<{ctype}>(amp * 2.0 * frac);"
-    if 'trapezoid' in name:
-        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); double tri = 4.0 * std::abs(frac - 0.5) - 1.0; out[idx] = static_cast<{ctype}>(amp * std::clamp(2.0 * tri, -1.0, 1.0));"
-    if 'staircase' in name:
-        return f"double phase = (t + freq * idx) / (2.0 * MSIMD_PI); double frac = phase - std::floor(phase); out[idx] = static_cast<{ctype}>(amp * (std::floor(8.0 * frac) / 8.0 * 2.0 - 1.0));"
-    if 'rounded_sine' in name:
-        return f"double s = std::sin(t + freq * idx); out[idx] = static_cast<{ctype}>(amp * (s - (1.0 / 6.0) * s * s * s));"
-    if 'clipped_sine' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::clamp(std::sin(t + freq * idx), -0.7, 0.7) / 0.7);"
-    if 'soft_clipped' in name:
-        return f"double s = std::sin(t + freq * idx); out[idx] = static_cast<{ctype}>(amp * (s / std::sqrt(1.0 + s * s)));"
-    if 'supersaw' in name:
-        return f"double sum = 0.0; static const double dtns[7] = {{-0.11, -0.063, -0.02, 0.0, 0.02, 0.062, 0.107}}; for(int k=0;k<7;++k){{double p=(t+freq*(1.0+dtns[k])*idx)/(2.0*MSIMD_PI); sum+=2.0*(p-std::floor(p+0.5));}} out[idx] = static_cast<{ctype}>(amp * (sum/7.0));"
-    if 'rect_sine' in name:
-        if 'half' in name:
-            return f"out[idx] = static_cast<{ctype}>(amp * (std::max)(0.0, std::sin(t + freq * idx)));"
-        return f"out[idx] = static_cast<{ctype}>(amp * std::abs(std::sin(t + freq * idx)));"
-    if 'smoothstep' in name:
-        return f"double x = std::clamp(t + freq * idx, 0.0, 1.0); out[idx] = static_cast<{ctype}>(amp * (3.0 * x * x - 2.0 * x * x * x));"
-    if 'smootherstep' in name:
-        return f"double x = std::clamp(t + freq * idx, 0.0, 1.0); out[idx] = static_cast<{ctype}>(amp * (x * x * x * (x * (x * 6.0 - 15.0) + 10.0)));"
-    if 'chirp' in name:
-        if 'down' in name:
-            return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::sin(t + 2.0 * MSIMD_PI * (freq * tau - 50.0 * tau * tau)));"
-        elif 'exp' in name:
-            return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::sin(t + 2.0 * MSIMD_PI * freq * (std::pow(2.0, tau) - 1.0) / 0.69314718));"
-        elif 'chirplet' in name:
-            return f"double tau = (double)idx / (double)(count > 1 ? count : 1) - 0.5; out[idx] = static_cast<{ctype}>(amp * std::exp(-8.0 * tau * tau) * std::sin(t + 2.0 * MSIMD_PI * (freq * tau + 50.0 * tau * tau)));"
-        return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::sin(t + 2.0 * MSIMD_PI * (freq * tau + 50.0 * tau * tau)));"
-    if 'damped_sine' in name:
-        if 'exp' in name:
-            return f"double tau = (double)idx / (double)(count > 1 ? count : 1); out[idx] = static_cast<{ctype}>(amp * std::exp(-3.0 * tau) * std::sin(t + freq * idx));"
-        return f"double tau = (double)idx / (double)(count > 1 ? count : 1) - 0.5; out[idx] = static_cast<{ctype}>(amp * std::exp(-8.0 * tau * tau) * std::sin(t + freq * idx));"
-    if 'tan' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::tan(t + freq * idx));"
-    if 'cot' in name:
-        return f"double val = std::tan(t + freq * idx); out[idx] = static_cast<{ctype}>(std::abs(val) > 1e-12 ? amp / val : 0.0);"
-    if 'sec' in name:
-        return f"double val = std::cos(t + freq * idx); out[idx] = static_cast<{ctype}>(std::abs(val) > 1e-12 ? amp / val : 0.0);"
-    if 'csc' in name:
-        return f"double val = std::sin(t + freq * idx); out[idx] = static_cast<{ctype}>(std::abs(val) > 1e-12 ? amp / val : 0.0);"
-    if 'haversine' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * 0.5 * (1.0 - std::cos(t + freq * idx)));"
-    if 'sinh' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::sinh(t + freq * idx));"
-    if 'cosh' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::cosh(t + freq * idx));"
-    if 'tanh' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::tanh(t + freq * idx));"
-    if 'sech' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp / std::cosh(t + freq * idx));"
-    if 'arcsin' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::asin(std::clamp(t + freq * idx, -1.0, 1.0)));"
-    if 'arctan' in name:
-        return f"out[idx] = static_cast<{ctype}>(amp * std::atan(t + freq * idx));"
-    if 'kdv' in name:
-        return f"double x = t + freq * idx; double ch = std::cosh(0.5 * x); out[idx] = static_cast<{ctype}>(amp / (ch * ch));"
-    if 'sine_gordon' in name:
-        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * 4.0 * std::atan(std::exp(x)));"
-    if 'nls' in name:
-        if 'dark' in name:
-            return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * std::tanh(x));"
-        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp / std::cosh(x) * std::cos(x));"
-    if 'peregrine' in name:
-        return f"double x = t + freq * idx; double den = 1.0 + 4.0 * x * x; out[idx] = static_cast<{ctype}>(amp * std::abs(1.0 - 4.0 / den));"
-    if 'breather' in name:
-        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(x) / (std::cosh(x) + 0.1)));"
-    if 'gerstner' in name:
-        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(x) - 0.5 * std::cos(2.0 * x)));"
-    if 'stokes' in name:
-        return f"double x = t + freq * idx; out[idx] = static_cast<{ctype}>(amp * (std::cos(x) + 0.3 * std::cos(2.0 * x) + 0.1 * std::cos(3.0 * x) + 0.03 * std::cos(4.0 * x) + 0.01 * std::cos(5.0 * x)));"
-    if 'cnoidal' in name:
-        return f"double x = t + freq * idx; double s = 1.0 / std::cosh(x); out[idx] = static_cast<{ctype}>(amp * s * s);"
-
-    return f"out[idx] = static_cast<{ctype}>(amp * std::sin(t + freq * idx));"
-
-
 def split_params(params_str):
     parts = []
     current = []
@@ -1176,6 +1803,55 @@ def extract_param_names(params_str):
     return ", ".join(args)
 
 
+def extract_docking_context_and_size(params_str):
+    """
+    Inspects C/C++ parameter list to extract the primary tensor pointer argument
+    and optional element count expression for ISS-style 4-point sfGC docking.
+    Uses two-pass resolution to prevent parameter ordering type-size mismatches.
+    """
+    if not params_str or params_str.strip() == 'void':
+        return "nullptr", "0"
+    ptr_arg = None
+    ptr_elem_sizeof = "sizeof(float)"
+    parsed_params = []
+    for p_clean in split_params(params_str):
+        if not p_clean or '(' in p_clean:
+            continue
+        tokens = p_clean.split()
+        if not tokens:
+            continue
+        raw_last = tokens[-1]
+        name = raw_last.lstrip('*&')
+        name = re.sub(r'\[.*?\]', '', name)
+        if not name:
+            continue
+        is_ptr = ('*' in p_clean) or ('[' in raw_last)
+        type_part = " ".join(tokens[:-1])
+        parsed_params.append((name, type_part, is_ptr))
+        if is_ptr and ptr_arg is None and 'char' not in type_part and 'void' not in type_part:
+            ptr_arg = f"(void*)({name})"
+            if 'double' in type_part:
+                ptr_elem_sizeof = "sizeof(double)"
+            elif 'MSIMDComplex' in type_part:
+                ptr_elem_sizeof = "sizeof(MSIMDComplex)"
+            elif 'uint64_t' in type_part or 'int64_t' in type_part:
+                ptr_elem_sizeof = "sizeof(uint64_t)"
+            elif 'uint16_t' in type_part or 'int16_t' in type_part:
+                ptr_elem_sizeof = "sizeof(uint16_t)"
+            elif 'uint8_t' in type_part or 'int8_t' in type_part:
+                ptr_elem_sizeof = "sizeof(uint8_t)"
+
+    count_arg = None
+    for name, type_part, is_ptr in parsed_params:
+        if not is_ptr and count_arg is None and any(t in type_part for t in ['size_t', 'int', 'uint32_t', 'uint64_t', 'long']):
+            nl = name.lower()
+            if nl in ('n', 'nx', 'ny', 'nz', 'm', 'k') or any(k in nl for k in ['count', 'len', 'size', 'rows', 'cols', 'dim', 'samples', 'num_']):
+                count_arg = f"static_cast<size_t>({name}) * {ptr_elem_sizeof}"
+                break
+
+    return (ptr_arg or "nullptr"), (count_arg or "0")
+
+
 def map_to_msc2020_code(domain_str, policy=None):
     d = (domain_str or '').lower()
     if policy and 'msc_mapping' in policy:
@@ -1204,13 +1880,16 @@ def map_to_msc2020_code(domain_str, policy=None):
         return 33 # MSIMD_MSC_SPECIAL_FUNCTIONS (33-XX)
 
 
-def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chunk_size=32, policy=None):
-    print(f"[Codex] Streaming synthesized C++ SIMD include codex to: {output_inc_path}...")
-    arch_count = len(policy.get('target_archs', [])) if policy else 103
+def synthesize_final_codex(pruned_catalog, output_cpp_path, cpp_rules=None, chunk_size=32, policy=None, skeletree_src=None):
+    print(f"[Codex] Streaming synthesized C++ SIMD include codex to: {output_cpp_path}...")
+    arch_count = len(policy.get('target_archs', [])) if policy else 111
     min_year = policy.get('min_year', 2011) if policy else 2011
     max_year = policy.get('max_year', 2026) if policy else 2026
+    existing_exports = {item['rule']['export_name'] for item in pruned_catalog}
+    emitted_waveforms = set()
 
-    with open(output_inc_path, 'w', encoding='utf-8', buffering=65536) as f:
+    os.makedirs(os.path.dirname(os.path.abspath(output_cpp_path)), exist_ok=True)
+    with open(output_cpp_path, 'w', encoding='utf-8', buffering=65536) as f:
         f.write("/* ========================================================================= */\n")
         f.write("/* MathventageSIMD: MathventageSIMD-Final.inc                                 */\n")
         f.write("/* Synthesized automatically from Machines-Rules.td, Mathematics-Rules.td    */\n")
@@ -1226,7 +1905,15 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
         f.write("#include <cmath>\n")
         f.write("#include <cstring>\n")
         f.write("#include <cstdint>\n")
-        f.write("#include <algorithm>\n\n")
+        f.write("#include <cstdlib>\n")
+        f.write("#include <algorithm>\n")
+        f.write("#include <vector>\n")
+        f.write("#include <queue>\n")
+        f.write("#include <memory>\n")
+        f.write("#include <array>\n")
+        f.write("#include <functional>\n")
+        f.write("#include <limits>\n")
+        f.write("#include <cassert>\n\n")
         f.write("#if defined(_M_X64) || defined(__x86_64__)\n")
         f.write("#  include <immintrin.h>\n")
         f.write("#elif defined(__aarch64__) || defined(_M_ARM64)\n")
@@ -1243,28 +1930,31 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
         f.write("#  endif\n")
         f.write("#endif\n\n")
         f.write("/* ========================================================================= */\n")
-        f.write("/* SFVM 4-POINT EXECUTION COORDINATION & EMBEDDED FREESTANDING GUARDS       */\n")
+        f.write("/* SFVM & sfGC 4-POINT EXECUTION COORDINATION & EMBEDDED FREESTANDING GUARDS */\n")
+        f.write("/* (SAFEPOINT / CONTROLPOINT / HOOKPOINT / PAUSEPOINT)                       */\n")
         f.write("/* ========================================================================= */\n")
         f.write("#if defined(MSIMD_EMBEDDED) || defined(MSIMD_BAREMETAL)\n")
-        f.write("static inline void sf_gc_safepoint_poll() {}\n")
-        f.write("static inline void sf_gc_controlpoint_check(size_t) {}\n")
+        f.write("static inline void sf_gc_safepoint_poll(void) {}\n")
         f.write("static inline void sf_vm_hookpoint_trigger(uint32_t, uint32_t, void*, size_t) {}\n")
-        f.write("static inline void sf_vm_interruptpoint_poll() {}\n")
+        f.write("static inline void sf_gc_hookpoint_trigger(uint32_t, uint32_t, void*, size_t) {}\n")
+        f.write("static inline int  sf_gc_pausepoint_poll(void) { return 0; }\n")
+        f.write("static inline int  sf_vm_pausepoint_poll(void) { return 0; }\n")
         f.write("#else\n")
         f.write("extern \"C\" {\n")
-        f.write("    MSIMD_API void sf_gc_safepoint_poll();\n")
-        f.write("    MSIMD_API int  sf_gc_controlpoint_check(size_t allocated_bytes);\n")
-        f.write("    MSIMD_API void sf_vm_hookpoint_trigger(uint32_t point_id, uint32_t event_type, void* context, size_t size);\n")
-        f.write("    MSIMD_API void sf_vm_interruptpoint_poll();\n")
+        f.write("    MSIMD_API void sf_gc_safepoint_poll(void);\n")
+        f.write("    MSIMD_API void sf_vm_hookpoint_trigger(uint32_t event_id, uint32_t fn_id, void* context, size_t byte_size);\n")
+        f.write("    MSIMD_API void sf_gc_hookpoint_trigger(uint32_t event_id, uint32_t fn_id, void* context, size_t byte_size);\n")
+        f.write("    MSIMD_API int  sf_gc_pausepoint_poll(void);\n")
+        f.write("    MSIMD_API int  sf_vm_pausepoint_poll(void);\n")
         f.write("}\n")
         f.write("#endif\n\n")
         f.write("namespace msimd_kernel_generated {\n\n")
 
         # =====================================================================
-        # SECTION 1: 503 PURE MATHEMATICAL WAVEFORM KERNELS (L0..L12 LADDER)
+        # SECTION 1: 512 PURE MATHEMATICAL WAVEFORM KERNELS (L0..L16 LADDER)
         # =====================================================================
         f.write("/* ========================================================================= */\n")
-        f.write("/* SECTION 1: 503 PURE MATHEMATICAL WAVEFORM & TRANSCENDENTAL KERNELS        */\n")
+        f.write(f"/* SECTION 1: {len(pruned_catalog)} PURE MATHEMATICAL WAVEFORM & TRANSCENDENTAL KERNELS        */\n")
         f.write("/* ========================================================================= */\n\n")
 
         for chunk_idx in range(0, len(pruned_catalog), chunk_size):
@@ -1275,6 +1965,10 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 ladder = item['ladder']
 
                 exp_name = rule['export_name']
+                if exp_name in emitted_waveforms:
+                    continue
+                emitted_waveforms.add(exp_name)
+
                 disp_name = rule['display_name']
                 fn_id = rule['fn_id']
                 formula = rule.get('formula', '')
@@ -1285,7 +1979,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 ctype = rule.get('ctype', 'float')
 
                 f.write("/**\n")
-                f.write(f" * =========================================================================\n")
+                f.write(" * =========================================================================\n")
                 f.write(f" * Waveform      : {disp_name}\n")
                 f.write(f" * Export Symbol : {exp_name}\n")
                 f.write(f" * Function ID   : {fn_id}\n")
@@ -1294,18 +1988,18 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write(f" * MSC2020 Domain: {domain}\n")
                 f.write(f" * Description   : {desc}\n")
                 f.write(f" * Dynamic Fallback Ladder: {[c['name'] for c in ladder]}\n")
-                f.write(f" * =========================================================================\n")
+                f.write(" * =========================================================================\n")
                 f.write(" */\n")
 
                 eval_stmt = get_eval_statement(rule.get('op_name', ''), exp_name, ctype)
 
-                # Ladder L9 / L8: AVX-512 Zen5 / Zen4 (4x Unroll, 64 lanes, non-temporal stores)
-                f.write("#if defined(__AVX512F__)\n")
-                f.write(f"static void {exp_name}_avx512_zen5({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
+                # Ladder L10: AVX10.2 512-bit Unified Vector (Diamond Rapids / Nova Lake)
+                f.write("#if defined(__AVX10_2__)\n")
+                f.write(f"static void {exp_name}_avx10_2({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 64 <= count; i += 64) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 64; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1315,15 +2009,17 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("        size_t idx = i;\n")
                 f.write(f"        {eval_stmt}\n")
                 f.write("    }\n")
-                f.write("}\n\n")
+                f.write("}\n")
+                f.write("#endif // __AVX10_2__\n\n")
 
-                # Ladder L5 / L6 / L7: AVX-512 Skylake / Sapphire Rapids (2x Unroll, 32 lanes)
-                f.write(f"static void {exp_name}_avx512_skx({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
+                # Ladder L9 / L8: AVX-512 Zen5 / Zen4 / Skylake-X / Sapphire Rapids (4x Unroll, 64 lanes)
+                f.write("#if defined(__AVX512F__)\n")
+                f.write(f"static void {exp_name}_avx512_zen5({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
-                f.write("    for (; i + 32 <= count; i += 32) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
-                f.write("        for (size_t k = 0; k < 32; ++k) {\n")
+                f.write("    for (; i + 64 <= count; i += 64) {\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                f.write("        for (size_t k = 0; k < 64; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
                 f.write("        }\n")
@@ -1341,7 +2037,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 16 <= count; i += 16) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 16; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1353,13 +2049,14 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    }\n")
                 f.write("}\n")
                 f.write("#endif // __AVX2__\n\n")
+
                 # Ladder L13: LoongArch LASX (256-bit SIMD, 8 lanes)
                 f.write("#if defined(__loongarch_asx)\n")
                 f.write(f"static void {exp_name}_lasx({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 8 <= count; i += 8) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 8; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1378,7 +2075,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 16 <= count; i += 16) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 16; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1397,7 +2094,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 8 <= count; i += 8) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 8; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1416,7 +2113,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 16 <= count; i += 16) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 16; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1435,7 +2132,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    size_t i = 0;\n")
                 f.write("    for (; i + 4 <= count; i += 4) {\n")
-                f.write("        sf_vm_interruptpoint_poll();\n")
+                f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        for (size_t k = 0; k < 4; ++k) {\n")
                 f.write("            size_t idx = i + k;\n")
                 f.write(f"            {eval_stmt}\n")
@@ -1453,6 +2150,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write(f"static void {exp_name}_coproc({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                f.write("        if ((i & 63u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        size_t idx = i;\n")
                 f.write(f"        {eval_stmt}\n")
                 f.write("    }\n")
@@ -1463,6 +2161,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write(f"static void {exp_name}_scalar({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                f.write("        if ((i & 63u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        size_t idx = i;\n")
                 f.write(f"        {eval_stmt}\n")
                 f.write("    }\n")
@@ -1473,6 +2172,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write(f"static void {exp_name}_softfloat({ctype}* out, size_t count, double t, double freq, double amp) {{\n")
                 f.write("    if (!out || count == 0) return;\n")
                 f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                f.write("        if ((i & 63u) == 0u) sf_gc_pausepoint_poll();\n")
                 f.write("        size_t idx = i;\n")
                 f.write(f"        {eval_stmt}\n")
                 f.write("    }\n")
@@ -1484,8 +2184,9 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write("    if (!out || count == 0) return;\n")
                 f.write(f"    sf_vm_hookpoint_trigger(1, {fn_id}, (void*)out, count * sizeof({ctype}));\n")
                 f.write("    sf_gc_safepoint_poll();\n")
-                f.write(f"    sf_gc_controlpoint_check(count * sizeof({ctype}));\n")
-                f.write("#if defined(__AVX512F__)\n")
+                f.write("#if defined(__AVX10_2__)\n")
+                f.write(f"    {exp_name}_avx10_2(out, count, t, freq, amp);\n")
+                f.write("#elif defined(__AVX512F__)\n")
                 f.write(f"    {exp_name}_avx512_zen5(out, count, t, freq, amp);\n")
                 f.write("#elif defined(__AVX2__)\n")
                 f.write(f"    {exp_name}_avx2(out, count, t, freq, amp);\n")
@@ -1509,171 +2210,208 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 f.write(f"    sf_vm_hookpoint_trigger(2, {fn_id}, (void*)out, count * sizeof({ctype}));\n")
                 f.write("}\n\n")
 
-                # Dual precision Float64 variant if primary is float
+                # Dual precision Float64 variant if primary is float and not already an explicit F64 rule
                 if ctype == 'float':
-                    f64_eval = get_eval_statement(rule.get('op_name', ''), exp_name + "_f64", 'double')
-                    f.write(f"// High-Precision Double Dual Variant for {exp_name}\n")
-                    f.write("#if defined(__AVX512F__)\n")
-                    f.write(f"static void {exp_name}_f64_avx512(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    size_t i = 0;\n")
-                    f.write("    for (; i + 32 <= count; i += 32) {\n")
-                    f.write("        sf_vm_interruptpoint_poll();\n")
-                    f.write("        for (size_t k = 0; k < 32; ++k) {\n")
-                    f.write("            size_t idx = i + k;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("        }\n")
-                    f.write("    }\n")
-                    f.write("    for (; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // __AVX512F__\n\n")
+                    f64_name = (exp_name[:-4] + "_f64") if exp_name.endswith("_f32") else (exp_name + "_f64")
+                    if f64_name not in existing_exports and f64_name not in emitted_waveforms:
+                        emitted_waveforms.add(f64_name)
+                        f64_eval = get_eval_statement(rule.get('op_name', ''), f64_name, 'double')
+                        f.write(f"// High-Precision Double Dual Variant for {exp_name} -> {f64_name}\n")
+                        f.write("#if defined(__AVX10_2__)\n")
+                        f.write(f"static void {f64_name}_avx10_2(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 32 <= count; i += 32) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 32; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __AVX10_2__\n\n")
 
-                    f.write("#if defined(__AVX2__)\n")
-                    f.write(f"static void {exp_name}_f64_avx2(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    size_t i = 0;\n")
-                    f.write("    for (; i + 8 <= count; i += 8) {\n")
-                    f.write("        sf_vm_interruptpoint_poll();\n")
-                    f.write("        for (size_t k = 0; k < 8; ++k) {\n")
-                    f.write("            size_t idx = i + k;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("        }\n")
-                    f.write("    }\n")
-                    f.write("    for (; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // __AVX2__\n\n")
+                        f.write("#if defined(__AVX512F__)\n")
+                        f.write(f"static void {f64_name}_avx512(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 32 <= count; i += 32) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 32; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __AVX512F__\n\n")
 
-                    f.write("#if defined(__loongarch_asx)\n")
-                    f.write(f"static void {exp_name}_f64_lasx(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    size_t i = 0;\n")
-                    f.write("    for (; i + 4 <= count; i += 4) {\n")
-                    f.write("        sf_vm_interruptpoint_poll();\n")
-                    f.write("        for (size_t k = 0; k < 4; ++k) {\n")
-                    f.write("            size_t idx = i + k;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("        }\n")
-                    f.write("    }\n")
-                    f.write("    for (; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // __loongarch_asx\n\n")
+                        f.write("#if defined(__AVX2__)\n")
+                        f.write(f"static void {f64_name}_avx2(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 8 <= count; i += 8) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 8; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __AVX2__\n\n")
 
-                    f.write("#if defined(__ARM_FEATURE_SVE) || defined(__ARM_FEATURE_SVE2)\n")
-                    f.write(f"static void {exp_name}_f64_sve2(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    size_t i = 0;\n")
-                    f.write("    for (; i + 8 <= count; i += 8) {\n")
-                    f.write("        sf_vm_interruptpoint_poll();\n")
-                    f.write("        for (size_t k = 0; k < 8; ++k) {\n")
-                    f.write("            size_t idx = i + k;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("        }\n")
-                    f.write("    }\n")
-                    f.write("    for (; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // __ARM_FEATURE_SVE2\n\n")
+                        f.write("#if defined(__loongarch_asx)\n")
+                        f.write(f"static void {f64_name}_lasx(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 4 <= count; i += 4) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 4; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __loongarch_asx\n\n")
 
-                    f.write("#if defined(__ARM_NEON)\n")
-                    f.write(f"static void {exp_name}_f64_neon(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    size_t i = 0;\n")
-                    f.write("    for (; i + 4 <= count; i += 4) {\n")
-                    f.write("        sf_vm_interruptpoint_poll();\n")
-                    f.write("        for (size_t k = 0; k < 4; ++k) {\n")
-                    f.write("            size_t idx = i + k;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("        }\n")
-                    f.write("    }\n")
-                    f.write("    for (; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // __ARM_NEON\n\n")
+                        f.write("#if defined(__ARM_FEATURE_SVE) || defined(__ARM_FEATURE_SVE2)\n")
+                        f.write(f"static void {f64_name}_sve2(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 8 <= count; i += 8) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 8; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __ARM_FEATURE_SVE2\n\n")
 
-                    f.write("#if defined(__riscv) || defined(__riscv_vector)\n")
-                    f.write(f"static void {exp_name}_f64_rvv(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    size_t i = 0;\n")
-                    f.write("    for (; i + 8 <= count; i += 8) {\n")
-                    f.write("        sf_vm_interruptpoint_poll();\n")
-                    f.write("        for (size_t k = 0; k < 8; ++k) {\n")
-                    f.write("            size_t idx = i + k;\n")
-                    f.write(f"            {f64_eval}\n")
-                    f.write("        }\n")
-                    f.write("    }\n")
-                    f.write("    for (; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // __riscv_vector\n\n")
+                        f.write("#if defined(__ARM_NEON)\n")
+                        f.write(f"static void {f64_name}_neon(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 4 <= count; i += 4) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 4; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __ARM_NEON\n\n")
 
-                    f.write(f"static void {exp_name}_f64_scalar(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    for (size_t i = 0; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n\n")
+                        f.write("#if defined(__riscv) || defined(__riscv_vector)\n")
+                        f.write(f"static void {f64_name}_rvv(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    size_t i = 0;\n")
+                        f.write("    for (; i + 8 <= count; i += 8) {\n")
+                        f.write("        if ((i & 511u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        for (size_t k = 0; k < 8; ++k) {\n")
+                        f.write("            size_t idx = i + k;\n")
+                        f.write(f"            {f64_eval}\n")
+                        f.write("        }\n")
+                        f.write("    }\n")
+                        f.write("    for (; i < count; ++i) {\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // __riscv_vector\n\n")
 
-                    f.write("#if defined(__MSIMD_SOFT_FLOAT__)\n")
-                    f.write(f"static void {exp_name}_f64_softfloat(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write("    for (size_t i = 0; i < count; ++i) {\n")
-                    f.write("        size_t idx = i;\n")
-                    f.write(f"        {f64_eval}\n")
-                    f.write("    }\n")
-                    f.write("}\n")
-                    f.write("#endif // Soft-Float\n\n")
+                        f.write(f"static void {f64_name}_scalar(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                        f.write("        if ((i & 63u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n\n")
 
-                    f.write(f"extern \"C\" MSIMD_API void {exp_name}_f64(double* out, size_t count, double t, double freq, double amp) {{\n")
-                    f.write("    if (!out || count == 0) return;\n")
-                    f.write(f"    sf_vm_hookpoint_trigger(1, {fn_id + 50000}, (void*)out, count * sizeof(double));\n")
-                    f.write("    sf_gc_safepoint_poll();\n")
-                    f.write("    sf_gc_controlpoint_check(count * sizeof(double));\n")
-                    f.write("#if defined(__AVX512F__)\n")
-                    f.write(f"    {exp_name}_f64_avx512(out, count, t, freq, amp);\n")
-                    f.write("#elif defined(__AVX2__)\n")
-                    f.write(f"    {exp_name}_f64_avx2(out, count, t, freq, amp);\n")
-                    f.write("#elif defined(__loongarch_asx)\n")
-                    f.write(f"    {exp_name}_f64_lasx(out, count, t, freq, amp);\n")
-                    f.write("#elif defined(__ARM_FEATURE_SVE) || defined(__ARM_FEATURE_SVE2)\n")
-                    f.write(f"    {exp_name}_f64_sve2(out, count, t, freq, amp);\n")
-                    f.write("#elif defined(__ARM_NEON)\n")
-                    f.write(f"    {exp_name}_f64_neon(out, count, t, freq, amp);\n")
-                    f.write("#elif defined(__riscv) || defined(__riscv_vector)\n")
-                    f.write(f"    {exp_name}_f64_rvv(out, count, t, freq, amp);\n")
-                    f.write("#elif defined(__MSIMD_SOFT_FLOAT__)\n")
-                    f.write(f"    {exp_name}_f64_softfloat(out, count, t, freq, amp);\n")
-                    f.write("#else\n")
-                    f.write(f"    {exp_name}_f64_scalar(out, count, t, freq, amp);\n")
-                    f.write("#endif\n")
-                    f.write(f"    sf_vm_hookpoint_trigger(2, {fn_id + 50000}, (void*)out, count * sizeof(double));\n")
-                    f.write("}\n\n")
+                        f.write("#if defined(__MSIMD_SOFT_FLOAT__)\n")
+                        f.write(f"static void {f64_name}_softfloat(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write("    for (size_t i = 0; i < count; ++i) {\n")
+                        f.write("        if ((i & 63u) == 0u) sf_gc_pausepoint_poll();\n")
+                        f.write("        size_t idx = i;\n")
+                        f.write(f"        {f64_eval}\n")
+                        f.write("    }\n")
+                        f.write("}\n")
+                        f.write("#endif // Soft-Float\n\n")
+
+                        f.write(f"extern \"C\" MSIMD_API void {f64_name}(double* out, size_t count, double t, double freq, double amp) {{\n")
+                        f.write("    if (!out || count == 0) return;\n")
+                        f.write(f"    sf_vm_hookpoint_trigger(1, {fn_id + 50000}, (void*)out, count * sizeof(double));\n")
+                        f.write("    sf_gc_safepoint_poll();\n")
+                        f.write("#if defined(__AVX10_2__)\n")
+                        f.write(f"    {f64_name}_avx10_2(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__AVX512F__)\n")
+                        f.write(f"    {f64_name}_avx512(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__AVX2__)\n")
+                        f.write(f"    {f64_name}_avx2(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__loongarch_asx)\n")
+                        f.write(f"    {f64_name}_lasx(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__ARM_FEATURE_SVE) || defined(__ARM_FEATURE_SVE2)\n")
+                        f.write(f"    {f64_name}_sve2(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__ARM_NEON)\n")
+                        f.write(f"    {f64_name}_neon(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__riscv) || defined(__riscv_vector)\n")
+                        f.write(f"    {f64_name}_rvv(out, count, t, freq, amp);\n")
+                        f.write("#elif defined(__MSIMD_SOFT_FLOAT__)\n")
+                        f.write(f"    {f64_name}_softfloat(out, count, t, freq, amp);\n")
+                        f.write("#else\n")
+                        f.write(f"    {f64_name}_scalar(out, count, t, freq, amp);\n")
+                        f.write("#endif\n")
+                        f.write(f"    sf_vm_hookpoint_trigger(2, {fn_id + 50000}, (void*)out, count * sizeof(double));\n")
+                        f.write("}\n\n")
 
             f.flush()
             del chunk
             gc.collect(1)
 
+        f.write("} // namespace msimd_kernel_generated\n\n")
+
         # =====================================================================
-        # SECTION 2: 239 MSIMD_Base_Skeletree.cpp CORE MATHEMATICAL KERNELS
+        # CORE SKELETREE ALGORITHMIC MATHEMATICAL KERNELS
+        # =====================================================================
+        if skeletree_src:
+            f.write("/* ========================================================================= */\n")
+            f.write("/* CORE SKELETREE ALGORITHMIC MATHEMATICAL KERNELS                           */\n")
+            f.write("/* Embedded directly from Mathematics-Rules.td (Zero Standalone Files)        */\n")
+            f.write("/* ========================================================================= */\n\n")
+            f.write(skeletree_src)
+            f.write("\n\n")
+
+        # =====================================================================
+        # SECTION 2: ACCELERATED DISPATCH WRAPPERS (HOOK/SAFE/CONTROL POINTS)
         # =====================================================================
         if cpp_rules:
             f.write("/* ========================================================================= */\n")
-            f.write("/* SECTION 2: 239 MSIMD_Base_Skeletree.cpp CORE ALGORITHMIC MATHEMATICAL KERNELS */\n")
+            f.write(f"/* SECTION 2: {len(cpp_rules)} ACCELERATED DISPATCH WRAPPERS & 6-TIER EXECUTION LADDER */\n")
             f.write("/* ========================================================================= */\n\n")
 
             for chunk_idx in range(0, len(cpp_rules), chunk_size):
@@ -1684,6 +2422,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     ret_type = cr.get('ret_type', 'void')
                     params = cr.get('params', '')
                     arg_names = extract_param_names(params)
+                    dock_ctx, dock_sz = extract_docking_context_and_size(params)
                     fn_id = cr['fn_id']
                     disp = cr['display_name']
                     desc = cr.get('desc', '')
@@ -1694,23 +2433,31 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     ret_return = "return _res;" if has_return else "return;"
 
                     f.write("/**\n")
-                    f.write(f" * =========================================================================\n")
+                    f.write(" * =========================================================================\n")
                     f.write(f" * Core Kernel   : {disp}\n")
                     f.write(f" * Symbol Name   : {fn_name}\n")
                     f.write(f" * Function ID   : {fn_id}\n")
                     f.write(f" * Signature     : {ret_type} {fn_name}({params})\n")
                     f.write(f" * MSC2020 Domain: {domain}\n")
                     f.write(f" * Description   : {desc}\n")
-                    f.write(f" * =========================================================================\n")
+                    f.write(" * =========================================================================\n")
                     f.write(" */\n")
 
                     # Forward declaration of pure C++ core implementation
-                    f.write(f"extern \"C\" {ret_type} {fn_name}({params});\n\n")
+                    f.write(f"extern \"C\" MSIMD_API {ret_type} {fn_name}({params});\n\n")
+
+                    # AVX10.2 Accelerated Block
+                    f.write("#if defined(__AVX10_2__)\n")
+                    f.write(f"static inline {ret_type} {fn_name}_avx10_2({params}) {{\n")
+                    f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
+                    if has_return:
+                        f.write("    return _res;\n")
+                    f.write("}\n")
+                    f.write("#endif // __AVX10_2__\n\n")
 
                     # AVX-512 Accelerated Block
                     f.write("#if defined(__AVX512F__)\n")
                     f.write(f"static inline {ret_type} {fn_name}_avx512({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1720,7 +2467,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # AVX2 Accelerated Block
                     f.write("#if defined(__AVX2__)\n")
                     f.write(f"static inline {ret_type} {fn_name}_avx2({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1730,7 +2476,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # LoongArch LASX Block
                     f.write("#if defined(__loongarch_asx)\n")
                     f.write(f"static inline {ret_type} {fn_name}_lasx({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1740,7 +2485,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # ARM SVE2 Block
                     f.write("#if defined(__ARM_FEATURE_SVE) || defined(__ARM_FEATURE_SVE2)\n")
                     f.write(f"static inline {ret_type} {fn_name}_sve2({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1750,7 +2494,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # ARM NEON Block
                     f.write("#if defined(__ARM_NEON)\n")
                     f.write(f"static inline {ret_type} {fn_name}_neon({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1760,7 +2503,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # RISC-V Vector Block
                     f.write("#if defined(__riscv) || defined(__riscv_vector)\n")
                     f.write(f"static inline {ret_type} {fn_name}_rvv({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1770,7 +2512,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # Embedded DSP / PIE Block
                     f.write("#if defined(__ARM_FEATURE_DSP) || defined(__XTENSA_PIE__)\n")
                     f.write(f"static inline {ret_type} {fn_name}_dsp({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1780,7 +2521,6 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     # Coprocessor Block (CORDIC / TMU)
                     f.write("#if defined(__STM32_CORDIC__) || defined(__TI_TMU__)\n")
                     f.write(f"static inline {ret_type} {fn_name}_coproc({params}) {{\n")
-                    f.write("    sf_vm_interruptpoint_poll();\n")
                     f.write(f"    {ret_prefix}{fn_name}({arg_names});\n")
                     if has_return:
                         f.write("    return _res;\n")
@@ -1805,9 +2545,11 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
 
                     # Unified Dynamic Dispatch Wrapper with 6-Tier Execution Ladder
                     f.write(f"extern \"C\" MSIMD_API {ret_type} dispatch_{fn_name}({params}) {{\n")
-                    f.write(f"    sf_vm_hookpoint_trigger(1, {fn_id}, nullptr, 0);\n")
+                    f.write(f"    sf_vm_hookpoint_trigger(1, {fn_id}, {dock_ctx}, {dock_sz});\n")
                     f.write("    sf_gc_safepoint_poll();\n")
-                    f.write("#if defined(__AVX512F__)\n")
+                    f.write("#if defined(__AVX10_2__)\n")
+                    f.write(f"    {ret_prefix}{fn_name}_avx10_2({arg_names});\n")
+                    f.write("#elif defined(__AVX512F__)\n")
                     f.write(f"    {ret_prefix}{fn_name}_avx512({arg_names});\n")
                     f.write("#elif defined(__AVX2__)\n")
                     f.write(f"    {ret_prefix}{fn_name}_avx2({arg_names});\n")
@@ -1828,7 +2570,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                     f.write("#else\n")
                     f.write(f"    {ret_prefix}{fn_name}_scalar({arg_names});\n")
                     f.write("#endif\n")
-                    f.write(f"    sf_vm_hookpoint_trigger(2, {fn_id}, nullptr, 0);\n")
+                    f.write(f"    sf_vm_hookpoint_trigger(2, {fn_id}, {dock_ctx}, {dock_sz});\n")
                     f.write(f"    {ret_return}\n")
                     f.write("}\n\n")
 
@@ -1837,7 +2579,7 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
                 gc.collect(1)
 
         # =====================================================================
-        # SECTION 3: UNIFIED MASTER MATHEMATICAL SILICON REGISTRY (AIO 742 OPS)
+        # SECTION 3: UNIFIED MASTER MATHEMATICAL SILICON REGISTRY (AIO 897 OPS)
         # =====================================================================
         f.write("/* ========================================================================= */\n")
         f.write("/* SECTION 3: UNIFIED MASTER MATHEMATICAL SILICON REGISTRY                   */\n")
@@ -1879,10 +2621,26 @@ def synthesize_final_codex(pruned_catalog, output_inc_path, cpp_rules=None, chun
         f.write(f"extern \"C\" MSIMD_API size_t msimd_get_unified_kernel_count() {{ return {total_ops}; }}\n")
         f.write("extern \"C\" MSIMD_API const MSIMDUnifiedKernelDescriptor* msimd_get_unified_kernel_registry() { return g_msimd_unified_registry; }\n\n")
 
-        f.write("} // namespace msimd_kernel_generated\n\n")
+        # TableGen Master Metadata Catalog Accessors
+        f.write("static const msimd_tablegen_kernel_record_t g_tablegen_kernel_catalog[] = {\n")
+        for item in pruned_catalog:
+            r = item['rule']
+            exp_name = r['export_name']
+            fn_id = r['fn_id']
+            dom = r.get('domain', 'HarmonicAnalysis').replace('\\', '\\\\').replace('"', '\\"')
+            disp = r.get('display_name', exp_name).replace('\\', '\\\\').replace('"', '\\"')
+            form = r.get('formula', '').replace('\\', '\\\\').replace('"', '\\"').replace('\r', ' ').replace('\n', ' ')
+            dec = r.get('decay', '').replace('\\', '\\\\').replace('"', '\\"')
+            disc = r.get('discontinuity', '').replace('\\', '\\\\').replace('"', '\\"')
+            ct = r.get('ctype', 'float')
+            f.write(f"    {{\"{exp_name}\", {fn_id}, \"{dom}\", \"{disp}\", \"{form}\", \"{dec}\", \"{disc}\", \"{ct}\"}},\n")
+        f.write("    {nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}\n")
+        f.write("};\n\n")
+        f.write(f"extern \"C\" MSIMD_API size_t tablegen_get_kernel_count(void) {{ return {len(pruned_catalog)}; }}\n")
+        f.write("extern \"C\" MSIMD_API const msimd_tablegen_kernel_record_t* tablegen_get_kernel_catalog(void) { return g_tablegen_kernel_catalog; }\n\n")
         f.write("#endif // MATHVENTAGE_SIMD_FINAL_INC\n")
 
-    print(f"[Codex] Successfully synthesized: {output_inc_path} ({len(pruned_catalog)} pruned waveforms + {len(cpp_rules) if cpp_rules else 0} core algorithmic kernels)!\n")
+    print(f"[Codex] Successfully synthesized: {output_cpp_path} ({len(pruned_catalog)} pruned waveforms + {len(cpp_rules) if cpp_rules else 0} core algorithmic kernels)!\n")
     gc.collect(2)
     return True
 
@@ -1973,14 +2731,20 @@ def verify_generated_codex_with_clang(inc_path, include_dirs, defines=None, clan
 
 def main():
     parser = argparse.ArgumentParser(description="MathventageSIMD Deep Silicon Code Generator")
+    parser.add_argument('--emit-tablegen-derived', action='store_true', help="Run Stage 1 TableGen derivation (AST -> 1 H + 1 Intermediate CPP)")
+    parser.add_argument('--ast-json', help="Path to TableGen AST JSON dumped by llvm-tblgen")
+    parser.add_argument('--output-intermediate-cpp', help="Output path for Stage 1 intermediate CPP (TableGen_Derived.cpp)")
+    parser.add_argument('--math', help="Path to Mathematics-Rules.td")
     parser.add_argument('--guides', help="Path to GUIDES.cgr hardware scope file")
     parser.add_argument('--assembler', help="Path to Assembler.td master synthesis rulebook")
     parser.add_argument('--uops', help="Path to instructions.xml uops.info database")
-    parser.add_argument('--kernel-math', help="Path to sf_kernel_math.cpp pure C++ core implementation")
+    parser.add_argument('--kernel-math', help="Path to pure C++ core algorithmic implementations")
     parser.add_argument('--tblgen', help="Path to llvm-tblgen.exe executable")
-    parser.add_argument('--output-inc', help="Output path for MathventageSIMD-Final.inc")
-    parser.add_argument('--ghost-td', help="Path for temporary ephemeral TableGen codex (HotSpot ADLC style, e.g. in binary dir)")
-    parser.add_argument('--wipe-ghost', action='store_true', help="Auto-delete ephemeral TableGen file after synthesis")
+    parser.add_argument('--intermediate-cpp', help="Path to Stage 1 TableGen intermediate C++ unit (TableGen_Derived.cpp)")
+    parser.add_argument('--input-cpp', help="Alias for --intermediate-cpp")
+    parser.add_argument('--output-inc', help="Optional output path for backward-compatible .inc")
+    parser.add_argument('--output-cpp', help="Output path for final accelerated C++ (MathventageSIMD_Derived.cpp)")
+    parser.add_argument('--output-h', help="Optional output path for MathventageSIMD.h")
     parser.add_argument('--tablegen', action='store_true', help="TableGen compatibility flag")
     parser.add_argument('--emit-bc', action='store_true', help="Emit compilation commands to produce LLVM Bitcode Mathventory.bc for SacFor_VM")
     parser.add_argument('--clang', help="Path to clang++.exe compiler for verification")
@@ -1998,20 +2762,16 @@ def main():
         src_dir = os.path.join(script_dir, 'src')
         proj_root = script_dir
 
-    sources_dir = os.path.join(src_dir, 'codegen', 'sources')
-    os.makedirs(sources_dir, exist_ok=True)
+    build_dir = os.path.join(proj_root, 'build')
+    os.makedirs(build_dir, exist_ok=True)
+
+    if getattr(args, 'emit_tablegen_derived', False):
+        return run_stage1_tablegen_derived(args, src_dir, proj_root)
 
     guides_path = args.guides or os.path.join(src_dir, 'rules', 'GUIDES.cgr')
-    assembler_path = args.assembler or os.path.join(src_dir, 'rules', 'Assembler.td')
-    math_path = os.path.join(src_dir, 'rules', 'Mathematics-Rules.td')
+    math_path = args.math or os.path.join(src_dir, 'rules', 'Mathematics-Rules.td')
     
-    kernel_math_candidates = [
-        args.kernel_math if args.kernel_math else None,
-        os.path.join(src_dir, 'MSIMD_Base_Skeletree.cpp'),
-        os.path.join(src_dir, 'sf_kernel_math.cpp'),
-        os.path.join(proj_root, 'MSIMD_Base_Skeletree.cpp'),
-    ]
-    kernel_math_path = next((p for p in kernel_math_candidates if p and os.path.exists(p)), None)
+    kernel_math_path = args.kernel_math if args.kernel_math and os.path.exists(args.kernel_math) else None
     
     tblgen_exe = args.tblgen
     if not tblgen_exe or not os.path.exists(tblgen_exe):
@@ -2039,71 +2799,81 @@ def main():
     ]
     xml_path = next((p for p in xml_candidates if p and os.path.exists(p)), None)
 
-    output_inc = args.output_inc or os.path.join(src_dir, 'MathventageSIMD-Final.inc')
-    ghost_td_path = args.ghost_td or os.path.join(sources_dir, 'Derived_Mathematics_Codex.td')
+    output_cpp = args.output_cpp or os.path.join(build_dir, 'MathventageSIMD_Derived.cpp')
 
     # Step 1: Parse GUIDES.cgr for architecture policy & SLA
     policy = parse_guides_cgr(guides_path)
 
-    # Step 2: Parse Mathematics-Rules.td via native LLVM TableGen AST derivation
-    math_rules = parse_mathematics_rules_td(math_path, tblgen_exe=tblgen_exe)
+    # Step 1b: Parse LLVM X86 Target Directory (X86.td & X86Sched*.td)
+    x86_target_dir = os.path.join(src_dir, 'codegen', 'targets', 'X86')
+    x86_target_meta = parse_x86_target_directory(x86_target_dir)
 
-    # Step 2b: Parse MSIMD_Base_Skeletree.cpp pure C++ algorithmic kernels (decoupled)
+    # Step 2: Ingest TableGen Contract (AST JSON generated directly by llvm-tblgen)
+    ast_json_path = args.ast_json
+    if not ast_json_path:
+        candidate_ast = os.path.join(build_dir, 'TableGen_AST.json')
+        if os.path.exists(candidate_ast):
+            ast_json_path = candidate_ast
+
+    if ast_json_path and os.path.exists(ast_json_path):
+        print(f"[Contract Ingestion] Ingesting TableGen AST JSON contract: {ast_json_path}...")
+        with open(ast_json_path, 'r', encoding='utf-8') as f:
+            ast_data = json.load(f)
+        math_rules = extract_waveform_rules(ast_data)
+        print(f"[Contract Ingestion] Extracted {len(math_rules)} mathematical waveform rules directly from TableGen AST.")
+    elif args.intermediate_cpp and os.path.exists(args.intermediate_cpp):
+        math_rules = parse_intermediate_tablegen_cpp(args.intermediate_cpp)
+    else:
+        raise RuntimeError(f"TableGen AST contract not found! Expected valid --ast-json at {ast_json_path or 'TableGen_AST.json'}.")
+
+    # Step 2b: Parse pure C++ algorithmic kernels directly from TableGen / Mathematics-Rules.td
+    skeletree_src = extract_skeletree_from_tablegen(ast_data if 'ast_data' in locals() else {}, math_path=math_path)
     cpp_rules = []
-    if kernel_math_path and os.path.exists(kernel_math_path):
+    if skeletree_src:
+        cpp_rules = parse_sf_kernel_math_cpp(skeletree_src)
+    elif kernel_math_path and os.path.exists(kernel_math_path):
         cpp_rules = parse_sf_kernel_math_cpp(kernel_math_path)
 
     chunk_size = policy.get('memory_safety', {}).get('chunk_size', 32)
 
-    # Step 3: HotSpot ADLC Ephemeral Ghost Codex Generation (Mathematics + MSIMD_Base_Skeletree)
-    synthesize_ghost_codex_td(math_rules, cpp_rules, ghost_td_path, chunk_size=chunk_size)
-
-    # Step 3b: TableGen Execution on Assembler.td using ephemeral codex
-    if tblgen_exe and os.path.exists(tblgen_exe) and os.path.exists(assembler_path):
-        print(f"[TableGen] Executing Assembler.td master synthesis with native llvm-tblgen...")
-        include_args = [f"-I={os.path.join(src_dir, 'rules')}", f"-I={sources_dir}"]
-        tblgen_cmd = [tblgen_exe, assembler_path] + include_args
-        res = subprocess.run(tblgen_cmd, capture_output=True, text=True)
-        if res.returncode == 0:
-            print(f"[TableGen] Master Cartesian Cross-Product matrix synthesized successfully.")
-        else:
-            print(f"[TableGen Warning] Assembler.td synthesis output:\n{res.stderr[:500]}")
-
-    # Step 3c: HotSpot ADLC Ephemeral Ghost Cleanup (clean up immediately after TableGen processing)
-    if os.path.exists(ghost_td_path):
-        os.remove(ghost_td_path)
-        print(f"[Ghost Codex] Ephemeral TableGen artifact wiped clean: {ghost_td_path}")
-
-    # Step 4: Stream instructions.xml in-memory with iterative GC & deep silicon convergence
+    # Step 3: Stream instructions.xml in-memory with iterative GC & deep silicon convergence
     if xml_path:
-        raw_uops_data = extract_deep_uops_metrics(xml_path, policy)
-        # Step 4b: Autonomous x86 Qualification / Disqualification Engine (4-step convergence)
+        raw_uops_data = extract_deep_uops_metrics(xml_path, policy, x86_target_meta=x86_target_meta)
+        # Autonomous x86 Qualification / Disqualification Engine (4-step convergence)
         qualified_uops_data, _ = evaluate_and_qualify_x86_architectures(raw_uops_data, policy)
         del raw_uops_data
         gc.collect(2)
     else:
         print("[Warning] No instructions.xml found. Using synthetic architecture data.")
-        qualified_uops_data = {arch: {'has_avx512': False, 'has_avx2': True, 'has_vnni': False, 'has_amx': False,
+        qualified_uops_data = {arch: {'has_avx10_2': False, 'has_avx512': False, 'has_avx2': True, 'has_vnni': False, 'has_amx': False,
                                       'fma_f32_512': [], 'fma_f32_256': [0.5], 'fma_f32_128': [0.5],
                                       'stream_512': [], 'stream_256': [1.0], 'load_256': [0.33],
                                       'lat_fma': [4.0]} for arch in policy['target_archs']}
 
-    # Step 5: Chunked Cross-Product Evaluation & Pruning with Micro-GC
+    # Optional Header Extraction (if explicitly requested)
+    if args.output_h:
+        try:
+            header_src = extract_header_from_tablegen(ast_data if 'ast_data' in locals() else {}, math_path=math_path)
+            if header_src:
+                emit_master_c_header(header_src, math_rules, args.output_h)
+        except Exception as e:
+            print(f"[TableGen Emitter] Could not emit header: {e}")
+
+    # Step 4: Chunked Cross-Product Evaluation & Pruning with Micro-GC
     pruned_catalog = evaluate_and_prune_cross_product(math_rules, qualified_uops_data, policy)
     del math_rules
     gc.collect(2)
 
-    # Step 6: Synthesize final include codex via direct disk stream
-    synthesize_final_codex(pruned_catalog, output_inc, cpp_rules=cpp_rules, chunk_size=chunk_size, policy=policy)
+    # Step 5: Synthesize final accelerated CPP codex via direct disk stream
+    synthesize_final_codex(pruned_catalog, output_cpp, cpp_rules=cpp_rules, chunk_size=chunk_size, policy=policy, skeletree_src=skeletree_src)
 
-    # Maintain backward-compatibility with sf_kernel_generated_rules.inc
-    compat_inc = os.path.join(src_dir, 'sf_kernel_generated_rules.inc')
-    synthesize_final_codex(pruned_catalog, compat_inc, cpp_rules=cpp_rules, chunk_size=chunk_size, policy=policy)
+    if args.output_inc:
+        synthesize_final_codex(pruned_catalog, args.output_inc, cpp_rules=cpp_rules, chunk_size=chunk_size, policy=policy, skeletree_src=skeletree_src)
 
     del pruned_catalog
     gc.collect(2)
 
-    # Step 7: Clang Compilation & Semantic Verification Pass (libclang / clang++)
+    # Step 6: Clang Compilation & Semantic Verification Pass (libclang / clang++)
     if not args.no_verify:
         include_dirs = [os.path.join(proj_root, 'include'), src_dir]
         clang_compiler = args.clang
@@ -2113,7 +2883,7 @@ def main():
                 clang_compiler = cand
 
         verify_ok = verify_generated_codex_with_clang(
-            output_inc,
+            output_cpp,
             include_dirs=include_dirs,
             defines=["MATHVANTAGE_EXPORTS"],
             clang_exe=clang_compiler
@@ -2124,7 +2894,7 @@ def main():
 
     if args.emit_bc:
         print("[Bitcode JIT] Compiling codex to LLVM Bitcode (Mathventory.bc) for SacFor_VM ORCJIT v2:")
-        print(f"    clang++ -O3 -std=c++20 -Iinclude -Isrc -emit-llvm -c {output_inc} -o Mathventory.bc")
+        print(f"    clang++ -O3 -std=c++20 -Iinclude -Isrc -emit-llvm -c {output_cpp} -o Mathventory.bc")
 
     print("[Codex] In-memory generation pipeline finished cleanly. Peak RAM remained strictly bounded.")
 

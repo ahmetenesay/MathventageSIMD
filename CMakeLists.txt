@@ -67,6 +67,9 @@ if(WIN32)
     if(NOT DEFINED CMAKE_LINKER AND DEFAULT_LLVM_DIR AND EXISTS "${DEFAULT_LLVM_DIR}/bin/lld-link.exe")
         set(CMAKE_LINKER "${DEFAULT_LLVM_DIR}/bin/lld-link.exe" CACHE FILEPATH "Linker" FORCE)
     endif()
+    if(NOT DEFINED CMAKE_RC_COMPILER AND DEFAULT_LLVM_DIR AND EXISTS "${DEFAULT_LLVM_DIR}/bin/llvm-rc.exe")
+        set(CMAKE_RC_COMPILER "${DEFAULT_LLVM_DIR}/bin/llvm-rc.exe" CACHE FILEPATH "RC compiler" FORCE)
+    endif()
 endif()
 
 project(MathventageSIMD
@@ -239,12 +242,9 @@ elseif(MSIMD_ARCH MATCHES "arm64|aarch64")
     set(MSIMD_ARCH "arm64")
 endif()
 if(NOT DEFINED NATIVES_OUT_DIR)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/../JingZero/src/main/resources/natives/mathvantage")
-        set(NATIVES_OUT_DIR "${CMAKE_SOURCE_DIR}/../JingZero/src/main/resources/natives/mathvantage/${MSIMD_OS}-${MSIMD_ARCH}")
-    else()
-        set(NATIVES_OUT_DIR "${CMAKE_SOURCE_DIR}/bin/${MSIMD_OS}-${MSIMD_ARCH}")
-    endif()
+    set(NATIVES_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/out/${MSIMD_OS}-${MSIMD_ARCH}")
 endif()
+set(SDK_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/out")
 
 # Autodetect LLVM, OpenVINO and oneTBB on Windows if installed
 set(DEFAULT_OPENVINO_DIR "C:/Intel/openvino_toolkit_windows_2025.4.0.20398.8fdad55727d_x86_64")
@@ -262,16 +262,15 @@ if(WIN32 AND MSIMD_ARCH STREQUAL "x64")
     endif()
 endif()
 
+set(CODEGEN_INTERMEDIATE_CPP "${CMAKE_CURRENT_BINARY_DIR}/TableGen_Derived.cpp")
+set(CODEGEN_OUTPUT_CPP      "${CMAKE_CURRENT_BINARY_DIR}/MathventageSIMD_Derived.cpp")
+
 set(SOURCES
-    src/MSIMD_Base_Skeletree.cpp
-    src/SF_Native_Dispatcher.cpp
-    src/SF_Backend_Accelerated_Dispatcher.cpp
+    "${CODEGEN_OUTPUT_CPP}"
     src/SacFor_VM.cpp
 )
 set(HEADERS
     include/MathventageSIMD.h
-        include/MathventageSIMD.h
-        include/MathventageSIMD.h
 )
 
 add_library(mathvantage SHARED ${SOURCES} ${HEADERS})
@@ -286,31 +285,57 @@ if(APPLE)
     endif()
 endif()
 
-# TBB and OpenVINO
-find_package(TBB QUIET)
-if((WIN32 OR APPLE) AND MSIMD_ARCH MATCHES "arm64")
-    if(NOT TBB_FOUND)
-        set(TBB_FOUND FALSE)
-    endif()
-endif()
-if(TBB_FOUND)
-    target_link_libraries(mathvantage PRIVATE TBB::tbb)
-    target_compile_definitions(mathvantage PRIVATE USE_TBB)
-    message(STATUS "Intel TBB Found. Flow Graph Pipeline enabled.")
-else()
-    message(WARNING "Intel TBB not found. Falling back to standard OS Threads/Scalar execution.")
+# =========================================================================
+# ACCELERATED ENGINE CONTROLS & STANDALONE RESILIENCE
+# =========================================================================
+option(ENABLE_TBB "Enable Intel oneTBB acceleration" ON)
+option(ENABLE_OPENVINO "Enable OpenVINO runtime acceleration" ON)
+option(MATHVANTAGE_STANDALONE "Build 100% self-contained binary with ZERO external DLL dependencies" OFF)
+
+if(MATHVANTAGE_STANDALONE)
+    set(ENABLE_TBB OFF CACHE BOOL "Force disable TBB for standalone build" FORCE)
+    set(ENABLE_OPENVINO OFF CACHE BOOL "Force disable OpenVINO for standalone build" FORCE)
+    message(STATUS "[STANDALONE BUILD] TBB and OpenVINO disabled. Pure native C++20 thread pool and SIMD kernels enabled.")
 endif()
 
-find_package(OpenVINO QUIET)
-if((WIN32 OR APPLE) AND MSIMD_ARCH MATCHES "arm64")
-    set(OpenVINO_FOUND FALSE)
+# TBB and OpenVINO
+if(ENABLE_TBB)
+    find_package(TBB QUIET)
+    if((WIN32 OR APPLE) AND MSIMD_ARCH MATCHES "arm64")
+        if(NOT TBB_FOUND)
+            set(TBB_FOUND FALSE)
+        endif()
+    endif()
+    if(TBB_FOUND)
+        target_link_libraries(mathvantage PRIVATE TBB::tbb)
+        target_compile_definitions(mathvantage PRIVATE USE_TBB)
+        message(STATUS "Intel TBB Found. Flow Graph Pipeline enabled.")
+        if(WIN32)
+            target_link_libraries(mathvantage PRIVATE delayimp.lib)
+            target_link_options(mathvantage PRIVATE "/DELAYLOAD:tbb12.dll")
+            target_link_options(mathvantage PRIVATE "/DELAYLOAD:tbb12_debug.dll")
+        endif()
+    else()
+        message(WARNING "Intel TBB not found. Falling back to standard OS Threads/Scalar execution.")
+    endif()
 endif()
-if(OpenVINO_FOUND)
-    target_link_libraries(mathvantage PRIVATE openvino::runtime)
-    target_compile_definitions(mathvantage PRIVATE USE_OPENVINO)
-    message(STATUS "OpenVINO Found. AI Scheduler enabled.")
-else()
-    message(WARNING "OpenVINO not found. AI Scheduler will fallback to static CPU heuristics.")
+
+if(ENABLE_OPENVINO)
+    find_package(OpenVINO QUIET)
+    if((WIN32 OR APPLE) AND MSIMD_ARCH MATCHES "arm64")
+        set(OpenVINO_FOUND FALSE)
+    endif()
+    if(OpenVINO_FOUND)
+        target_link_libraries(mathvantage PRIVATE openvino::runtime)
+        target_compile_definitions(mathvantage PRIVATE USE_OPENVINO)
+        message(STATUS "OpenVINO Found. AI Scheduler enabled.")
+        if(WIN32)
+            target_link_libraries(mathvantage PRIVATE delayimp.lib)
+            target_link_options(mathvantage PRIVATE "/DELAYLOAD:openvino.dll")
+        endif()
+    else()
+        message(WARNING "OpenVINO not found. AI Scheduler will fallback to static CPU heuristics.")
+    endif()
 endif()
 
 # =========================================================================
@@ -348,12 +373,19 @@ if(LLVM_FOUND)
         mcparser
     )
 
-    # In MSVC, match LLVM's static MT runtime and embed static libraries
+    if(TARGET LLVMDebugInfoPDB)
+        get_target_property(PDB_LIBS LLVMDebugInfoPDB INTERFACE_LINK_LIBRARIES)
+        if(PDB_LIBS)
+            list(FILTER PDB_LIBS EXCLUDE REGEX "diaguids\\.lib")
+            set_target_properties(LLVMDebugInfoPDB PROPERTIES INTERFACE_LINK_LIBRARIES "${PDB_LIBS}")
+        endif()
+    endif()
+
+    # In MSVC/Clang-CL, match LLVM's static MT runtime and embed static libraries
     if(MSVC)
-        # LLVM 22.1.5 on this system is built with MultiThreaded (/MT_StaticRelease)
-        set_property(TARGET mathvantage PROPERTY
-            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-        )
+        # LLVM 22.1.5 on this system is built with MultiThreaded (/MT, _ITERATOR_DEBUG_LEVEL=0)
+        set_property(TARGET mathvantage PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+        target_compile_definitions(mathvantage PRIVATE _ITERATOR_DEBUG_LEVEL=0)
         # Windows system dependencies required by static LLVMSupport
         target_link_libraries(mathvantage PRIVATE
             ${LLVM_REQ_LIBS}
@@ -381,18 +413,14 @@ if(NOT Python3_EXECUTABLE)
     find_program(Python3_EXECUTABLE NAMES py python3 python)
 endif()
 
-set(CODEGEN_GUIDES    "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/GUIDES.cgr")
-set(CODEGEN_ASSEMBLER "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/Assembler.td")
-set(CODEGEN_MATH      "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/Mathematics-Rules.td")
-set(CODEGEN_MACHINES  "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/Machines-Rules.td")
-set(CODEGEN_UOPS      "${CMAKE_CURRENT_SOURCE_DIR}/src/sources/instructions.xml")
-set(CODEGEN_MATH_CPP  "${CMAKE_CURRENT_SOURCE_DIR}/src/MSIMD_Base_Skeletree.cpp")
-set(CODEGEN_FINAL_INC "${CMAKE_CURRENT_SOURCE_DIR}/src/MathventageSIMD-Final.inc")
-set(CODEGEN_COMPAT    "${CMAKE_CURRENT_SOURCE_DIR}/src/sf_kernel_generated_rules.inc")
-set(CODEGEN_GHOST_TD  "${CMAKE_CURRENT_SOURCE_DIR}/src/codegen/sources/Derived_Mathematics_Codex.td")
-
-# HotSpot ADLC Model: Ephemeral TableGen artifact lives strictly in build tree and is wiped on clean
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CODEGEN_GHOST_TD}")
+set(CODEGEN_GUIDES          "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/GUIDES.cgr")
+set(CODEGEN_ASSEMBLER       "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/Assembler.td")
+set(CODEGEN_MATH            "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/Mathematics-Rules.td")
+set(CODEGEN_MACHINES        "${CMAKE_CURRENT_SOURCE_DIR}/src/rules/Machines-Rules.td")
+set(CODEGEN_UOPS            "${CMAKE_CURRENT_SOURCE_DIR}/src/codegen/instructions.xml")
+set(CODEGEN_INTERMEDIATE_CPP "${CMAKE_CURRENT_BINARY_DIR}/TableGen_Derived.cpp")
+set(CODEGEN_OUTPUT_CPP      "${CMAKE_CURRENT_BINARY_DIR}/MathventageSIMD_Derived.cpp")
+set(CODEGEN_HEADER          "${CMAKE_CURRENT_SOURCE_DIR}/include/MathventageSIMD.h")
 
 # Locate LLVM TableGen (llvm-tblgen.exe)
 set(DEFAULT_LLVM_TBLGEN "${DEFAULT_LLVM_DIR}/bin/llvm-tblgen.exe")
@@ -407,51 +435,71 @@ else()
 endif()
 
 if(Python3_EXECUTABLE)
-    set(CODEGEN_EXTRA_DEPENDS "")
+    set(CODEGEN_AST_JSON "${CMAKE_CURRENT_BINARY_DIR}/TableGen_AST.json")
+
+    # Stage 1a: TableGen AST Generation via Direct Native llvm-tblgen.exe
     if(LLVM_TABLEGEN_EXE)
-        list(APPEND CODEGEN_EXTRA_DEPENDS "${LLVM_TABLEGEN_EXE}")
+        add_custom_command(
+            OUTPUT "${CODEGEN_AST_JSON}"
+            COMMAND "${LLVM_TABLEGEN_EXE}"
+                "${CODEGEN_ASSEMBLER}"
+                -I="${CMAKE_CURRENT_SOURCE_DIR}/src/rules"
+                --dump-json
+                -o "${CODEGEN_AST_JSON}"
+            DEPENDS
+                "${CODEGEN_ASSEMBLER}"
+                "${CODEGEN_MATH}"
+                "${CODEGEN_MACHINES}"
+                "${LLVM_TABLEGEN_EXE}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            COMMENT "[MathventageSIMD] Stage 1a/3: LLVM TableGen compilation & cross-product (Assembler.td -> TableGen_AST.json)..."
+        )
     endif()
 
+    # Stage 1b: Master Public Header & Accelerated SIMD Codex Synthesis
+    # TableGen AST Contract (TableGen_AST.json) -> 1 H (include/MathventageSIMD.h) + 1 C++ (build/MathventageSIMD_Derived.cpp)
     add_custom_command(
         OUTPUT
-            "${CODEGEN_FINAL_INC}"
-            "${CODEGEN_COMPAT}"
+            "${CODEGEN_HEADER}"
+            "${CODEGEN_OUTPUT_CPP}"
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/src/codegen/codegen.py"
+            --ast-json "${CODEGEN_AST_JSON}"
             --guides "${CODEGEN_GUIDES}"
-            --assembler "${CODEGEN_ASSEMBLER}"
             --uops "${CODEGEN_UOPS}"
-            --kernel-math "${CODEGEN_MATH_CPP}"
-            --tblgen "${LLVM_TABLEGEN_EXE}"
-            --output-inc "${CODEGEN_FINAL_INC}"
-            --ghost-td "${CODEGEN_GHOST_TD}"
+            --output-h "${CODEGEN_HEADER}"
+            --output-cpp "${CODEGEN_OUTPUT_CPP}"
+            --no-verify
         DEPENDS
+            "${CODEGEN_AST_JSON}"
             "${CODEGEN_GUIDES}"
-            "${CODEGEN_ASSEMBLER}"
-            "${CODEGEN_MATH}"
-            "${CODEGEN_MACHINES}"
             "${CODEGEN_UOPS}"
-            "${CODEGEN_MATH_CPP}"
-            "${CODEGEN_EXTRA_DEPENDS}"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/codegen/codegen.py"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "[MathventageSIMD] HotSpot ADLC In-Memory / Ephemeral Cross-Product synthesis..."
+        COMMENT "[MathventageSIMD] Stage 1b/2: TableGen AST Ingestion & Deep Silicon Synthesis (TableGen_AST.json -> MathventageSIMD.h + MathventageSIMD_Derived.cpp)..."
     )
 
-    add_custom_target(generate_mathventory_inc
+    add_custom_target(generate_mathvantage_sources
         DEPENDS
-            "${CODEGEN_FINAL_INC}"
+            "${CODEGEN_OUTPUT_CPP}"
+            "${CODEGEN_HEADER}"
     )
 
-    # LLVM Bitcode Target: Mathventory.bc compiled directly via Clang
+    # Stage 2: LLVM Bitcode Target (Mathventory.bc compiled directly via Clang)
     find_program(CLANG_COMPILER_EXE NAMES clang++ clang clang-cl HINTS "${DEFAULT_LLVM_DIR}/bin")
     if(CLANG_COMPILER_EXE)
         set(MATHVENTORY_BC_OUT "${CMAKE_CURRENT_BINARY_DIR}/Mathventory.bc")
+        set(BC_ARCH_FLAGS "")
+        if(MSIMD_ARCH MATCHES "x64|x86_64|amd64")
+            if(CLANG_COMPILER_EXE MATCHES "clang-cl")
+                set(BC_ARCH_FLAGS /arch:AVX2 /clang:-mavx2 /clang:-mfma)
+            else()
+                set(BC_ARCH_FLAGS -mavx2 -mfma)
+            endif()
+        endif()
         if(CLANG_COMPILER_EXE MATCHES "clang-cl")
-            set(CLANG_BC_FLAGS /O2 /clang:-emit-llvm /clang:-c)
-            set(CLANG_BC_OUT_FLAG /Fo"${MATHVENTORY_BC_OUT}")
+            set(CLANG_BC_FLAGS /O2 /std:c++20 ${BC_ARCH_FLAGS} /clang:-emit-llvm /clang:-c /DMATHVANTAGE_EXPORTS /clang:-o /clang:"${MATHVENTORY_BC_OUT}")
         else()
-            set(CLANG_BC_FLAGS -O3 -emit-llvm -c)
-            set(CLANG_BC_OUT_FLAG -o "${MATHVENTORY_BC_OUT}")
+            set(CLANG_BC_FLAGS -O3 -std=c++20 ${BC_ARCH_FLAGS} -emit-llvm -c -DMATHVANTAGE_EXPORTS -o "${MATHVENTORY_BC_OUT}")
         endif()
 
         add_custom_command(
@@ -460,14 +508,13 @@ if(Python3_EXECUTABLE)
                 ${CLANG_BC_FLAGS}
                 -I"${CMAKE_CURRENT_SOURCE_DIR}/include"
                 -I"${CMAKE_CURRENT_SOURCE_DIR}/src"
-                ${CLANG_BC_OUT_FLAG}
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/sf_kernel_math.cpp"
+                -I"${CMAKE_CURRENT_BINARY_DIR}"
+                "${CODEGEN_OUTPUT_CPP}"
             DEPENDS
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/sf_kernel_math.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/include/MathventageSIMD.h"
-                "${CODEGEN_FINAL_INC}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            COMMENT "[MathventageSIMD] Compiling LLVM Bitcode artifact Mathventory.bc via Clang..."
+                "${CODEGEN_OUTPUT_CPP}"
+                "${CODEGEN_HEADER}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            COMMENT "[MathventageSIMD] Stage 3/3: Compiling LLVM Bitcode artifact Mathventory.bc via Clang..."
         )
 
         add_custom_target(generate_mathventory_bc
@@ -478,7 +525,7 @@ endif()
 
 set_target_properties(mathvantage PROPERTIES
     PREFIX "lib"
-    OUTPUT_NAME "mathvantage"
+    OUTPUT_NAME "sfmsimd"
     LIBRARY_OUTPUT_DIRECTORY "${NATIVES_OUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "${NATIVES_OUT_DIR}"
 )
@@ -486,10 +533,11 @@ set_target_properties(mathvantage PROPERTIES
 target_include_directories(mathvantage PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 target_compile_definitions(mathvantage PRIVATE MATHVANTAGE_EXPORTS)
-if(TARGET generate_mathventory_inc)
-    add_dependencies(mathvantage generate_mathventory_inc)
+if(TARGET generate_mathvantage_sources)
+    add_dependencies(mathvantage generate_mathvantage_sources)
 endif()
 if(TARGET generate_mathventory_bc)
     add_dependencies(mathvantage generate_mathventory_bc)
@@ -514,7 +562,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if(CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC" OR MSVC)
         # Clang-CL Driver with multi-process translation unit compilation (/MP auto-saturates all host cores)
         target_compile_options(mathvantage PRIVATE
-            /O2 /Oi /Ot /fp:fast /EHsc /bigobj /permissive- /MP
+            /O2 /Oi /Ot /fp:fast /EHsc /bigobj /permissive-
+            $<$<BOOL:${MSVC_IDE}>:/MP>
             /clang:-O3
             /clang:-ffast-math
         )
@@ -539,7 +588,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
     # Fast Linker: LLVM lld-link scaling to all available worker threads
     if(WIN32 AND DEFAULT_LLVM_DIR AND EXISTS "${DEFAULT_LLVM_DIR}/bin/lld-link.exe")
-        target_link_options(mathvantage PRIVATE -fuse-ld=lld)
         target_link_options(mathvantage PRIVATE /threads:${HOST_LOGICAL_CORES})
     endif()
 
@@ -561,6 +609,9 @@ if(WIN32 AND MSIMD_ARCH STREQUAL "x64")
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${DEFAULT_TBB_DIR}/bin/tbb12.dll"
             "${NATIVES_OUT_DIR}/tbb12.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${DEFAULT_TBB_DIR}/bin/tbb12_debug.dll"
+            "${NATIVES_OUT_DIR}/tbb12_debug.dll"
         COMMENT "Auto-deploying OpenVINO and oneTBB DLL dependencies to ${NATIVES_OUT_DIR}..."
     )
 endif()
@@ -571,14 +622,40 @@ endif()
 
 # Target to build Linux x86_64 via WSL
 add_custom_target(build_linux_x64
-    COMMAND C:/Windows/System32/wsl.exe bash -c "g++ -std=c++20 -O3 -mavx2 -mfma -DUSE_OPENVINO -DUSE_TBB -DMATHVANTAGE_EXPORTS -fPIC -shared -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/include -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/src -I/mnt/c/Intel/openvino_toolkit_windows_2025.4.0.20398.8fdad55727d_x86_64/runtime/include -I\\\"/mnt/c/Program Files (x86)/Intel/oneAPI/tbb/latest/include\\\" /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/MSIMD_Base_Skeletree.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SF_Native_Dispatcher.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SF_Backend_Accelerated_Dispatcher.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SacFor_VM.cpp -L/mnt/c/Users/aziml/my_projects/JingZero/src/main/resources/natives/mathvantage/linux-x64 -lopenvino -ltbb -o /mnt/c/Users/aziml/my_projects/MathventageSIMD/bin/linux-x64/libmathvantage.so"
-    COMMENT "Building Linux x86_64 via WSL..."
+    COMMAND C:/Windows/System32/wsl.exe bash -c "mkdir -p /mnt/c/Users/aziml/my_projects/MathventageSIMD/out/linux-x64 && g++ -std=c++20 -O3 -mavx2 -mfma -DMATHVANTAGE_EXPORTS -fPIC -shared -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/include -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/src /mnt/c/Users/aziml/my_projects/MathventageSIMD/build/MathventageSIMD_Derived.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SacFor_VM.cpp -o /mnt/c/Users/aziml/my_projects/MathventageSIMD/out/linux-x64/libsfmsimd.so"
+    DEPENDS generate_mathvantage_sources
+    COMMENT "Building Linux x86_64 via WSL -> out/linux-x64/libsfmsimd.so..."
 )
 
 # Target to build Linux ARM64 via WSL
 add_custom_target(build_linux_arm64
-    COMMAND C:/Windows/System32/wsl.exe bash -c "aarch64-linux-gnu-g++ -std=c++20 -O3 -march=armv8-a+simd -DMATHVANTAGE_EXPORTS -fPIC -shared -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/include -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/src /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/MSIMD_Base_Skeletree.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SF_Native_Dispatcher.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SF_Backend_Accelerated_Dispatcher.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SacFor_VM.cpp -o /mnt/c/Users/aziml/my_projects/MathventageSIMD/bin/linux-arm64/libmathvantage.so"
-    COMMENT "Building Linux ARM64 via WSL..."
+    COMMAND C:/Windows/System32/wsl.exe bash -c "mkdir -p /mnt/c/Users/aziml/my_projects/MathventageSIMD/out/linux-arm64 && aarch64-linux-gnu-g++ -std=c++20 -O3 -march=armv8-a+simd -DMATHVANTAGE_EXPORTS -fPIC -shared -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/include -I/mnt/c/Users/aziml/my_projects/MathventageSIMD/src /mnt/c/Users/aziml/my_projects/MathventageSIMD/build/MathventageSIMD_Derived.cpp /mnt/c/Users/aziml/my_projects/MathventageSIMD/src/SacFor_VM.cpp -o /mnt/c/Users/aziml/my_projects/MathventageSIMD/out/linux-arm64/libsfmsimd.so"
+    DEPENDS generate_mathvantage_sources
+    COMMENT "Building Linux ARM64 via WSL -> out/linux-arm64/libsfmsimd.so..."
+)
+
+# Target to build ALL cross-platform binaries
+add_custom_target(build_all_cross
+    DEPENDS mathvantage build_linux_x64 build_linux_arm64
+    COMMENT "All Cross-Platform binaries (Windows x64 + Linux x64 + Linux ARM64) built successfully!"
+)
+
+# SDK Packaging Target: Packages include/ headers and out/ binaries into a clean SDK zip
+add_custom_target(package_sdk
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SDK_OUT_DIR}/sdk/include"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SDK_OUT_DIR}/sdk/bin"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SDK_OUT_DIR}/sdk/bindings/java"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/include/SacculusForge.h" "${SDK_OUT_DIR}/sdk/include/SacculusForge.h"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/include/MathventageSIMD.h" "${SDK_OUT_DIR}/sdk/include/MathventageSIMD.h"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SDK_OUT_DIR}/windows-x64" "${SDK_OUT_DIR}/sdk/bin/windows-x64"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SDK_OUT_DIR}/linux-x64" "${SDK_OUT_DIR}/sdk/bin/linux-x64"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SDK_OUT_DIR}/linux-arm64" "${SDK_OUT_DIR}/sdk/bin/linux-arm64"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/other_langs_bindings/Java/JNI/out/MSIMD_JNI_Loader.java" "${SDK_OUT_DIR}/sdk/bindings/java/MSIMD_JNI_Loader.java"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/other_langs_bindings/Java/JNI/out/SacculusForge.java" "${SDK_OUT_DIR}/sdk/bindings/java/SacculusForge.java"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/other_langs_bindings/Java/JNI/out/MathventageSIMD.java" "${SDK_OUT_DIR}/sdk/bindings/java/MathventageSIMD.java"
+    COMMAND ${CMAKE_COMMAND} -E tar "cfv" "${SDK_OUT_DIR}/MathventageSIMD-SDK.zip" --format=zip "${SDK_OUT_DIR}/sdk"
+    DEPENDS build_all_cross sfmsimd_jni
+    COMMENT "Packaging MathventageSIMD-SDK.zip into ${SDK_OUT_DIR}..."
 )
 
 # Jextract Custom Target (Regenerates Java Panama Bindings)
@@ -590,6 +667,11 @@ add_custom_target(generate_java_bindings
         "${CMAKE_SOURCE_DIR}/include/MathventageSIMD.h"
     COMMENT "Regenerating Java Panama FFM Bindings via jextract-25..."
 )
+
+# Modular Java JNI Subsystem
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/other_langs_bindings/Java/JNI/MSIMD-JNIGen.cmake")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/other_langs_bindings/Java/JNI/MSIMD-JNIGen.cmake")
+endif()
 
 # =========================================================================
 # BARE-METAL EMBEDDED FIRMWARE TARGET (INTEL HEX STUB)
@@ -627,5 +709,29 @@ if(BUILD_EMBEDDED_HEX)
     endif()
 endif()
 
+# =========================================================================
+# SFVM ARCHITECTURAL VERIFICATION SUITE
+# =========================================================================
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/verify_sfvm_all_features.cpp")
+    add_executable(sf_verification_test
+        tests/verify_sfvm_all_features.cpp
+    )
+    target_include_directories(sf_verification_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    set_target_properties(sf_verification_test PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${NATIVES_OUT_DIR}"
+    )
+    if(MSVC)
+        set_property(TARGET sf_verification_test PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+        target_compile_definitions(sf_verification_test PRIVATE _ITERATOR_DEBUG_LEVEL=0)
+    endif()
+    target_link_libraries(sf_verification_test PRIVATE mathvantage)
+    enable_testing()
+    add_test(NAME sf_verification_test COMMAND sf_verification_test)
+endif()
+
 message(STATUS "Configured for ${MSIMD_OS}-${MSIMD_ARCH}. Output -> ${NATIVES_OUT_DIR}")
+
 

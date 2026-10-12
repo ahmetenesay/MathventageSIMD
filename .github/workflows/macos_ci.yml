@@ -1,0 +1,51 @@
+name: MathventageSIMD macOS CI Matrix
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    name: macOS ${{ matrix.arch }} Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+            cmake_arch: arm64
+          - os: macos-13
+            arch: x86_64
+            cmake_arch: x86_64
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ninja & LLVM
+        run: |
+          brew install ninja llvm
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)/bin/clang++" \
+            -DCMAKE_C_COMPILER="$(brew --prefix llvm)/bin/clang" \
+            -DCMAKE_OSX_ARCHITECTURES="${{ matrix.cmake_arch }}"
+
+      - name: Build MathventageSIMD Shared Library
+        run: |
+          cmake --build build --target mathvantage
+
+      - name: Upload macOS Dynamic Library Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsfmsimd-macos-${{ matrix.arch }}
+          path: |
+            out/macos-${{ matrix.cmake_arch }}/libsfmsimd.dylib
+            build/libsfmsimd.dylib

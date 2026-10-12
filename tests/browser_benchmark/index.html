@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MathventageSIMD & SacculusForge VM // Silicon Benchmark Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo">⚡</div>
+        <div>
+          <div class="brand-title">MATHVENTAGE-SIMD // SACCULUSFORGE SFVM</div>
+          <div class="brand-sub">HPC Real-Time Hardware Benchmark & Silicon Roofline Analyzer</div>
+        </div>
+      </div>
+      <div class="header-status-panel">
+        <span class="badge-pill" id="header-tier-badge">TIER: ORTA_ORTA (6P+8E)</span>
+        <span class="badge-pill" id="header-profile-badge">PROFILE: NORMAX</span>
+      </div>
+    </header>
+
+    <main class="dashboard-layout">
+      <!-- 1. Real-Time Tensor & Throughput Meters -->
+      <section id="throughput-meters-container"></section>
+
+      <!-- 2. Dual Visualization: Roofline Model & Latency Histogram -->
+      <section class="viz-dual-panel">
+        <div class="viz-card">
+          <div class="viz-header">
+            <span class="viz-title">CACHE-AWARE ROOFLINE MODEL</span>
+            <span class="viz-legend">Arithmetic Intensity vs GFLOPS (DRAM/L3/L1)</span>
+          </div>
+          <div id="roofline-container"></div>
+        </div>
+
+        <div class="viz-card">
+          <div class="viz-header">
+            <span class="viz-title">CYCLE-LEVEL RDTSC LATENCY HISTOGRAM</span>
+            <span class="viz-legend">p50 / p95 / p99 Percentile Distribution</span>
+          </div>
+          <div id="histogram-container"></div>
+        </div>
+      </section>
+
+      <!-- 3. SFVM Memory Topography Visualizer -->
+      <section id="topography-container"></section>
+
+      <!-- 4. Interactive Benchmark Controller Matrix -->
+      <section id="controller-container"></section>
+
+      <!-- 5. Real-Time RDTSC Hardware Telemetry Stream & 4-Point Topology -->
+      <section id="telemetry-container"></section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

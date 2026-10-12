@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+*.log
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.lib
+*.dll
+build_cmake/
+build/

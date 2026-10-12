@@ -1,0 +1,261 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 980" width="100%" height="100%" style="background:#080c12; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <!-- Background Grid -->
+    <pattern id="vfs-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#111722" stroke-width="1"/>
+    </pattern>
+
+    <!-- Markers -->
+    <marker id="m-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#b17a3a"/>
+    </marker>
+    <marker id="m-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+    </marker>
+    <marker id="m-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#8b5cf6"/>
+    </marker>
+
+    <!-- Gradients -->
+    <linearGradient id="rootGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2e1f0e"/>
+      <stop offset="100%" stop-color="#181006"/>
+    </linearGradient>
+    <linearGradient id="onHeapBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#06231c"/>
+      <stop offset="100%" stop-color="#02120e"/>
+    </linearGradient>
+    <linearGradient id="offHeapBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1c0f2e"/>
+      <stop offset="100%" stop-color="#0d0617"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1240" height="980" fill="#080c12"/>
+  <rect width="1240" height="980" fill="url(#vfs-grid)"/>
+
+  <!-- ROOT VFS NODE -->
+  <g transform="translate(420, 20)">
+    <rect width="400" height="56" rx="8" fill="url(#rootGrad)" stroke="#b17a3a" stroke-width="2"/>
+    <text x="200" y="26" text-anchor="middle" font-size="14" font-weight="800" fill="#fef3c7" letter-spacing="1.5">/ (ROOT VFS NAMESPACE)</text>
+    <text x="200" y="44" text-anchor="middle" font-size="11" font-weight="500" fill="#d4af37">SacFor_VM Virtual File System Tree (sacculus_folder_tree_t)</text>
+  </g>
+
+  <!-- Trunk Lines: Root to /heap/ -->
+  <path d="M 620 76 L 620 100" fill="none" stroke="#b17a3a" stroke-width="2" marker-end="url(#m-amber)"/>
+
+  <!-- Node: /heap/ -->
+  <g transform="translate(520, 100)">
+    <rect width="200" height="36" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+    <text x="100" y="23" text-anchor="middle" font-size="13" font-weight="700" fill="#f8fafc">/heap/</text>
+  </g>
+
+  <!-- Orthogonal Split: /heap/ to on_heap (left) and off_heap (right) -->
+  <path d="M 520 118 L 260 118 L 260 155" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#m-green)"/>
+  <path d="M 720 118 L 1020 118 L 1020 155" fill="none" stroke="#8b5cf6" stroke-width="2" marker-end="url(#m-purple)"/>
+
+  <!-- ==================== 1. ON-HEAP BRANCH (LEFT) ==================== -->
+  <!-- Header Node: /heap/on_heap/ -->
+  <g transform="translate(120, 155)">
+    <rect width="280" height="38" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="2"/>
+    <text x="140" y="24" text-anchor="middle" font-size="13" font-weight="800" fill="#ecfdf5">/heap/on_heap/</text>
+  </g>
+
+  <!-- Main Container: On-Heap Body -->
+  <rect x="30" y="210" width="740" height="740" rx="10" fill="url(#onHeapBg)" stroke="#059669" stroke-width="1.5"/>
+  <text x="50" y="235" font-size="12" font-weight="800" fill="#34d399" letter-spacing="1">ON-HEAP MANAGED ANATOMY (sfGC Generational Runway &amp; Landfill)</text>
+
+  <!-- Connect /heap/on_heap/ down to Container -->
+  <path d="M 260 193 L 260 210" fill="none" stroke="#10b981" stroke-width="2"/>
+
+  <!-- 1.1 SUB-BRANCH: /heap/on_heap/runway/ -->
+  <g transform="translate(50, 250)">
+    <rect width="700" height="440" rx="8" fill="#031c16" stroke="#10b981" stroke-width="1.5"/>
+    <text x="20" y="25" font-size="12" font-weight="800" fill="#6ee7b7">/heap/on_heap/runway/</text>
+    <text x="20" y="40" font-size="10" fill="#a7f3d0">Bump Allocation Runway • High-Speed Mathematical Vector Loops</text>
+
+    <!-- 1.1.1 /motherline/ -->
+    <rect x="15" y="55" width="670" height="300" rx="6" fill="#021410" stroke="#047857" stroke-width="1"/>
+    <text x="30" y="75" font-size="11" font-weight="700" fill="#a7f3d0">/motherline/</text>
+
+    <!-- EGG ZONE (Unoptimized Newborns) -->
+    <g transform="translate(30, 85)">
+      <rect width="310" height="255" rx="6" fill="#062a22" stroke="#059669" stroke-width="1"/>
+      <text x="15" y="22" font-size="11" font-weight="800" fill="#6ee7b7">/egg/ (Newborn &amp; Unprofiled)</text>
+
+      <!-- Young Rooms -->
+      <rect x="10" y="32" width="290" height="65" rx="4" fill="#041e18" stroke="#10b981" stroke-width="0.8"/>
+      <text x="20" y="48" font-size="10" font-weight="700" fill="#a7f3d0">/young/</text>
+      <text x="25" y="66" font-size="9" fill="#d1fae5">[ tank ]  •  [ demand ]</text>
+      <text x="25" y="83" font-size="9" fill="#d1fae5">[ middle ]  •  [ hotfield ]</text>
+
+      <!-- Adolescent Rooms -->
+      <rect x="10" y="105" width="290" height="65" rx="4" fill="#041e18" stroke="#10b981" stroke-width="0.8"/>
+      <text x="20" y="121" font-size="10" font-weight="700" fill="#a7f3d0">/adolescent/</text>
+      <text x="25" y="139" font-size="9" fill="#d1fae5">[ tank ]  •  [ demand ]</text>
+      <text x="25" y="156" font-size="9" fill="#d1fae5">[ middle ]  •  [ hotfield ]</text>
+
+      <!-- Senior Rooms -->
+      <rect x="10" y="178" width="290" height="65" rx="4" fill="#041e18" stroke="#10b981" stroke-width="0.8"/>
+      <text x="20" y="194" font-size="10" font-weight="700" fill="#a7f3d0">/senior/</text>
+      <text x="25" y="212" font-size="9" fill="#d1fae5">[ tank ]  •  [ demand ]</text>
+      <text x="25" y="229" font-size="9" fill="#d1fae5">[ middle ]  •  [ hotfield ]</text>
+    </g>
+
+    <!-- FLEDGLING ZONE (Yapbozcu Optimized) -->
+    <g transform="translate(360, 85)">
+      <rect width="310" height="255" rx="6" fill="#073329" stroke="#10b981" stroke-width="1.5"/>
+      <text x="15" y="22" font-size="11" font-weight="800" fill="#34d399">/fledgling/ (Peak-SIMD Specialized)</text>
+
+      <!-- Young Rooms -->
+      <rect x="10" y="32" width="290" height="65" rx="4" fill="#041e18" stroke="#10b981" stroke-width="0.8"/>
+      <text x="20" y="48" font-size="10" font-weight="700" fill="#a7f3d0">/young/</text>
+      <text x="25" y="66" font-size="9" fill="#d1fae5">[ tank ]  •  [ demand ]</text>
+      <text x="25" y="83" font-size="9" fill="#d1fae5">[ middle ]  •  [ hotfield ]</text>
+
+      <!-- Adolescent Rooms -->
+      <rect x="10" y="105" width="290" height="65" rx="4" fill="#041e18" stroke="#10b981" stroke-width="0.8"/>
+      <text x="20" y="121" font-size="10" font-weight="700" fill="#a7f3d0">/adolescent/</text>
+      <text x="25" y="139" font-size="9" fill="#d1fae5">[ tank ]  •  [ demand ]</text>
+      <text x="25" y="156" font-size="9" fill="#d1fae5">[ middle ]  •  [ hotfield ]</text>
+
+      <!-- Senior Rooms -->
+      <rect x="10" y="178" width="290" height="65" rx="4" fill="#041e18" stroke="#10b981" stroke-width="0.8"/>
+      <text x="20" y="194" font-size="10" font-weight="700" fill="#a7f3d0">/senior/</text>
+      <text x="25" y="212" font-size="9" fill="#d1fae5">[ tank ]  •  [ demand ]</text>
+      <text x="25" y="229" font-size="9" fill="#d1fae5">[ middle ]  •  [ hotfield ]</text>
+    </g>
+
+    <!-- 1.1.2 /pitstop/ and 1.1.3 /falline/ -->
+    <g transform="translate(15, 368)">
+      <rect width="325" height="58" rx="6" fill="#222612" stroke="#eab308" stroke-width="1.5"/>
+      <text x="15" y="22" font-size="11" font-weight="800" fill="#fef08a">/pitstop/</text>
+      <text x="15" y="37" font-size="9.5" fill="#fef9c3">Empty-Box In-Place Slot Placeholder</text>
+      <text x="15" y="50" font-size="9" fill="#ca8a04">Zero-compaction live ISA swap protocol</text>
+    </g>
+
+    <g transform="translate(360, 368)">
+      <rect width="325" height="58" rx="6" fill="#082e28" stroke="#14b8a6" stroke-width="1.5"/>
+      <text x="15" y="22" font-size="11" font-weight="800" fill="#5eead4">/falline/</text>
+      <text x="15" y="37" font-size="9.5" fill="#ccfbf1">Recycled Size-Classed Empty Boxes</text>
+      <text x="15" y="50" font-size="9" fill="#0d9488">Instant reuse cache for zero allocation overhead</text>
+    </g>
+  </g>
+
+  <!-- 1.2 SUB-BRANCH: /heap/on_heap/puzzle_arena/ -->
+  <g transform="translate(50, 705)">
+    <rect width="700" height="80" rx="8" fill="#241238" stroke="#a855f7" stroke-width="1.5"/>
+    <text x="20" y="22" font-size="12" font-weight="800" fill="#e9d5ff">/heap/on_heap/puzzle_arena/ (Yapbozcu Profiling Engine)</text>
+    
+    <rect x="20" y="32" width="320" height="38" rx="4" fill="#1a0c2b" stroke="#9333ea" stroke-width="1"/>
+    <text x="30" y="48" font-size="10" font-weight="700" fill="#f3e8ff">/stagnant/</text>
+    <text x="30" y="62" font-size="9" fill="#c084fc">Unimproved candidates awaiting re-evaluation</text>
+
+    <rect x="360" y="32" width="320" height="38" rx="4" fill="#1a0c2b" stroke="#9333ea" stroke-width="1"/>
+    <text x="370" y="48" font-size="10" font-weight="700" fill="#f3e8ff">/eval/</text>
+    <text x="370" y="62" font-size="9" fill="#c084fc">Active ISA microarchitecture performance trials</text>
+  </g>
+
+  <!-- 1.3 SUB-BRANCH: /heap/on_heap/landfill/ -->
+  <g transform="translate(50, 800)">
+    <rect width="700" height="135" rx="8" fill="#111827" stroke="#475569" stroke-width="1.5"/>
+    <text x="20" y="22" font-size="12" font-weight="800" fill="#cbd5e1">/heap/on_heap/landfill/ (Eviction &amp; Resurrection Arena)</text>
+
+    <!-- matured -->
+    <rect x="20" y="34" width="210" height="85" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="30" y="52" font-size="10" font-weight="700" fill="#f1f5f9">/trash_pit/matured/</text>
+    <text x="30" y="68" font-size="9" fill="#94a3b8">Permanently dead objects</text>
+    <text x="30" y="82" font-size="8.5" fill="#64748b">Evicted from runway</text>
+    <text x="30" y="96" font-size="8.5" fill="#64748b">Sliding compaction targets</text>
+
+    <!-- rehab -->
+    <rect x="245" y="34" width="215" height="85" rx="4" fill="#1c2d27" stroke="#10b981" stroke-width="1.2"/>
+    <text x="255" y="52" font-size="10" font-weight="700" fill="#34d399">/trash_pit/rehab/</text>
+    <text x="255" y="68" font-size="9" fill="#a7f3d0">Physical Resurrection</text>
+    <text x="255" y="82" font-size="8.5" fill="#6ee7b7">Restores payload via Falline</text>
+    <text x="255" y="96" font-size="8.5" fill="#6ee7b7">or re-admits into Egg zone</text>
+
+    <!-- header_pane -->
+    <rect x="475" y="34" width="205" height="85" rx="4" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="485" y="52" font-size="10" font-weight="700" fill="#f1f5f9">/header_pane/</text>
+    <text x="485" y="68" font-size="9" fill="#94a3b8">Metadata Pane Retention</text>
+    <text x="485" y="82" font-size="8.5" fill="#64748b">Compact SIMD descriptors</text>
+    <text x="485" y="96" font-size="8.5" fill="#64748b">Cycle gain &amp; lineage records</text>
+  </g>
+
+
+  <!-- ==================== 2. OFF-HEAP BRANCH (RIGHT) ==================== -->
+  <!-- Header Node: /heap/off_heap/ -->
+  <g transform="translate(880, 155)">
+    <rect width="280" height="38" rx="6" fill="#311b92" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="140" y="24" text-anchor="middle" font-size="13" font-weight="800" fill="#f5f3ff">/heap/off_heap/</text>
+  </g>
+
+  <!-- Main Container: Off-Heap Body -->
+  <rect x="800" y="210" width="410" height="740" rx="10" fill="url(#offHeapBg)" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="820" y="235" font-size="12" font-weight="800" fill="#c084fc" letter-spacing="1">OFF-HEAP UNMANAGED ANATOMY (Zero-GC Direct)</text>
+
+  <!-- Connect /heap/off_heap/ down to Container -->
+  <path d="M 1020 193 L 1020 210" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+
+  <!-- 2.1 SUB-BRANCH: /heap/off_heap/code_boot/ -->
+  <g transform="translate(820, 250)">
+    <rect width="370" height="175" rx="8" fill="#1e0c38" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="15" y="24" font-size="12" font-weight="800" fill="#d8b4fe">/code_boot/</text>
+    <text x="15" y="38" font-size="10" fill="#e9d5ff">Native JIT Executable Code Buffers</text>
+
+    <!-- rawcode_cell -->
+    <rect x="15" y="48" width="340" height="52" rx="5" fill="#140728" stroke="#7c3aed" stroke-width="1"/>
+    <text x="25" y="68" font-size="10" font-weight="700" fill="#f5f3ff">/rawcode_cell/</text>
+    <text x="25" y="82" font-size="9" fill="#c4b5fd">Embedded Mathventory.bc LLVM bitcode &amp; AST</text>
+    <text x="25" y="94" font-size="8.5" fill="#a78bfa">Uncompressed source representations</text>
+
+    <!-- processed_code_chunk -->
+    <rect x="15" y="110" width="340" height="52" rx="5" fill="#140728" stroke="#a855f7" stroke-width="1.2"/>
+    <text x="25" y="130" font-size="10" font-weight="700" fill="#f5f3ff">/processed_code_chunk/</text>
+    <text x="25" y="144" font-size="9" fill="#e9d5ff">ORCJIT v2 Compiled Executable Machine Pages</text>
+    <text x="25" y="156" font-size="8.5" fill="#c084fc">RX pinned memory ready for CPU execution</text>
+  </g>
+
+  <!-- 2.2 SUB-BRANCH: /heap/off_heap/log_boot/ -->
+  <g transform="translate(820, 440)">
+    <rect width="370" height="280" rx="8" fill="#111d33" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="15" y="24" font-size="12" font-weight="800" fill="#7dd3fc">/log_boot/ (Circular Telemetry Engine)</text>
+    <text x="15" y="38" font-size="10" fill="#bae6fd">Dual-Ring Diagnostic Telemetry Logging</text>
+
+    <!-- hotlog -->
+    <rect x="15" y="50" width="340" height="95" rx="5" fill="#0c1424" stroke="#0284c7" stroke-width="1.2"/>
+    <text x="25" y="72" font-size="11" font-weight="700" fill="#38bdf8">/hotlog/</text>
+    <text x="25" y="88" font-size="9.5" fill="#e0f2fe">64 MB Ultra-Low-Latency Ring Buffer</text>
+    <text x="25" y="102" font-size="8.5" fill="#7dd3fc">Fast atomic write pointer • Lockless capture</text>
+    <text x="25" y="116" font-size="8.5" fill="#38bdf8">Instant crash forensic dump &amp; live events</text>
+    <text x="25" y="130" font-size="8" fill="#0284c7">Format: [Event_ID | TS | Thread | Payload]</text>
+
+    <!-- coldlog -->
+    <rect x="15" y="155" width="340" height="110" rx="5" fill="#0c1424" stroke="#0369a1" stroke-width="1"/>
+    <text x="25" y="177" font-size="11" font-weight="700" fill="#7dd3fc">/coldlog/</text>
+    <text x="25" y="193" font-size="9.5" fill="#e0f2fe">786 MB Persistent Historical Drain</text>
+    <text x="25" y="207" font-size="8.5" fill="#38bdf8">Background worker thread drains hotlog</text>
+    <text x="25" y="221" font-size="8.5" fill="#7dd3fc">NDJSON structured telemetry output</text>
+    <text x="25" y="235" font-size="8.5" fill="#bae6fd">Full historical trace for IDE / CLI consoles</text>
+    <text x="25" y="249" font-size="8" fill="#0284c7">Auto-rolls on 786 MB threshold</text>
+  </g>
+
+  <!-- 2.3 SUB-BRANCH: /heap/off_heap/reserved_boot/ -->
+  <g transform="translate(820, 735)">
+    <rect width="370" height="195" rx="8" fill="#1e142e" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="15" y="24" font-size="12" font-weight="800" fill="#e9d5ff">/reserved_boot/</text>
+    <text x="15" y="38" font-size="10" fill="#c084fc">Direct Silicon Hardware MMIO &amp; Disk Swap</text>
+
+    <rect x="15" y="48" width="340" height="60" rx="5" fill="#130a20" stroke="#a855f7" stroke-width="1"/>
+    <text x="25" y="68" font-size="10" font-weight="700" fill="#f5f3ff">Hardware MMIO &amp; GPIO Registers</text>
+    <text x="25" y="82" font-size="9" fill="#e9d5ff">Direct memory-mapped co-processor registers</text>
+    <text x="25" y="95" font-size="8.5" fill="#c084fc">Firmware interlock &amp; silicon probe banks</text>
+
+    <rect x="15" y="118" width="340" height="62" rx="5" fill="#130a20" stroke="#a855f7" stroke-width="1"/>
+    <text x="25" y="138" font-size="10" font-weight="700" fill="#f5f3ff">VFS Anonymous Memory-Mapped Swap</text>
+    <text x="25" y="152" font-size="9" fill="#e9d5ff">Multi-GB tensor paging to disk pagefile</text>
+    <text x="25" y="166" font-size="8.5" fill="#c084fc">Zero-GC memory expansion beyond physical RAM</text>
+  </g>
+</svg>

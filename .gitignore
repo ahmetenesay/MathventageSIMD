@@ -35,3 +35,17 @@ CMakeCache.txt
 # Large binaries & reference PDFs
 source_docs/*.pdf
 src/codegen/instructions.xml
+
+# Build Artifacts & Generated Intermediates (Never commit to source tree)
+TableGen_Derived.cpp
+MathventageSIMD_Derived.cpp
+TableGen_AST.json
+Mathventory.bc
+src/MathventageSIMD_Derived.cpp
+src/codegen/sources/TableGen_Derived.cpp
+
+# Python Caches
+__pycache__/
+*.pyc
+*.pyo
+

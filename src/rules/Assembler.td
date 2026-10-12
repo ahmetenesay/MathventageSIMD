@@ -13,7 +13,7 @@
 //    MathventageSIMD-Final.inc without brittle external shell scripts.
 // =============================================================================
 
-include "Derived_Mathematics_Codex.td"
+include "Mathematics-Rules.td"
 include "Machines-Rules.td"
 
 // =============================================================================
@@ -35,8 +35,8 @@ class SynthesizedCartesianKernel<WaveformRule wave, DispatchLadderLevel ladder> 
   int MinElements = ladder.MinElements;
 
   // Uniquely articulated semantic symbol name
-  string KernelSymbol = wave.ExportName # "_" # ladder.Name # "_u" # ladder.Unroll.UnrollFactor;
-  string DisplayTitle = wave.DisplayName # " [" # ladder.Name # " x" # ladder.Unroll.UnrollFactor # "]";
+  string KernelSymbol = wave.ExportName # "_" # ladder.Name # "_u" # !cast<string>(ladder.Unroll.UnrollFactor);
+  string DisplayTitle = wave.DisplayName # " [" # ladder.Name # " x" # !cast<string>(ladder.Unroll.UnrollFactor) # "]";
   
   // Pipeline metrics derived from hardware truth
   int VectorLanes = ladder.Unroll.ElementsPerIteration;
@@ -87,8 +87,8 @@ class SynthesizedKernelVariant<WaveformRule wave, MachineISA isa, UnrollStrategy
   UnrollStrategy Unroll = unroll;
   HardwareMemoryStrategy MemoryStrategy = mem_strat;
 
-  string KernelSymbol = wave.ExportName # "_" # isa.Name # "_u" # unroll.UnrollFactor;
-  string DisplayTitle = wave.DisplayName # " [" # isa.Name # " x" # unroll.UnrollFactor # "]";
+  string KernelSymbol = wave.ExportName # "_" # isa.Name # "_u" # !cast<string>(unroll.UnrollFactor);
+  string DisplayTitle = wave.DisplayName # " [" # isa.Name # " x" # !cast<string>(unroll.UnrollFactor) # "]";
   
   int VectorLanes = unroll.ElementsPerIteration;
   int TargetAlignment = unroll.AlignmentBytes;
@@ -165,3 +165,83 @@ def SFVM_StandardKernelInterlock : SFVM_InterlockStrategy<
     [Point_Interruptpoint, Point_Safepoint],
     [Point_Hookpoint],
     64>;
+
+// =============================================================================
+// SECTION 5: CONCRETE CARTESIAN BINDER INSTANTIATIONS
+// =============================================================================
+
+foreach wave = [Wave_Sine_f32, Wave_Sine_f64,
+                Wave_Cosine_f32, Wave_Cosine_f64,
+                Wave_SymmetricSquare_f32, Wave_SymmetricSquare_f64,
+                Wave_SymmetricTriangle_f32, Wave_SymmetricTriangle_f64,
+                Wave_SawtoothRampUp_f32, Wave_SawtoothRampUp_f64,
+                Wave_SawtoothRampDown_f32, Wave_SawtoothRampDown_f64,
+                Wave_Trapezoidal_f32, Wave_Trapezoidal_f64,
+                Wave_Staircase_f32, Wave_Staircase_f64] in {
+  foreach ladder = [Ladder_L0_AMX_AVX512_Streaming,
+                    Ladder_L1_AVX512_FMA_Cached,
+                    Ladder_L2_AVX512_VL_Prefetch,
+                    Ladder_L3_Zen4_Zen5_DualFPU,
+                    Ladder_L4_AVX_VNNI_FMA3,
+                    Ladder_L5_AVX2_Streaming_NT,
+                    Ladder_L6_AVX2_Cached_Baseline,
+                    Ladder_L7_SSE42_128Bit,
+                    Ladder_L8_SRAM_Partitioned,
+                    Ladder_L9_Pure_Scalar_Fallback,
+                    Ladder_L10_ARM_SVE2,
+                    Ladder_L11_ARM_NEON,
+                    Ladder_L12_RISCV_Vector,
+                    Ladder_L13_LoongArch_LASX,
+                    Ladder_L14_Embedded_DSP_PIE,
+                    Ladder_L15_Hardware_Coprocessor,
+                    Ladder_L16_SoftFloat_Q31,
+                    Ladder_L17_AVX10_2_Converged_512] in {
+    def Cartesian_#wave#_#ladder : SynthesizedCartesianKernel<wave, ladder>;
+  }
+}
+
+foreach wave = [Wave_Sine_f32, Wave_Sine_f64, Wave_Cosine_f32, Wave_Cosine_f64] in {
+  def Matrix_#wave#_AVX2     : SynthesizedMatrixKernel<wave, Tile_AVX2_Haswell_Skylake, ISA_x86_AVX2>;
+  def Matrix_#wave#_AVX512   : SynthesizedMatrixKernel<wave, Tile_AVX512_SkylakeX_ICL, ISA_x86_AVX512F>;
+  def Matrix_#wave#_Zen5     : SynthesizedMatrixKernel<wave, Tile_AVX512_Zen4_Zen5, ISA_x86_AVX512F>;
+  def Matrix_#wave#_Zen6     : SynthesizedMatrixKernel<wave, Tile_AVX512_Zen6_3DVCache, ISA_x86_AVX512F>;
+  def Matrix_#wave#_AVX10_2  : SynthesizedMatrixKernel<wave, Tile_AVX10_2_NovaLake_bLLC, ISA_x86_AVX10_2>;
+  def Matrix_#wave#_AppleM4  : SynthesizedMatrixKernel<wave, Tile_Apple_M1_M4, ISA_ARM_NEON>;
+  def Matrix_#wave#_SVE2     : SynthesizedMatrixKernel<wave, Tile_ARM_NeoverseV2_SVE2, ISA_ARM_SVE2>;
+  def Matrix_#wave#_RVV      : SynthesizedMatrixKernel<wave, Tile_RISCV_Vector_V1, ISA_RISCV_Vector>;
+}
+
+// =============================================================================
+// SECTION 6: MULTI-LIMB EMULATED & HIGH-PRECISION KERNEL SYNTHESIS
+// =============================================================================
+// Synthesizes an emulated multi-limb arithmetic kernel variant binding a
+// high-precision or multi-limb WaveformRule with a PrecisionExecutionRoute.
+// Handles both native hardware ALUs (IBM Power/zArch) and multi-limb emulation
+// (x86-64, ARM64, RISC-V, Universal 256b).
+// =============================================================================
+
+class SynthesizedEmulatedKernel<WaveformRule wave, PrecisionExecutionRoute route> {
+  WaveformRule Wave = wave;
+  PrecisionExecutionRoute Route = route;
+  MultiLimbSchema Schema = route.EmulationSchema;
+  bit IsNative = route.IsNativeALU;
+  bit IsEmulated = route.IsEmulated;
+
+  string KernelSymbol = wave.ExportName # "_" # route.Name # "_" # Schema.Name;
+  string DisplayTitle = wave.DisplayName # " [" # route.Name # " / " # Schema.Name # "]";
+
+  int TotalBits = Schema.TotalBits;
+  int LimbCount = Schema.LimbCount;
+  int LimbWidth = Schema.LimbWidthBits;
+
+  string ReturnType = "void";
+  string ParameterTypes = wave.DataType.CType # "* out, size_t count, double t, double freq, double amp";
+  string FunctionPrototype = ReturnType # " " # KernelSymbol # "(" # ParameterTypes # ")";
+}
+
+foreach wave = [Wave_Sine_f64, Wave_Cosine_f64] in {
+  def EmuKernel_#wave#_NativePower  : SynthesizedEmulatedKernel<wave, Route_128b_Native_IBMPower>;
+  def EmuKernel_#wave#_Emux86       : SynthesizedEmulatedKernel<wave, Route_128b_Emulated_x86_64_Float>;
+  def EmuKernel_#wave#_EmuARM       : SynthesizedEmulatedKernel<wave, Route_128b_Emulated_AArch64_Float>;
+  def EmuKernel_#wave#_EmuUniversal : SynthesizedEmulatedKernel<wave, Route_256b_Emulated_Universal_QuadDouble>;
+}

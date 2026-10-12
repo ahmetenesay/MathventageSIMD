@@ -373,6 +373,12 @@ typedef struct { int64_t  lo; int64_t  hi; } msimd_i128_t;
 
 /* 10. True IEEE 754-2008 binary128 Quad Precision (1 sign, 15 exp, 112 mantissa) */
 typedef struct { uint64_t lo; uint64_t hi; } msimd_fp128_t;
+typedef msimd_fp128_t msimd_f128_t;
+
+/* 11. Multi-Limb 256-bit Integer & Float Types (Universal Emulation) */
+typedef struct { uint64_t limbs[4]; } msimd_u256_t;
+typedef struct { int64_t  limbs[4]; } msimd_i256_t;
+typedef struct { double   limbs[4]; } msimd_f256_t;
 
 /* Complex Number (Single Precision) */
 typedef struct MSIMDComplex {
@@ -4777,8 +4783,8 @@ MSIMD_API void msimd_lbm_d3q19_bgk_collision_and_stream(const float* f_in, float
  *
  * Permutes statevector amplitudes: |...0...> <-> |...1...> across 2^{num_qubits} complex amplitudes.
  *
- * @param[in,out] psi_re           Statevector real amplitudes array [2^{num_qubits}] updated in-place.
- * @param[in,out] psi_im           Statevector imaginary amplitudes array [2^{num_qubits}] updated in-place.
+ * @param[in,out] psi_re           Statevector real amplitudes array [2^{num_qubits} ] updated in-place.
+ * @param[in,out] psi_im           Statevector imaginary amplitudes array [2^{num_qubits} ] updated in-place.
  * @param[in]     num_qubits       Total number of entangled qubits in the system.
  * @param[in]     target_qubit     Target qubit index (0 to num_qubits - 1).
  * @param[in]     precision_target Optional precision descriptor (default: nullptr).
@@ -5320,6 +5326,11049 @@ MSIMD_API int    msimd_graph_bellman_ford(const double* adj_matrix, size_t n, si
 MSIMD_API double msimd_graph_max_flow_edmonds_karp(const double* capacity_matrix, size_t n, size_t source, size_t sink, double* residual_matrix_out, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
 
 /** @} */ /* End of MSIMD_Section46 */
+
+/* ========================================================================= */
+/* SECTION 47: EXTENDED COMPUTATIONAL, PHYSICAL & ALGORITHMIC KERNELS       */
+/* ========================================================================= */
+/** @defgroup MSIMD_Section47 Extended Computational & Physical Kernels
+ *  @{
+ */
+
+/**
+ * @brief Computational kernel msimd_vec4f_reflect.
+ */
+MSIMD_API void            msimd_vec4f_reflect(const float* v, const float* n, float* out, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_vec4d_reflect.
+ */
+MSIMD_API void            msimd_vec4d_reflect(const double* v, const double* n, double* out, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_mat3f_identity.
+ */
+MSIMD_API void            msimd_mat3f_identity(float* m, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_mat3f_invert.
+ */
+MSIMD_API bool            msimd_mat3f_invert(const float* m, float* out);
+
+/**
+ * @brief Computational kernel msimd_mat4f_identity.
+ */
+MSIMD_API void            msimd_mat4f_identity(float* m, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_mat4f_transpose.
+ */
+MSIMD_API void            msimd_mat4f_transpose(const float* m, float* out, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_quat_identity.
+ */
+MSIMD_API void            msimd_quat_identity(float* q, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_bessel_j0.
+ */
+MSIMD_API double          msimd_bessel_j0(double x, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_bessel_j1.
+ */
+MSIMD_API double          msimd_bessel_j1(double x, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_airy_ai.
+ */
+MSIMD_API double          msimd_airy_ai(double x, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_legendre_p.
+ */
+MSIMD_API double          msimd_legendre_p(int n, double x, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_chebyshev_t.
+ */
+MSIMD_API double          msimd_chebyshev_t(int n, double x, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_kdv_step.
+ */
+MSIMD_API void            msimd_kdv_step(float* u_next, const float* u_curr, const float* u_prev, size_t n, float dt, float dx, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_sine_gordon_step.
+ */
+MSIMD_API void            msimd_sine_gordon_step(float* u_next, const float* u_curr, const float* u_prev, size_t n, float dt, float dx, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_fractional_caputo_derivative.
+ */
+MSIMD_API void            msimd_fractional_caputo_derivative(const float* f, float* out, size_t n, float alpha, float dt, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_wavelet_haar_forward.
+ */
+MSIMD_API void            msimd_wavelet_haar_forward(const float* in, float* out, size_t n, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_wavelet_haar_inverse.
+ */
+MSIMD_API void            msimd_wavelet_haar_inverse(const float* in, float* out, size_t n, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_wavelet_daubechies4_forward.
+ */
+MSIMD_API void            msimd_wavelet_daubechies4_forward(const float* in, float* out, size_t n, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_kernel_wave_step_1d_fp32.
+ */
+MSIMD_API void            msimd_kernel_wave_step_1d_fp32(float* next, const float* curr, const float* prev, size_t nx, float r2, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_kernel_wave_step_3d_fp32.
+ */
+MSIMD_API void            msimd_kernel_wave_step_3d_fp32(float* next, const float* curr, const float* prev, size_t nx, size_t ny, size_t nz, float rx, float ry, float rz, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_kernel_maxwell_yee_3d.
+ */
+MSIMD_API void            msimd_kernel_maxwell_yee_3d(size_t nx, size_t ny, size_t nz, float* Ex, float* Ey, float* Ez, float* Hx, float* Hy, float* Hz, float dt, float dx, float dy, float dz, float mu, float eps, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_kernel_lbm_d2q9.
+ */
+MSIMD_API void            msimd_kernel_lbm_d2q9(size_t nx, size_t ny, const float* f_in, float* f_out, float* rho, float* ux, float* uy, float tau, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_kernel_stockham_fft_radix2.
+ */
+MSIMD_API void            msimd_kernel_stockham_fft_radix2(size_t n, const float* in_real, const float* in_imag, float* out_real, float* out_imag, int inverse, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_rigidbody_update_inv_inertia.
+ */
+MSIMD_API void            msimd_rigidbody_update_inv_inertia(MSIMDRigidBody* b, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_rigidbody_integrate_velocity.
+ */
+MSIMD_API void            msimd_rigidbody_integrate_velocity(MSIMDRigidBody* b, const float* gravity, float dt, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_rigidbody_integrate_position.
+ */
+MSIMD_API void            msimd_rigidbody_integrate_position(MSIMDRigidBody* b, float dt, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_pgs_prepare_contact.
+ */
+MSIMD_API void            msimd_pgs_prepare_contact(MSIMDContactConstraint* c, float dt, float baumgarte, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_pgs_solve_contact_iteration.
+ */
+MSIMD_API void            msimd_pgs_solve_contact_iteration(MSIMDContactConstraint* c, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_sph_compute_density_pressure.
+ */
+MSIMD_API void            msimd_sph_compute_density_pressure(MSIMDSPHParticle* p, size_t count, float h, float rest_density, float k_stiffness, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_c_add.
+ */
+MSIMD_API MSIMDComplex    msimd_c_add(MSIMDComplex a, MSIMDComplex b);
+
+/**
+ * @brief Computational kernel msimd_c_sub.
+ */
+MSIMD_API MSIMDComplex    msimd_c_sub(MSIMDComplex a, MSIMDComplex b);
+
+/**
+ * @brief Computational kernel msimd_c_mul.
+ */
+MSIMD_API MSIMDComplex    msimd_c_mul(MSIMDComplex a, MSIMDComplex b);
+
+/**
+ * @brief Computational kernel msimd_c_scale.
+ */
+MSIMD_API MSIMDComplex    msimd_c_scale(MSIMDComplex a, float s);
+
+/**
+ * @brief Computational kernel msimd_c_norm_sq.
+ */
+MSIMD_API float           msimd_c_norm_sq(MSIMDComplex a);
+
+/**
+ * @brief Computational kernel msimd_pauli_sigma_x.
+ */
+MSIMD_API void            msimd_pauli_sigma_x(const MSIMDComplex in[2], MSIMDComplex out[2], const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_pauli_sigma_y.
+ */
+MSIMD_API void            msimd_pauli_sigma_y(const MSIMDComplex in[2], MSIMDComplex out[2], const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_pauli_sigma_z.
+ */
+MSIMD_API void            msimd_pauli_sigma_z(const MSIMDComplex in[2], MSIMDComplex out[2], const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_dirac_4spinor_step_3d.
+ */
+MSIMD_API void            msimd_dirac_4spinor_step_3d(MSIMDComplex* psi_next, const MSIMDComplex* psi_curr, size_t nx, size_t ny, size_t nz, float m, float c, float hbar, float dt, float dx, float dy, float dz, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_lattice_u1_plaquette_energy.
+ */
+MSIMD_API float           msimd_lattice_u1_plaquette_energy(const float* link_angles, size_t nx, size_t ny, size_t nz, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_lindblad_step_qubit.
+ */
+MSIMD_API void            msimd_lindblad_step_qubit(const MSIMDComplex rho[4], const MSIMDComplex H[4], float gamma_dephase, float gamma_relax, float dt, MSIMDComplex out_rho[4], const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_aabb_intersect_ray.
+ */
+MSIMD_API bool            msimd_aabb_intersect_ray(const MSIMDAABB* box, const float* orig, const float* dir, float* out_tmin, float* out_tmax);
+
+/**
+ * @brief Computational kernel msimd_pbr_distribution_ggx.
+ */
+MSIMD_API float           msimd_pbr_distribution_ggx(const float* n, const float* h, float roughness);
+
+/**
+ * @brief Computational kernel msimd_pbr_geometry_schlick_ggx.
+ */
+MSIMD_API float           msimd_pbr_geometry_schlick_ggx(float n_dot_v, float roughness);
+
+/**
+ * @brief Computational kernel msimd_pbr_geometry_smith.
+ */
+MSIMD_API float           msimd_pbr_geometry_smith(const float* n, const float* v, const float* l, float roughness);
+
+/**
+ * @brief Computational kernel msimd_pbr_fresnel_schlick.
+ */
+MSIMD_API void            msimd_pbr_fresnel_schlick(float cos_theta, const float* F0, float* out_F);
+
+/**
+ * @brief Computational kernel msimd_pbr_cook_torrance_brdf.
+ */
+MSIMD_API void            msimd_pbr_cook_torrance_brdf(const float* n, const float* v, const float* l, const float* albedo, float metallic, float roughness, float* out_radiance, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_svdag_raymarch_dda.
+ */
+MSIMD_API bool            msimd_svdag_raymarch_dda(const uint32_t* voxel_grid, size_t dim_x, size_t dim_y, size_t dim_z, const float* orig, const float* dir, float max_dist, float* out_hit_pos, int* out_voxel_val);
+
+/**
+ * @brief Computational kernel msimd_kernel_ray_triangle_batch8.
+ */
+MSIMD_API void            msimd_kernel_ray_triangle_batch8(const float ox[8], const float oy[8], const float oz[8], const float dx[8], const float dy[8], const float dz[8], const float v0[3], const float v1[3], const float v2[3], int hit[8], float t[8], float u[8], float v[8], const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_acoustic_fdtd_step_3d.
+ */
+MSIMD_API void            msimd_acoustic_fdtd_step_3d(float* p, float* ux, float* uy, float* uz, size_t nx, size_t ny, size_t nz, float c, float rho, float dt, float dx, float dy, float dz, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_acoustic_doppler_shift.
+ */
+MSIMD_API float           msimd_acoustic_doppler_shift(float f0, const float* src_pos, const float* src_vel, const float* lis_pos, const float* lis_vel, float speed_of_sound, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_acoustic_sabine_rt60.
+ */
+MSIMD_API float           msimd_acoustic_sabine_rt60(float room_volume, const float* surface_areas, const float* absorption_coeffs, size_t surface_count, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_acoustic_hrtf_binaural_process.
+ */
+MSIMD_API void            msimd_acoustic_hrtf_binaural_process(const float* in_audio, size_t sample_count, const float* hrtf_left_ir, const float* hrtf_right_ir, size_t ir_len, float* out_left, float* out_right, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_compress_rle.
+ */
+MSIMD_API size_t          msimd_compress_rle(const uint8_t* in, size_t in_len, uint8_t* out, size_t out_max);
+
+/**
+ * @brief Computational kernel msimd_decompress_rle.
+ */
+MSIMD_API size_t          msimd_decompress_rle(const uint8_t* in, size_t in_len, uint8_t* out, size_t out_max);
+
+/**
+ * @brief Computational kernel msimd_compress_lzss.
+ */
+MSIMD_API size_t          msimd_compress_lzss(const uint8_t* in, size_t in_len, uint8_t* out, size_t out_max);
+
+/**
+ * @brief Computational kernel msimd_decompress_lzss.
+ */
+MSIMD_API size_t          msimd_decompress_lzss(const uint8_t* in, size_t in_len, uint8_t* out, size_t out_max);
+
+/**
+ * @brief Computational kernel msimd_bitpack_pack.
+ */
+MSIMD_API void            msimd_bitpack_pack(const uint32_t* values, size_t count, int bitwidth, uint8_t* out_bytes, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_bitpack_unpack.
+ */
+MSIMD_API void            msimd_bitpack_unpack(const uint8_t* in_bytes, size_t count, int bitwidth, uint32_t* out_values, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_float_to_half.
+ */
+MSIMD_API uint16_t        msimd_float_to_half(float val);
+
+/**
+ * @brief Computational kernel msimd_half_to_float.
+ */
+MSIMD_API float           msimd_half_to_float(uint16_t h, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_wave_morphology_step.
+ */
+MSIMD_API void            msimd_wave_morphology_step(float* out_state, const float* in_state, size_t n, float dispersion, float coupling, float nonlinearity, float dt, int mode, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_soliton_interaction_step.
+ */
+MSIMD_API void            msimd_soliton_interaction_step(float* phi_re, float* phi_im, size_t n, float v1, float v2, float phase_offset, float dt, float dx, int mode, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_discrete_spatial_filter_step.
+ */
+MSIMD_API void            msimd_discrete_spatial_filter_step(float* target, const float* source, size_t n, float alpha, int mode, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Computational kernel msimd_wave_taxonomy_eval.
+ */
+MSIMD_API void            msimd_wave_taxonomy_eval(int mode, float* out, const float* in, size_t n, float dispersion, float coupling, float nonlinearity, float dt, const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/** @} */ /* End of MSIMD_Section47 */
+
+/* ========================================================================= */
+/* SECTION 48: HIGH-PRECISION EMULATION, QUANTUM & ADVANCED DOMAIN KERNELS   */
+/* ========================================================================= */
+/** @defgroup MSIMD_Section48 High-Precision Emulation, Quantum & Advanced Domain Kernels
+ *  @{
+ */
+
+/**
+ * @brief CPU Acoustic Ray Tracing directional sound propagation with medium absorption.
+ */
+MSIMD_API void msimd_acoustic_trace_ray(
+    const float ray_origin[3],
+    const float ray_dir[3],
+    float initial_pressure,
+    float medium_attenuation_db_m,
+    float max_distance,
+    float hit_absorption_coeff,
+    float* out_traversed_dist,
+    float* out_final_pressure,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief High-speed branchless Molang expression evaluator for entity animation queries.
+ */
+MSIMD_API float msimd_molang_eval(
+    const char* molang_expression,
+    const float* query_vars,
+    size_t query_var_count,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Dual Quaternion Linear Blending (DLB) mesh skinning eliminating volume loss.
+ */
+MSIMD_API void msimd_animation_dualquat_skinning(
+    const float in_vertex[3],
+    const float in_normal[3],
+    const float dual_quats[][8],
+    const float* bone_weights,
+    size_t bone_count,
+    float out_vertex[3],
+    float out_normal[3],
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Kerr Rotating Black Hole Geodesic Raymarcher (Boyer-Lindquist spacetime).
+ */
+MSIMD_API int msimd_astro_kerr_raymarch(
+    double bh_mass,
+    double bh_spin_a,
+    const double ray_origin[3],
+    const double ray_dir[3],
+    double step_size,
+    int max_steps,
+    double* out_hit_dist,
+    int* out_captured,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Magnetar Ultra-Strong Magnetic Field and Quantum Vacuum Polarization evaluator.
+ */
+MSIMD_API void msimd_astro_magnetar_bfield(
+    double b0_pole_tesla,
+    double magnetar_radius_km,
+    const double eval_pos_km[3],
+    double out_bfield_tesla[3],
+    double* out_b_magnitude,
+    double* out_vacuum_polarization_idx,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Bounded Planck Uncertainty Space evaluator in 256-bit quad-double multi-limb precision.
+ */
+MSIMD_API int msimd_quantum_planck_bounded_uncertainty_256(
+    const msimd_f256_t* delta_x_in,
+    const msimd_f256_t* delta_p_in,
+    msimd_f256_t* phase_space_uncertainty_out,
+    int* satisfies_planck_bound,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Deterministic 100% Phase-Space Wavepacket Crest Pinpointer in discrete Planck spacetime.
+ */
+MSIMD_API size_t msimd_quantum_wavepacket_peak_pinpoint_256(
+    const msimd_f256_t* psi_real,
+    const msimd_f256_t* psi_imag,
+    size_t sample_count,
+    msimd_f256_t* out_peak_probability,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Quark Flavor Dynamics CKM Unitary 3x3 Mixing with CP-violating phase.
+ */
+MSIMD_API void msimd_quantum_flavor_ckm_mix(
+    const double in_quark_triplet_re[3],
+    const double in_quark_triplet_im[3],
+    const double ckm_matrix_re[9],
+    const double ckm_matrix_im[9],
+    double out_quark_triplet_re[3],
+    double out_quark_triplet_im[3],
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Asymmetric Numeral Systems (rANS) SIMD Entropy Encoder.
+ */
+MSIMD_API size_t msimd_compress_rans_encode(
+    const uint8_t* in_data,
+    size_t in_len,
+    uint8_t* out_buf,
+    size_t out_max,
+    const uint32_t* symbol_freqs,
+    size_t alphabet_size,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Asymmetric Numeral Systems (rANS) SIMD Entropy Decoder.
+ */
+MSIMD_API size_t msimd_compress_rans_decode(
+    const uint8_t* in_data,
+    size_t in_len,
+    uint8_t* out_buf,
+    size_t out_max,
+    const uint32_t* symbol_freqs,
+    size_t alphabet_size,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/** @} */ /* End of MSIMD_Section48 */
+
+/**
+ * @defgroup MSIMD_Section49 Section 49: Open-World Visibility Culling & Geometry Optimization
+ * @{
+ */
+
+/**
+ * @brief Batched SIMD Frustum Culling of Axis-Aligned Bounding Boxes (AABBs).
+ * @param frustum_planes 6 planes * 4 floats (Nx, Ny, Nz, D) = 24 floats.
+ * @param aabb_min_max N boxes * 6 floats (minX, minY, minZ, maxX, maxY, maxZ).
+ * @param count Number of AABBs to test.
+ * @param out_visibility_mask Output: 1 if inside/intersecting frustum, 0 if culled.
+ * @return Total number of visible AABBs.
+ */
+MSIMD_API size_t msimd_cull_frustum_aabbs_f32(
+    const float* frustum_planes,
+    const float* aabb_min_max,
+    size_t count,
+    uint8_t* out_visibility_mask,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Batched SIMD Frustum Culling of Bounding Spheres.
+ * @param frustum_planes 6 planes * 4 floats (Nx, Ny, Nz, D) = 24 floats.
+ * @param sphere_centers_radii N spheres * 4 floats (cx, cy, cz, radius).
+ * @param count Number of spheres to test.
+ * @param out_visibility_mask Output: 1 if visible, 0 if culled.
+ * @return Total number of visible spheres.
+ */
+MSIMD_API size_t msimd_cull_frustum_spheres_f32(
+    const float* frustum_planes,
+    const float* sphere_centers_radii,
+    size_t count,
+    uint8_t* out_visibility_mask,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Batched Squared Distance Evaluation & Level of Detail (LOD) / Range Culling.
+ * @param camera_pos 3 floats (camX, camY, camZ).
+ * @param object_positions N objects * 3 floats (posX, posY, posZ).
+ * @param count Number of objects.
+ * @param lod_sq_thresholds 4 floats: (lod0_max_sq, lod1_max_sq, lod2_max_sq, cull_dist_sq).
+ * @param out_lod_levels Output: discrete LOD level (0, 1, 2, 3) or 255 if culled beyond max range.
+ * @return Total number of visible (non-culled) objects.
+ */
+MSIMD_API size_t msimd_cull_distance_lod_f32(
+    const float* camera_pos,
+    const float* object_positions,
+    size_t count,
+    const float* lod_sq_thresholds,
+    uint8_t* out_lod_levels,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/**
+ * @brief Voxel 6-Neighbor Hidden Face Elimination & Occlusion Mask Synthesis.
+ * @param voxel_grid 3D chunk voxel grid: dim_x * dim_y * dim_z uint32_t block IDs (0 = air).
+ * @param dim_x Chunk X dimension.
+ * @param dim_y Chunk Y dimension.
+ * @param dim_z Chunk Z dimension.
+ * @param out_face_masks Output: dim_x * dim_y * dim_z 6-bit face visibility masks (+X, -X, +Y, -Y, +Z, -Z).
+ * @return Total number of visible faces across the voxel grid.
+ */
+MSIMD_API size_t msimd_voxel_cull_hidden_faces_u32(
+    const uint32_t* voxel_grid,
+    size_t dim_x,
+    size_t dim_y,
+    size_t dim_z,
+    uint8_t* out_face_masks,
+    const msimd_tensor_t* precision_target MSIMD_DEFAULT_PRECISION);
+
+/** @} */ /* End of MSIMD_Section49 */
+
+
+/* ========================================================================= */
+/* AUTONOMOUSLY DERIVED TABLEGEN WAVEFORM KERNELS (512 EVALUATED RULES)      */
+/* Dual Precision Public C-API: Single-Precision F32 + Double-Precision F64 */
+/* ========================================================================= */
+
+#ifndef MSIMD_TABLEGEN_KERNEL_RECORD_DEFINED
+#define MSIMD_TABLEGEN_KERNEL_RECORD_DEFINED
+typedef struct msimd_tablegen_kernel_record_t {
+    const char* export_name;
+    uint32_t    rule_id;
+    const char* domain;
+    const char* display_name;
+    const char* formula;
+    const char* decay;
+    const char* discontinuity;
+    const char* ctype;
+} msimd_tablegen_kernel_record_t;
+
+MSIMD_API size_t                                 tablegen_get_kernel_count(void);
+MSIMD_API const msimd_tablegen_kernel_record_t* tablegen_get_kernel_catalog(void);
+#endif /* MSIMD_TABLEGEN_KERNEL_RECORD_DEFINED */
+
+/**
+ * @brief TableGen Waveform Kernel: Lorenz Butterfly Attractor X-Component (Rule ID: 620)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Convective overturning coordinate displaying deterministic chaotic butterfly wing trajectories.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_attractor_lorenz_x(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Lorenz Butterfly Attractor X-Component (Rule ID: 50620)
+ * Domain       : OrdinaryDifferentialEq
+ * Description  : Convective overturning coordinate displaying deterministic chaotic butterfly wing trajectories.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_attractor_lorenz_x_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Mackey-Glass Delayed Physiological Attractor (Rule ID: 622)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Infinite-dimensional chaotic delay differential equation modeling physiological white blood cell regeneration.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_attractor_mackey_glass(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Mackey-Glass Delayed Physiological Attractor (Rule ID: 50622)
+ * Domain       : OrdinaryDifferentialEq
+ * Description  : Infinite-dimensional chaotic delay differential equation modeling physiological white blood cell regeneration.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_attractor_mackey_glass_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Van der Pol Relaxation Oscillator (Rule ID: 621)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Nonlinear limit-cycle system modeling heartbeat pacing, vacuum tube oscillation, and relaxation jumping.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_attractor_van_der_pol(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Van der Pol Relaxation Oscillator (Rule ID: 50621)
+ * Domain       : OrdinaryDifferentialEq
+ * Description  : Nonlinear limit-cycle system modeling heartbeat pacing, vacuum tube oscillation, and relaxation jumping.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_attractor_van_der_pol_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 4th-Order Classical Runge-Kutta (RK4) (Rule ID: 763)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Universal four-stage predictor-corrector integrator for general non-conservative dynamical systems.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_integrator_rk4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 4th-Order 3-Stage Ruth Symplectic Integrator (Rule ID: 761)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Ronald Ruth 4th-order partitioned Runge-Kutta conserving energy invariants without numerical drift.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_integrator_ruth4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 2nd-Order Symplectic Velocity Verlet (Rule ID: 760)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Standard phase space volume preserving integrator for molecular dynamics and orbital mechanics.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_integrator_velocity_verlet(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 6th-Order 7-Stage Haruo Yoshida Symplectic Integrator (Rule ID: 762)
+ * Domain       : OrdinaryDifferentialEq
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : High-precision composition integrator preserving Poincaré 2-form invariants across billions of cycles.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_integrator_yoshida6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 4x4 Matrix Inversion Cramer SIMD (Rule ID: 741)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Branchless 4x4 matrix inversion using SIMD sub-determinant Cramer evaluation.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_mat4_inv_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 4x4 Matrix Inversion Cramer SIMD (Rule ID: 50741)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Description  : Branchless 4x4 matrix inversion using SIMD sub-determinant Cramer evaluation.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_mat4_inv_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 4x4 Matrix Multiplication FMA Stencil (Rule ID: 740)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Vectorized 4x4 affine transform matrix product unrolled into 16 FMA broadcast lanes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_mat4_mul_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 4x4 Matrix Multiplication FMA Stencil (Rule ID: 50740)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Description  : Vectorized 4x4 affine transform matrix product unrolled into 16 FMA broadcast lanes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_mat4_mul_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Quaternion Hamilton Product Stencil (Rule ID: 744)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Fused 4D hypercomplex quaternion product maintaining SO(3) 3D rotation group structure.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_quat_hamilton_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Quaternion Hamilton Product Stencil (Rule ID: 50744)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Description  : Fused 4D hypercomplex quaternion product maintaining SO(3) 3D rotation group structure.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_quat_hamilton_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Linear Quaternion Interpolation (SLERP) (Rule ID: 745)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Constant-velocity geodesic interpolation on the unit 3-sphere S^3.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_quat_slerp_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Spherical Linear Quaternion Interpolation (SLERP) (Rule ID: 50745)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Description  : Constant-velocity geodesic interpolation on the unit 3-sphere S^3.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_quat_slerp_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 3D Vector Cross Product Stencil (Rule ID: 742)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Two-instruction permutation cross product (a x b) via shuffle and fused multiply-subtract.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_vec3_cross_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 3D Vector Cross Product Stencil (Rule ID: 50742)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Description  : Two-instruction permutation cross product (a x b) via shuffle and fused multiply-subtract.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_vec3_cross_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 4D Vector Dot Product Stencil (Rule ID: 743)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Single-cycle dot product accumulating 4 elements into a scalar lane.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_vec4_dot_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 4D Vector Dot Product Stencil (Rule ID: 50743)
+ * Domain       : LinearAndMultilinearAlgebra
+ * Description  : Single-cycle dot product accumulating 4 elements into a scalar lane.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_la_vec4_dot_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev-Horner Fast Vector Cosine (Rule ID: 702)
+ * Domain       : RealFunctions
+ * LaTeX Formula: 1.0 - 0.49999999*x^2 + 0.04166663*x^4 - 0.00138883*x^6
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Single-precision 6th-order minimax polynomial evaluating cos(x) with zero BPU branching.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_cos_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Chebyshev-Horner Fast Vector Cosine (Rule ID: 50702)
+ * Domain       : RealFunctions
+ * LaTeX Formula: 1.0 - 0.49999999*x^2 + 0.04166663*x^4 - 0.00138883*x^6
+ * Description  : Single-precision 6th-order minimax polynomial evaluating cos(x) with zero BPU branching.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_cos_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Range-Reduced Fast Vector Exponential (Rule ID: 703)
+ * Domain       : RealFunctions
+ * LaTeX Formula: 2^k * P(r), r = x - k*ln(2)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Range-reduced exponential approximation utilizing integer bitshift for 2^k and 5th-order Horner polynomial for residual.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_exp_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Range-Reduced Fast Vector Exponential (Rule ID: 50703)
+ * Domain       : RealFunctions
+ * LaTeX Formula: 2^k * P(r), r = x - k*ln(2)
+ * Description  : Range-reduced exponential approximation utilizing integer bitshift for 2^k and 5th-order Horner polynomial for residual.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_exp_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Newton-Raphson Fast Reciprocal Square Root (Rule ID: 705)
+ * Domain       : RealFunctions
+ * LaTeX Formula: x * (1.5 - 0.5 * a * x^2)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Initial hardware seed (rsqrtps) refined via quadratic Newton-Raphson step to full single-precision accuracy.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_inv_sqrt_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Newton-Raphson Fast Reciprocal Square Root (Rule ID: 50705)
+ * Domain       : RealFunctions
+ * LaTeX Formula: x * (1.5 - 0.5 * a * x^2)
+ * Description  : Initial hardware seed (rsqrtps) refined via quadratic Newton-Raphson step to full single-precision accuracy.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_inv_sqrt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Fast Vector Natural Logarithm (Rule ID: 704)
+ * Domain       : RealFunctions
+ * LaTeX Formula: k*ln(2) + 2*s * P(s^2), s = (m-1)/(m+1)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Vectorized natural logarithm splitting IEEE-754 exponent and mantissa with 5th-order Padé approximant.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_ln_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Fast Vector Natural Logarithm (Rule ID: 50704)
+ * Domain       : RealFunctions
+ * LaTeX Formula: k*ln(2) + 2*s * P(s^2), s = (m-1)/(m+1)
+ * Description  : Vectorized natural logarithm splitting IEEE-754 exponent and mantissa with 5th-order Padé approximant.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_ln_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Fast Logistic Sigmoid Activation (Rule ID: 707)
+ * Domain       : RealFunctions
+ * LaTeX Formula: 0.5 + 0.5 * tanh(0.5 * x)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Branchless vectorized logistic activation function derived from fast tanh.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_sigmoid_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Fast Logistic Sigmoid Activation (Rule ID: 50707)
+ * Domain       : RealFunctions
+ * LaTeX Formula: 0.5 + 0.5 * tanh(0.5 * x)
+ * Description  : Branchless vectorized logistic activation function derived from fast tanh.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_sigmoid_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev-Horner Fast Vector Sine (Rule ID: 701)
+ * Domain       : RealFunctions
+ * LaTeX Formula: x * (1.0 - 0.16666654*x^2 + 0.00833216*x^4 - 0.00019515*x^6)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Single-precision 7th-order minimax polynomial evaluating sin(x) with 2 ULP precision.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_sin_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Chebyshev-Horner Fast Vector Sine (Rule ID: 50701)
+ * Domain       : RealFunctions
+ * LaTeX Formula: x * (1.0 - 0.16666654*x^2 + 0.00833216*x^4 - 0.00019515*x^6)
+ * Description  : Single-precision 7th-order minimax polynomial evaluating sin(x) with 2 ULP precision.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_sin_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Padé Rational Fast Hyperbolic Tangent (Rule ID: 706)
+ * Domain       : RealFunctions
+ * LaTeX Formula: x * (105 + 10*x^2) / (105 + 45*x^2 + x^4)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Branchless rational Padé [3/2] approximation for hyperbolic tangent neural activations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_tanh_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Padé Rational Fast Hyperbolic Tangent (Rule ID: 50706)
+ * Domain       : RealFunctions
+ * LaTeX Formula: x * (105 + 10*x^2) / (105 + 45*x^2 + x^4)
+ * Description  : Branchless rational Padé [3/2] approximation for hyperbolic tangent neural activations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_poly_fast_tanh_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Barker-13 Optimal Biphase Radar Code (Rule ID: 641)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Biphase radar modulation sequence achieving the maximum possible compression peak-to-sidelobe ratio.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_sequence_barker_13(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Barker-13 Optimal Biphase Radar Code (Rule ID: 50641)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Biphase radar modulation sequence achieving the maximum possible compression peak-to-sidelobe ratio.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_sequence_barker_13_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gold Sequence for Asynchronous CDMA (Rule ID: 642)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Pseudo-random binary sequence generated from preferred pairs of m-sequences used in GPS and UMTS telecommunications.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_sequence_gold_cdma(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Gold Sequence for Asynchronous CDMA (Rule ID: 50642)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Pseudo-random binary sequence generated from preferred pairs of m-sequences used in GPS and UMTS telecommunications.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_sequence_gold_cdma_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Zadoff-Chu Polyphase CAZAC Sequence (LTE/5G PSS) (Rule ID: 640)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Optimal radar and mobile primary synchronization signal possessing strictly zero cyclic autocorrelation at non-zero shifts.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_sequence_zadoff_chu_cazac(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Zadoff-Chu Polyphase CAZAC Sequence (LTE/5G PSS) (Rule ID: 50640)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Optimal radar and mobile primary synchronization signal possessing strictly zero cyclic autocorrelation at non-zero shifts.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_sequence_zadoff_chu_cazac_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 3D 13-Point Biharmonic Operator (nabla^4) (Rule ID: 725)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Fourth-order biharmonic spatial differential operator modeling thin-plate flexure and elasticity.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_biharmonic_3d_13pt(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 3D 13-Point Biharmonic Operator (nabla^4) (Rule ID: 50725)
+ * Domain       : NumericalAnalysis
+ * Description  : Fourth-order biharmonic spatial differential operator modeling thin-plate flexure and elasticity.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_biharmonic_3d_13pt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 1D Standard 3-Point Laplacian Stencil (Rule ID: 720)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : (u[i-1] - 2*u[i] + u[i+1]) / dx^2 second-order accurate central difference.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_1d_3pt(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 1D Standard 3-Point Laplacian Stencil (Rule ID: 50720)
+ * Domain       : NumericalAnalysis
+ * Description  : (u[i-1] - 2*u[i] + u[i+1]) / dx^2 second-order accurate central difference.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_1d_3pt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 2D 5-Point Cross Laplacian Stencil (Rule ID: 721)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Central 5-point difference stencil on uniform Cartesian 2D grid.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_2d_5pt(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 2D 5-Point Cross Laplacian Stencil (Rule ID: 50721)
+ * Domain       : NumericalAnalysis
+ * Description  : Central 5-point difference stencil on uniform Cartesian 2D grid.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_2d_5pt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 2D 9-Point Isotropic Compact Laplacian Stencil (Rule ID: 722)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Fourth-order compact Mehrstellen isotropic stencil eliminating diagonal grid anisotropy.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_2d_9pt(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 2D 9-Point Isotropic Compact Laplacian Stencil (Rule ID: 50722)
+ * Domain       : NumericalAnalysis
+ * Description  : Fourth-order compact Mehrstellen isotropic stencil eliminating diagonal grid anisotropy.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_2d_9pt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 3D 27-Point Isotropic Cube Laplacian Stencil (Rule ID: 724)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Isotropic 27-point stencil minimizing grid dispersion in high-frequency wave propagation.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_3d_27pt(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 3D 27-Point Isotropic Cube Laplacian Stencil (Rule ID: 50724)
+ * Domain       : NumericalAnalysis
+ * Description  : Isotropic 27-point stencil minimizing grid dispersion in high-frequency wave propagation.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_3d_27pt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 3D 7-Point Star Laplacian Stencil (Rule ID: 723)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Standard 7-point orthogonal cross stencil for 3D scalar field diffusion and wave propagation.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_3d_7pt(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 3D 7-Point Star Laplacian Stencil (Rule ID: 50723)
+ * Domain       : NumericalAnalysis
+ * Description  : Standard 7-point orthogonal cross stencil for 3D scalar field diffusion and wave propagation.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_laplacian_3d_7pt_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Yee Staggered Electromagnetic FDTD Stencil (Rule ID: 726)
+ * Domain       : NumericalAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Staggered grid Yee cell evaluating curl(E) and curl(H) with rigorous symplectic conservation of charge.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_yee_fdtd_3d(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Yee Staggered Electromagnetic FDTD Stencil (Rule ID: 50726)
+ * Domain       : NumericalAnalysis
+ * Description  : Staggered grid Yee cell evaluating curl(E) and curl(H) with rigorous symplectic conservation of charge.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_stencil_yee_fdtd_3d_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Akhmediev Breather Soliton (Rule ID: 524)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: Periodic modulation wave in space growing and decaying symmetrically in time.
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Exact breather solution modeling the Fermi-Pasta-Ulam recurrence and modulational instability onset.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_akhmediev_breather(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Akhmediev Breather Soliton (Rule ID: 50524)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: Periodic modulation wave in space growing and decaying symmetrically in time.
+ * Description  : Exact breather solution modeling the Fermi-Pasta-Ulam recurrence and modulational instability onset.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_akhmediev_breather_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Inverse Sine (Arcsin) Wave (Rule ID: 210)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \arcsin(t)
+ * Decay Profile: none | Discontinuity: Bounded [-1, 1]
+ * Description  : Multivalued branch-cut principal angle curve bounded strictly over the domain [-1, 1].
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_inv_arcsin(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Inverse Sine (Arcsin) Wave (Rule ID: 50210)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \arcsin(t)
+ * Description  : Multivalued branch-cut principal angle curve bounded strictly over the domain [-1, 1].
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_inv_arcsin_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Inverse Tangent (Arctan) Wave (Rule ID: 211)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \arctan(t)
+ * Decay Profile: none | Discontinuity: Asymptotic [-pi/2, pi/2]
+ * Description  : Continuous bounded transition curve connecting -pi/2 to +pi/2 without singularities.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_inv_arctan(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Inverse Tangent (Arctan) Wave (Rule ID: 50211)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \arctan(t)
+ * Description  : Continuous bounded transition curve connecting -pi/2 to +pi/2 without singularities.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_inv_arctan_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 1% (Rule ID: 11001)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 1/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 1% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_1_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 1% (Rule ID: 61001)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 1/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 1% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_1_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 10% (Rule ID: 11010)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 10/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 10% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_10_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 10% (Rule ID: 61010)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 10/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 10% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_10_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 11% (Rule ID: 11011)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 11/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 11% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_11_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 11% (Rule ID: 61011)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 11/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 11% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_11_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 12% (Rule ID: 11012)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 12/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 12% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_12_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 12% (Rule ID: 61012)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 12/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 12% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_12_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 13% (Rule ID: 11013)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 13/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 13% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_13_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 13% (Rule ID: 61013)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 13/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 13% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_13_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 14% (Rule ID: 11014)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 14/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 14% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_14_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 14% (Rule ID: 61014)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 14/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 14% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_14_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 15% (Rule ID: 11015)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 15/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 15% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_15_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 15% (Rule ID: 61015)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 15/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 15% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_15_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 16% (Rule ID: 11016)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 16/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 16% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_16_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 16% (Rule ID: 61016)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 16/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 16% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_16_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 17% (Rule ID: 11017)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 17/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 17% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_17_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 17% (Rule ID: 61017)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 17/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 17% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_17_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 18% (Rule ID: 11018)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 18/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 18% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_18_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 18% (Rule ID: 61018)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 18/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 18% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_18_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 19% (Rule ID: 11019)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 19/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 19% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_19_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 19% (Rule ID: 61019)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 19/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 19% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_19_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 2% (Rule ID: 11002)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 2/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 2% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_2_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 2% (Rule ID: 61002)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 2/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 2% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_2_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 20% (Rule ID: 11020)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 20/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 20% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_20_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 20% (Rule ID: 61020)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 20/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 20% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_20_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 21% (Rule ID: 11021)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 21/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 21% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_21_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 21% (Rule ID: 61021)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 21/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 21% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_21_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 22% (Rule ID: 11022)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 22/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 22% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_22_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 22% (Rule ID: 61022)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 22/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 22% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_22_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 23% (Rule ID: 11023)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 23/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 23% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_23_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 23% (Rule ID: 61023)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 23/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 23% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_23_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 24% (Rule ID: 11024)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 24/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 24% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_24_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 24% (Rule ID: 61024)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 24/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 24% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_24_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 25% (Rule ID: 11025)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 25/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 25% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_25_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 25% (Rule ID: 61025)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 25/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 25% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_25_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 26% (Rule ID: 11026)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 26/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 26% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_26_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 26% (Rule ID: 61026)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 26/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 26% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_26_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 27% (Rule ID: 11027)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 27/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 27% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_27_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 27% (Rule ID: 61027)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 27/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 27% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_27_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 28% (Rule ID: 11028)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 28/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 28% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_28_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 28% (Rule ID: 61028)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 28/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 28% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_28_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 29% (Rule ID: 11029)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 29/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 29% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_29_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 29% (Rule ID: 61029)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 29/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 29% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_29_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 3% (Rule ID: 11003)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 3/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 3% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_3_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 3% (Rule ID: 61003)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 3/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 3% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_3_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 30% (Rule ID: 11030)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 30/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 30% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_30_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 30% (Rule ID: 61030)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 30/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 30% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_30_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 31% (Rule ID: 11031)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 31/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 31% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_31_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 31% (Rule ID: 61031)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 31/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 31% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_31_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 32% (Rule ID: 11032)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 32/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 32% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_32_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 32% (Rule ID: 61032)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 32/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 32% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_32_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 33% (Rule ID: 11033)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 33/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 33% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_33_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 33% (Rule ID: 61033)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 33/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 33% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_33_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 34% (Rule ID: 11034)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 34/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 34% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_34_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 34% (Rule ID: 61034)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 34/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 34% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_34_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 35% (Rule ID: 11035)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 35/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 35% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_35_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 35% (Rule ID: 61035)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 35/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 35% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_35_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 36% (Rule ID: 11036)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 36/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 36% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_36_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 36% (Rule ID: 61036)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 36/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 36% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_36_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 37% (Rule ID: 11037)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 37/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 37% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_37_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 37% (Rule ID: 61037)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 37/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 37% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_37_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 38% (Rule ID: 11038)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 38/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 38% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_38_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 38% (Rule ID: 61038)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 38/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 38% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_38_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 39% (Rule ID: 11039)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 39/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 39% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_39_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 39% (Rule ID: 61039)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 39/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 39% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_39_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 4% (Rule ID: 11004)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 4/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 4% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_4_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 4% (Rule ID: 61004)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 4/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 4% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_4_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 40% (Rule ID: 11040)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 40/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 40% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_40_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 40% (Rule ID: 61040)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 40/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 40% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_40_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 41% (Rule ID: 11041)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 41/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 41% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_41_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 41% (Rule ID: 61041)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 41/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 41% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_41_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 42% (Rule ID: 11042)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 42/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 42% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_42_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 42% (Rule ID: 61042)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 42/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 42% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_42_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 43% (Rule ID: 11043)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 43/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 43% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_43_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 43% (Rule ID: 61043)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 43/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 43% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_43_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 44% (Rule ID: 11044)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 44/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 44% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_44_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 44% (Rule ID: 61044)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 44/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 44% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_44_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 45% (Rule ID: 11045)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 45/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 45% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_45_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 45% (Rule ID: 61045)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 45/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 45% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_45_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 46% (Rule ID: 11046)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 46/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 46% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_46_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 46% (Rule ID: 61046)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 46/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 46% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_46_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 47% (Rule ID: 11047)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 47/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 47% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_47_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 47% (Rule ID: 61047)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 47/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 47% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_47_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 48% (Rule ID: 11048)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 48/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 48% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_48_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 48% (Rule ID: 61048)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 48/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 48% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_48_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 49% (Rule ID: 11049)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 49/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 49% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_49_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 49% (Rule ID: 61049)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 49/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 49% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_49_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 5% (Rule ID: 11005)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 5/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 5% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_5_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 5% (Rule ID: 61005)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 5/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 5% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_5_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 51% (Rule ID: 11051)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 51/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 51% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_51_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 51% (Rule ID: 61051)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 51/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 51% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_51_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 52% (Rule ID: 11052)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 52/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 52% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_52_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 52% (Rule ID: 61052)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 52/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 52% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_52_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 53% (Rule ID: 11053)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 53/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 53% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_53_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 53% (Rule ID: 61053)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 53/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 53% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_53_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 54% (Rule ID: 11054)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 54/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 54% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_54_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 54% (Rule ID: 61054)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 54/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 54% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_54_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 55% (Rule ID: 11055)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 55/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 55% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_55_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 55% (Rule ID: 61055)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 55/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 55% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_55_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 56% (Rule ID: 11056)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 56/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 56% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_56_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 56% (Rule ID: 61056)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 56/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 56% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_56_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 57% (Rule ID: 11057)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 57/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 57% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_57_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 57% (Rule ID: 61057)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 57/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 57% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_57_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 58% (Rule ID: 11058)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 58/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 58% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_58_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 58% (Rule ID: 61058)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 58/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 58% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_58_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 59% (Rule ID: 11059)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 59/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 59% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_59_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 59% (Rule ID: 61059)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 59/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 59% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_59_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 6% (Rule ID: 11006)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 6/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 6% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_6_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 6% (Rule ID: 61006)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 6/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 6% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_6_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 60% (Rule ID: 11060)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 60/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 60% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_60_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 60% (Rule ID: 61060)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 60/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 60% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_60_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 61% (Rule ID: 11061)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 61/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 61% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_61_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 61% (Rule ID: 61061)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 61/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 61% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_61_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 62% (Rule ID: 11062)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 62/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 62% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_62_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 62% (Rule ID: 61062)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 62/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 62% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_62_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 63% (Rule ID: 11063)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 63/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 63% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_63_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 63% (Rule ID: 61063)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 63/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 63% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_63_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 64% (Rule ID: 11064)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 64/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 64% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_64_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 64% (Rule ID: 61064)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 64/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 64% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_64_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 65% (Rule ID: 11065)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 65/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 65% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_65_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 65% (Rule ID: 61065)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 65/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 65% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_65_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 66% (Rule ID: 11066)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 66/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 66% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_66_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 66% (Rule ID: 61066)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 66/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 66% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_66_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 67% (Rule ID: 11067)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 67/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 67% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_67_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 67% (Rule ID: 61067)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 67/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 67% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_67_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 68% (Rule ID: 11068)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 68/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 68% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_68_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 68% (Rule ID: 61068)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 68/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 68% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_68_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 69% (Rule ID: 11069)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 69/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 69% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_69_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 69% (Rule ID: 61069)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 69/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 69% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_69_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 7% (Rule ID: 11007)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 7/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 7% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_7_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 7% (Rule ID: 61007)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 7/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 7% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_7_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 70% (Rule ID: 11070)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 70/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 70% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_70_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 70% (Rule ID: 61070)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 70/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 70% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_70_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 71% (Rule ID: 11071)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 71/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 71% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_71_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 71% (Rule ID: 61071)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 71/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 71% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_71_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 72% (Rule ID: 11072)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 72/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 72% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_72_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 72% (Rule ID: 61072)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 72/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 72% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_72_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 73% (Rule ID: 11073)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 73/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 73% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_73_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 73% (Rule ID: 61073)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 73/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 73% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_73_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 74% (Rule ID: 11074)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 74/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 74% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_74_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 74% (Rule ID: 61074)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 74/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 74% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_74_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 75% (Rule ID: 11075)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 75/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 75% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_75_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 75% (Rule ID: 61075)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 75/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 75% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_75_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 76% (Rule ID: 11076)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 76/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 76% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_76_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 76% (Rule ID: 61076)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 76/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 76% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_76_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 77% (Rule ID: 11077)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 77/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 77% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_77_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 77% (Rule ID: 61077)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 77/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 77% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_77_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 78% (Rule ID: 11078)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 78/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 78% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_78_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 78% (Rule ID: 61078)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 78/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 78% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_78_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 79% (Rule ID: 11079)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 79/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 79% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_79_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 79% (Rule ID: 61079)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 79/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 79% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_79_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 8% (Rule ID: 11008)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 8/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 8% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_8_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 8% (Rule ID: 61008)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 8/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 8% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_8_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 80% (Rule ID: 11080)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 80/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 80% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_80_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 80% (Rule ID: 61080)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 80/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 80% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_80_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 81% (Rule ID: 11081)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 81/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 81% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_81_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 81% (Rule ID: 61081)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 81/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 81% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_81_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 82% (Rule ID: 11082)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 82/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 82% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_82_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 82% (Rule ID: 61082)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 82/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 82% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_82_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 83% (Rule ID: 11083)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 83/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 83% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_83_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 83% (Rule ID: 61083)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 83/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 83% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_83_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 84% (Rule ID: 11084)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 84/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 84% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_84_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 84% (Rule ID: 61084)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 84/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 84% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_84_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 85% (Rule ID: 11085)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 85/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 85% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_85_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 85% (Rule ID: 61085)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 85/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 85% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_85_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 86% (Rule ID: 11086)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 86/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 86% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_86_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 86% (Rule ID: 61086)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 86/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 86% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_86_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 87% (Rule ID: 11087)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 87/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 87% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_87_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 87% (Rule ID: 61087)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 87/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 87% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_87_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 88% (Rule ID: 11088)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 88/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 88% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_88_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 88% (Rule ID: 61088)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 88/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 88% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_88_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 89% (Rule ID: 11089)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 89/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 89% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_89_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 89% (Rule ID: 61089)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 89/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 89% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_89_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 9% (Rule ID: 11009)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 9/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 9% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_9_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 9% (Rule ID: 61009)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 9/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 9% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_9_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 90% (Rule ID: 11090)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 90/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 90% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_90_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 90% (Rule ID: 61090)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 90/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 90% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_90_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 91% (Rule ID: 11091)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 91/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 91% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_91_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 91% (Rule ID: 61091)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 91/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 91% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_91_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 92% (Rule ID: 11092)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 92/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 92% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_92_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 92% (Rule ID: 61092)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 92/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 92% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_92_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 93% (Rule ID: 11093)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 93/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 93% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_93_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 93% (Rule ID: 61093)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 93/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 93% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_93_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 94% (Rule ID: 11094)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 94/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 94% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_94_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 94% (Rule ID: 61094)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 94/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 94% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_94_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 95% (Rule ID: 11095)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 95/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 95% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_95_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 95% (Rule ID: 61095)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 95/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 95% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_95_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 96% (Rule ID: 11096)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 96/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 96% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_96_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 96% (Rule ID: 61096)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 96/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 96% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_96_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 97% (Rule ID: 11097)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 97/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 97% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_97_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 97% (Rule ID: 61097)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 97/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 97% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_97_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 98% (Rule ID: 11098)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 98/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 98% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_98_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 98% (Rule ID: 61098)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 98/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 98% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_98_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Asymmetric Triangle Peak Shift 99% (Rule ID: 11099)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 99/100
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 99% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_99_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Asymmetric Triangle Peak Shift 99% (Rule ID: 61099)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \begin{cases} \frac{t}{d} & 0 \le t < d \\ \frac{1 - t}{1 - d} & d \le t < 1 \end{cases}, \quad d = 99/100
+ * Description  : Asymmetric triangle wave with crest vertex shifted to 99% of the period.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_asym_triangle_peak_99_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 0 (Rule ID: 13400)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 1 (Rule ID: 13401)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 10 (Rule ID: 13410)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 2 (Rule ID: 13402)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 3 (Rule ID: 13403)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 4 (Rule ID: 13404)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 5 (Rule ID: 13405)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 6 (Rule ID: 13406)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 7 (Rule ID: 13407)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 8 (Rule ID: 13408)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 1st Kind H1 of Order 9 (Rule ID: 13409)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h1_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 0 (Rule ID: 13500)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 1 (Rule ID: 13501)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 10 (Rule ID: 13510)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 2 (Rule ID: 13502)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 3 (Rule ID: 13503)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 4 (Rule ID: 13504)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 5 (Rule ID: 13505)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 6 (Rule ID: 13506)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 7 (Rule ID: 13507)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 8 (Rule ID: 13508)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hankel Function 2nd Kind H2 of Order 9 (Rule ID: 13509)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_h2_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 0 (Rule ID: 13000)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 1 (Rule ID: 13001)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 10 (Rule ID: 13010)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 2 (Rule ID: 13002)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 3 (Rule ID: 13003)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 4 (Rule ID: 13004)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 5 (Rule ID: 13005)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 6 (Rule ID: 13006)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 7 (Rule ID: 13007)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 8 (Rule ID: 13008)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bessel Function 1st Kind J of Order 9 (Rule ID: 13009)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_j_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 0 (Rule ID: 13200)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 1 (Rule ID: 13201)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 10 (Rule ID: 13210)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 2 (Rule ID: 13202)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 3 (Rule ID: 13203)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 4 (Rule ID: 13204)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 5 (Rule ID: 13205)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 6 (Rule ID: 13206)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 7 (Rule ID: 13207)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 8 (Rule ID: 13208)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 1st Kind I of Order 9 (Rule ID: 13209)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_i_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 0 (Rule ID: 13300)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 1 (Rule ID: 13301)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 10 (Rule ID: 13310)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 2 (Rule ID: 13302)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 3 (Rule ID: 13303)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 4 (Rule ID: 13304)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 5 (Rule ID: 13305)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 6 (Rule ID: 13306)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 7 (Rule ID: 13307)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 8 (Rule ID: 13308)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Modified Bessel 2nd Kind K of Order 9 (Rule ID: 13309)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_mod_k_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 0 (Rule ID: 13600)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 1 (Rule ID: 13601)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 10 (Rule ID: 13610)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 2 (Rule ID: 13602)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 3 (Rule ID: 13603)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 4 (Rule ID: 13604)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 5 (Rule ID: 13605)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 6 (Rule ID: 13606)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 7 (Rule ID: 13607)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 8 (Rule ID: 13608)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Bessel 1st Kind j of Order 9 (Rule ID: 13609)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_j_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 0 (Rule ID: 13700)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 1 (Rule ID: 13701)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 10 (Rule ID: 13710)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 2 (Rule ID: 13702)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 3 (Rule ID: 13703)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 4 (Rule ID: 13704)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 5 (Rule ID: 13705)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 6 (Rule ID: 13706)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 7 (Rule ID: 13707)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 8 (Rule ID: 13708)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Spherical Neumann 2nd Kind y of Order 9 (Rule ID: 13709)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_sph_y_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 0 (Rule ID: 13100)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_0(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 1 (Rule ID: 13101)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 10 (Rule ID: 13110)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 2 (Rule ID: 13102)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 3 (Rule ID: 13103)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 4 (Rule ID: 13104)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 5 (Rule ID: 13105)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 6 (Rule ID: 13106)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 7 (Rule ID: 13107)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 8 (Rule ID: 13108)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Neumann Function 2nd Kind Y of Order 9 (Rule ID: 13109)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Cylindrical wave solution to Bessel's differential equation representing radial harmonic modes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bessel_y_9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bipolar [-1, 1] Sawtooth Wave (Rule ID: 123)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 2(t \pmod 1) - 1
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Zero-mean bipolar sawtooth oscillating linearly across [-1, 1].
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bipolar_sawtooth(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Bipolar [-1, 1] Sawtooth Wave (Rule ID: 50123)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 2(t \pmod 1) - 1
+ * Description  : Zero-mean bipolar sawtooth oscillating linearly across [-1, 1].
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bipolar_sawtooth_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Bipolar [-1, 1] Square Wave (Rule ID: 121)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{sgn}(\sin(t))
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Zero-mean symmetric bipolar square wave switching between -1 and +1.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bipolar_square(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Bipolar [-1, 1] Square Wave (Rule ID: 50121)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{sgn}(\sin(t))
+ * Description  : Zero-mean symmetric bipolar square wave switching between -1 and +1.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_bipolar_square_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Cnoidal Periodic Shallow Water Wave (Rule ID: 532)
+ * Domain       : FluidMechanics
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Exact periodic solution to the Korteweg-de Vries equation describing ocean swell in shallow coastal regions.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_cnoidal_shallow(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Cnoidal Periodic Shallow Water Wave (Rule ID: 50532)
+ * Domain       : FluidMechanics
+ * Description  : Exact periodic solution to the Korteweg-de Vries equation describing ocean swell in shallow coastal regions.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_cnoidal_shallow_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hyperbolic Cosine (Catenary) Wave (Rule ID: 207)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \cosh(t)
+ * Decay Profile: none | Discontinuity: Exponential Divergence
+ * Description  : Even hyperbolic catenary curve modeling suspended elastic cables in uniform gravitational fields.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_cosh(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hyperbolic Cosine (Catenary) Wave (Rule ID: 50207)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \cosh(t)
+ * Description  : Even hyperbolic catenary curve modeling suspended elastic cables in uniform gravitational fields.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_cosh_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: harmonic_cosine (F32) (Rule ID: 50102)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \cos(t)
+ * Decay Profile: Pure (no upper harmonics) | Discontinuity: Smooth
+ * Description  : Orthogonal quadrature harmonic oscillator with phase shift pi/2.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_harmonic_cosine_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: harmonic_cosine (F64) (Rule ID: 102)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \cos(t)
+ * Decay Profile: Pure (no upper harmonics) | Discontinuity: Smooth
+ * Description  : Orthogonal quadrature harmonic oscillator with phase shift pi/2.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_harmonic_cosine_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Circular Cotangent Wave (Rule ID: 202)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \cot(t)
+ * Decay Profile: none | Discontinuity: Vertical Asymptote
+ * Description  : Reciprocal of tangent producing periodic vertical asymptotes at multiples of pi.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_cot(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Circular Cotangent Wave (Rule ID: 50202)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \cot(t)
+ * Description  : Reciprocal of tangent producing periodic vertical asymptotes at multiples of pi.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_cot_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Circular Cosecant Wave (Rule ID: 204)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \csc(t)
+ * Decay Profile: none | Discontinuity: Vertical Asymptote
+ * Description  : Reciprocal of sine possessing local extrema at +1 and -1 and asymptotes at multiples of pi.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_csc(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Circular Cosecant Wave (Rule ID: 50204)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \csc(t)
+ * Description  : Reciprocal of sine possessing local extrema at +1 and -1 and asymptotes at multiples of pi.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_csc_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: dirac_impulse_train (F32) (Rule ID: 50109)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \sum_{n=-\infty}^\infty \delta(t - nT)
+ * Decay Profile: Flat Spectrum (equal amplitude all n) | Discontinuity: Singular
+ * Description  : Idealized sampling distribution producing an infinite flat comb of harmonic frequencies.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_dirac_impulse_train_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: dirac_impulse_train (F64) (Rule ID: 109)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \sum_{n=-\infty}^\infty \delta(t - nT)
+ * Decay Profile: Flat Spectrum (equal amplitude all n) | Discontinuity: Singular
+ * Description  : Idealized sampling distribution producing an infinite flat comb of harmonic frequencies.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_dirac_impulse_train_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Exponentially Damped Sine Oscillation (Rule ID: 405)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: e^{-\gamma t} \sin(\omega t)
+ * Decay Profile: Continuous Cauchy Lorentzian | Discontinuity: Smooth
+ * Description  : Harmonic oscillator response under viscous damping losing energy exponentially per radian cycle.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_damped_sine_exp(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Exponentially Damped Sine Oscillation (Rule ID: 50405)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: e^{-\gamma t} \sin(\omega t)
+ * Description  : Harmonic oscillator response under viscous damping losing energy exponentially per radian cycle.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_damped_sine_exp_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Exponential (Geometric) Chirp (Rule ID: 403)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Wideband acoustic measurement waveform sweeping across equal octaves in equal time intervals.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_exponential(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Exponential (Geometric) Chirp (Rule ID: 50403)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Wideband acoustic measurement waveform sweeping across equal octaves in equal time intervals.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_exponential_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Full-Wave Rectified Bessel J0 Wave (Rule ID: 303)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: |J_0(t)|
+ * Decay Profile: Decaying even lobes | Discontinuity: Corner
+ * Description  : Rectified zero-order cylindrical wave modeling non-negative optical Airy disk intensity rings.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_full_rect_bessel_j0(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Full-Wave Rectified Bessel J0 Wave (Rule ID: 50303)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: |J_0(t)|
+ * Description  : Rectified zero-order cylindrical wave modeling non-negative optical Airy disk intensity rings.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_full_rect_bessel_j0_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Full-Wave Rectified Sine Wave (Rule ID: 301)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: |\sin(t)|
+ * Decay Profile: 1/(4n^2 - 1) (even harmonics) | Discontinuity: Corner
+ * Description  : Absolute value folded sinusoidal wave doubling fundamental frequency and preserving only even harmonics.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_full_rect_sine(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Full-Wave Rectified Sine Wave (Rule ID: 50301)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: |\sin(t)|
+ * Description  : Absolute value folded sinusoidal wave doubling fundamental frequency and preserving only even harmonics.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_full_rect_sine_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gaussian Windowed Chirplet Wavepacket (Rule ID: 404)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Time-frequency localized wavepacket combining Gaussian envelope with linear quadratic phase chirp.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_gaussian_chirplet(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Gaussian Windowed Chirplet Wavepacket (Rule ID: 50404)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Time-frequency localized wavepacket combining Gaussian envelope with linear quadratic phase chirp.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_gaussian_chirplet_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gaussian Damped Sine Wavepacket (Rule ID: 406)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: e^{-\alpha t^2} \sin(\omega t)
+ * Decay Profile: Gaussian Envelope | Discontinuity: Smooth
+ * Description  : Minimum uncertainty wavepacket achieving the theoretical Heisenberg-Gabor time-frequency limit.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_damped_sine_gaussian(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Gaussian Damped Sine Wavepacket (Rule ID: 50406)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: e^{-\alpha t^2} \sin(\omega t)
+ * Description  : Minimum uncertainty wavepacket achieving the theoretical Heisenberg-Gabor time-frequency limit.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_damped_sine_gaussian_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gerstner Trochoidal Surface Gravity Wave (Rule ID: 530)
+ * Domain       : FluidMechanics
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Exact nonlinear solution for deep water ocean waves where fluid particles trace circular orbits forming sharp cusps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_gerstner_trochoidal(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Gerstner Trochoidal Surface Gravity Wave (Rule ID: 50530)
+ * Domain       : FluidMechanics
+ * Description  : Exact nonlinear solution for deep water ocean waves where fluid particles trace circular orbits forming sharp cusps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_gerstner_trochoidal_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Half-Wave Rectified Sine Wave (Rule ID: 302)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \max(0, \sin(t))
+ * Decay Profile: 1/n + DC | Discontinuity: Corner
+ * Description  : Single-polarity diode rectified sinusoidal wave with positive pulses separated by zero intervals.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_half_rect_sine(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Half-Wave Rectified Sine Wave (Rule ID: 50302)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \max(0, \sin(t))
+ * Description  : Single-polarity diode rectified sinusoidal wave with positive pulses separated by zero intervals.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_half_rect_sine_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Haversine Great-Circle Metric Wave (Rule ID: 205)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \frac{1 - \cos(t)}{2}
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Half-versine wave essential in spherical navigational geodesic distance calculations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_haversine(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Haversine Great-Circle Metric Wave (Rule ID: 50205)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \frac{1 - \cos(t)}{2}
+ * Description  : Half-versine wave essential in spherical navigational geodesic distance calculations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_haversine_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hypersaw 9-Oscillator Hyper-Ensemble (Rule ID: 131)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{1}{9}\sum_{k=1}^9 \operatorname{saw}(\omega_k t + \phi_k)
+ * Decay Profile: Hyper-Dense Multi-Saw | Discontinuity: Jump
+ * Description  : Ultra-dense trance waveform synthesized from 9 prime-ratio detuned sawtooth generators.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hypersaw_9(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hypersaw 9-Oscillator Hyper-Ensemble (Rule ID: 50131)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{1}{9}\sum_{k=1}^9 \operatorname{saw}(\omega_k t + \phi_k)
+ * Description  : Ultra-dense trance waveform synthesized from 9 prime-ratio detuned sawtooth generators.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hypersaw_9_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Ratio cn/dn (cd) (Rule ID: 504)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Elliptic quotient cn(u,m) / dn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_cd(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Cosine Amplitude (cn) (Rule ID: 502)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Co-sinusoidal amplitude elliptic function cn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_cn(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Ratio cn/sn (cs) (Rule ID: 512)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Elliptic cotangent quotient cn(u,m) / sn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_cs(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Ratio dn/cn (dc) (Rule ID: 507)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Elliptic quotient dn(u,m) / cn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_dc(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Delta Amplitude (dn) (Rule ID: 503)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Delta amplitude elliptic function dn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_dn(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Ratio dn/sn (ds) (Rule ID: 511)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Elliptic quotient dn(u,m) / sn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_ds(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Reciprocal 1/cn (nc) (Rule ID: 508)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Reciprocal elliptic cosine 1 / cn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_nc(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Reciprocal 1/dn (nd) (Rule ID: 506)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Reciprocal elliptic delta 1 / dn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_nd(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Reciprocal 1/sn (ns) (Rule ID: 510)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Reciprocal elliptic sine 1 / sn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_ns(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Ratio sn/cn (sc) (Rule ID: 509)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Elliptic tangent quotient sn(u,m) / cn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_sc(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Ratio sn/dn (sd) (Rule ID: 505)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Elliptic quotient sn(u,m) / dn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_sd(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Jacobi Elliptic Sine Amplitude (sn) (Rule ID: 501)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Sinusoidal amplitude elliptic function sn(u,m).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_jacobi_sn(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Korteweg-de Vries (KdV) Bright Soliton (Rule ID: 520)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \frac{v}{2}\operatorname{sech}^2\left(\frac{\sqrt{v}}{2}(x - vt)\right)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Stable solitary elevation wave where nonlinear steepening exactly cancels third-order dispersion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_kdv_bright(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Korteweg-de Vries (KdV) Bright Soliton (Rule ID: 50520)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \frac{v}{2}\operatorname{sech}^2\left(\frac{\sqrt{v}}{2}(x - vt)\right)
+ * Description  : Stable solitary elevation wave where nonlinear steepening exactly cancels third-order dispersion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_kdv_bright_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Equatorial Kelvin Wave (El Niño Mechanism) (Rule ID: 533)
+ * Domain       : FluidMechanics
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Non-dispersive equatorially trapped eastward-propagating ocean wave acting as the driver of ENSO cycles.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_kelvin_equatorial(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Equatorial Kelvin Wave (El Niño Mechanism) (Rule ID: 50533)
+ * Domain       : FluidMechanics
+ * Description  : Non-dispersive equatorially trapped eastward-propagating ocean wave acting as the driver of ENSO cycles.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_kelvin_equatorial_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Linear Frequency Down-Chirp (Rule ID: 402)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Radar pulse compression waveform with instantaneous frequency linearly sweeping downwards.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_linear_down(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Linear Frequency Down-Chirp (Rule ID: 50402)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Radar pulse compression waveform with instantaneous frequency linearly sweeping downwards.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_linear_down_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Linear Frequency Up-Chirp (Rule ID: 401)
+ * Domain       : InformationAndSignalTheory
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Radar pulse compression waveform with instantaneous frequency linearly sweeping upwards.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_linear_up(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Linear Frequency Up-Chirp (Rule ID: 50401)
+ * Domain       : InformationAndSignalTheory
+ * Description  : Radar pulse compression waveform with instantaneous frequency linearly sweeping upwards.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_chirp_linear_up_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Nonlinear Schrödinger (NLS) Bright Soliton (Rule ID: 521)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \eta \operatorname{sech}(\eta(x - vt)) e^{i(v x - \omega t)}
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Fundamental envelope soliton propagating without dispersion in anomalous dispersion optical fiber.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_nls_bright(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Nonlinear Schrödinger (NLS) Bright Soliton (Rule ID: 50521)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \eta \operatorname{sech}(\eta(x - vt)) e^{i(v x - \omega t)}
+ * Description  : Fundamental envelope soliton propagating without dispersion in anomalous dispersion optical fiber.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_nls_bright_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Nonlinear Schrödinger (NLS) Dark Soliton (Rule ID: 522)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \psi_0 \tanh(\eta(x - vt)) e^{i(v x - \omega t)}
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Localized intensity dip (black hole analog) propagating stably in normal dispersion nonlinear media.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_nls_dark(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Nonlinear Schrödinger (NLS) Dark Soliton (Rule ID: 50522)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \psi_0 \tanh(\eta(x - vt)) e^{i(v x - \omega t)}
+ * Description  : Localized intensity dip (black hole analog) propagating stably in normal dispersion nonlinear media.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_nls_dark_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Peregrine Rogue Wave (Spatio-Temporal Singularity) (Rule ID: 523)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \left(1 - \frac{4(1 + 2i t)}{1 + 4x^2 + 4t^2}\right) e^{it}
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Prototype of extreme oceanic freak waves appearing suddenly from nowhere and vanishing without trace.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_peregrine_rogue(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Peregrine Rogue Wave (Spatio-Temporal Singularity) (Rule ID: 50523)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: \left(1 - \frac{4(1 + 2i t)}{1 + 4x^2 + 4t^2}\right) e^{it}
+ * Description  : Prototype of extreme oceanic freak waves appearing suddenly from nowhere and vanishing without trace.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_peregrine_rogue_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 1% (Rule ID: 10001)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 1/100)}(t \pmod 1) - \mathbf{1}_{[1/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 1% high state and 99% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_1_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 1% (Rule ID: 60001)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 1/100)}(t \pmod 1) - \mathbf{1}_{[1/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 1% high state and 99% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_1_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 10% (Rule ID: 10010)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 10/100)}(t \pmod 1) - \mathbf{1}_{[10/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 10% high state and 90% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_10_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 10% (Rule ID: 60010)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 10/100)}(t \pmod 1) - \mathbf{1}_{[10/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 10% high state and 90% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_10_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 11% (Rule ID: 10011)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 11/100)}(t \pmod 1) - \mathbf{1}_{[11/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 11% high state and 89% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_11_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 11% (Rule ID: 60011)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 11/100)}(t \pmod 1) - \mathbf{1}_{[11/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 11% high state and 89% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_11_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 12% (Rule ID: 10012)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 12/100)}(t \pmod 1) - \mathbf{1}_{[12/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 12% high state and 88% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_12_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 12% (Rule ID: 60012)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 12/100)}(t \pmod 1) - \mathbf{1}_{[12/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 12% high state and 88% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_12_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 13% (Rule ID: 10013)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 13/100)}(t \pmod 1) - \mathbf{1}_{[13/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 13% high state and 87% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_13_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 13% (Rule ID: 60013)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 13/100)}(t \pmod 1) - \mathbf{1}_{[13/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 13% high state and 87% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_13_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 14% (Rule ID: 10014)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 14/100)}(t \pmod 1) - \mathbf{1}_{[14/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 14% high state and 86% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_14_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 14% (Rule ID: 60014)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 14/100)}(t \pmod 1) - \mathbf{1}_{[14/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 14% high state and 86% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_14_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 15% (Rule ID: 10015)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 15/100)}(t \pmod 1) - \mathbf{1}_{[15/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 15% high state and 85% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_15_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 15% (Rule ID: 60015)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 15/100)}(t \pmod 1) - \mathbf{1}_{[15/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 15% high state and 85% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_15_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 16% (Rule ID: 10016)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 16/100)}(t \pmod 1) - \mathbf{1}_{[16/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 16% high state and 84% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_16_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 16% (Rule ID: 60016)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 16/100)}(t \pmod 1) - \mathbf{1}_{[16/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 16% high state and 84% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_16_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 17% (Rule ID: 10017)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 17/100)}(t \pmod 1) - \mathbf{1}_{[17/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 17% high state and 83% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_17_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 17% (Rule ID: 60017)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 17/100)}(t \pmod 1) - \mathbf{1}_{[17/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 17% high state and 83% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_17_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 18% (Rule ID: 10018)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 18/100)}(t \pmod 1) - \mathbf{1}_{[18/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 18% high state and 82% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_18_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 18% (Rule ID: 60018)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 18/100)}(t \pmod 1) - \mathbf{1}_{[18/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 18% high state and 82% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_18_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 19% (Rule ID: 10019)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 19/100)}(t \pmod 1) - \mathbf{1}_{[19/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 19% high state and 81% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_19_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 19% (Rule ID: 60019)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 19/100)}(t \pmod 1) - \mathbf{1}_{[19/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 19% high state and 81% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_19_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 2% (Rule ID: 10002)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 2/100)}(t \pmod 1) - \mathbf{1}_{[2/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 2% high state and 98% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_2_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 2% (Rule ID: 60002)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 2/100)}(t \pmod 1) - \mathbf{1}_{[2/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 2% high state and 98% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_2_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 20% (Rule ID: 10020)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 20/100)}(t \pmod 1) - \mathbf{1}_{[20/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 20% high state and 80% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_20_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 20% (Rule ID: 60020)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 20/100)}(t \pmod 1) - \mathbf{1}_{[20/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 20% high state and 80% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_20_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 21% (Rule ID: 10021)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 21/100)}(t \pmod 1) - \mathbf{1}_{[21/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 21% high state and 79% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_21_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 21% (Rule ID: 60021)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 21/100)}(t \pmod 1) - \mathbf{1}_{[21/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 21% high state and 79% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_21_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 22% (Rule ID: 10022)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 22/100)}(t \pmod 1) - \mathbf{1}_{[22/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 22% high state and 78% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_22_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 22% (Rule ID: 60022)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 22/100)}(t \pmod 1) - \mathbf{1}_{[22/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 22% high state and 78% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_22_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 23% (Rule ID: 10023)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 23/100)}(t \pmod 1) - \mathbf{1}_{[23/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 23% high state and 77% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_23_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 23% (Rule ID: 60023)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 23/100)}(t \pmod 1) - \mathbf{1}_{[23/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 23% high state and 77% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_23_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 24% (Rule ID: 10024)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 24/100)}(t \pmod 1) - \mathbf{1}_{[24/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 24% high state and 76% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_24_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 24% (Rule ID: 60024)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 24/100)}(t \pmod 1) - \mathbf{1}_{[24/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 24% high state and 76% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_24_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 25% (Rule ID: 10025)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 25/100)}(t \pmod 1) - \mathbf{1}_{[25/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 25% high state and 75% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_25_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 25% (Rule ID: 60025)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 25/100)}(t \pmod 1) - \mathbf{1}_{[25/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 25% high state and 75% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_25_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 26% (Rule ID: 10026)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 26/100)}(t \pmod 1) - \mathbf{1}_{[26/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 26% high state and 74% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_26_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 26% (Rule ID: 60026)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 26/100)}(t \pmod 1) - \mathbf{1}_{[26/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 26% high state and 74% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_26_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 27% (Rule ID: 10027)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 27/100)}(t \pmod 1) - \mathbf{1}_{[27/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 27% high state and 73% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_27_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 27% (Rule ID: 60027)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 27/100)}(t \pmod 1) - \mathbf{1}_{[27/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 27% high state and 73% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_27_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 28% (Rule ID: 10028)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 28/100)}(t \pmod 1) - \mathbf{1}_{[28/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 28% high state and 72% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_28_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 28% (Rule ID: 60028)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 28/100)}(t \pmod 1) - \mathbf{1}_{[28/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 28% high state and 72% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_28_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 29% (Rule ID: 10029)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 29/100)}(t \pmod 1) - \mathbf{1}_{[29/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 29% high state and 71% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_29_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 29% (Rule ID: 60029)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 29/100)}(t \pmod 1) - \mathbf{1}_{[29/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 29% high state and 71% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_29_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 3% (Rule ID: 10003)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 3/100)}(t \pmod 1) - \mathbf{1}_{[3/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 3% high state and 97% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_3_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 3% (Rule ID: 60003)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 3/100)}(t \pmod 1) - \mathbf{1}_{[3/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 3% high state and 97% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_3_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 30% (Rule ID: 10030)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 30/100)}(t \pmod 1) - \mathbf{1}_{[30/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 30% high state and 70% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_30_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 30% (Rule ID: 60030)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 30/100)}(t \pmod 1) - \mathbf{1}_{[30/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 30% high state and 70% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_30_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 31% (Rule ID: 10031)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 31/100)}(t \pmod 1) - \mathbf{1}_{[31/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 31% high state and 69% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_31_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 31% (Rule ID: 60031)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 31/100)}(t \pmod 1) - \mathbf{1}_{[31/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 31% high state and 69% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_31_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 32% (Rule ID: 10032)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 32/100)}(t \pmod 1) - \mathbf{1}_{[32/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 32% high state and 68% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_32_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 32% (Rule ID: 60032)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 32/100)}(t \pmod 1) - \mathbf{1}_{[32/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 32% high state and 68% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_32_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 33% (Rule ID: 10033)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 33/100)}(t \pmod 1) - \mathbf{1}_{[33/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 33% high state and 67% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_33_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 33% (Rule ID: 60033)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 33/100)}(t \pmod 1) - \mathbf{1}_{[33/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 33% high state and 67% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_33_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 34% (Rule ID: 10034)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 34/100)}(t \pmod 1) - \mathbf{1}_{[34/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 34% high state and 66% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_34_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 34% (Rule ID: 60034)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 34/100)}(t \pmod 1) - \mathbf{1}_{[34/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 34% high state and 66% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_34_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 35% (Rule ID: 10035)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 35/100)}(t \pmod 1) - \mathbf{1}_{[35/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 35% high state and 65% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_35_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 35% (Rule ID: 60035)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 35/100)}(t \pmod 1) - \mathbf{1}_{[35/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 35% high state and 65% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_35_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 36% (Rule ID: 10036)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 36/100)}(t \pmod 1) - \mathbf{1}_{[36/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 36% high state and 64% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_36_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 36% (Rule ID: 60036)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 36/100)}(t \pmod 1) - \mathbf{1}_{[36/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 36% high state and 64% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_36_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 37% (Rule ID: 10037)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 37/100)}(t \pmod 1) - \mathbf{1}_{[37/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 37% high state and 63% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_37_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 37% (Rule ID: 60037)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 37/100)}(t \pmod 1) - \mathbf{1}_{[37/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 37% high state and 63% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_37_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 38% (Rule ID: 10038)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 38/100)}(t \pmod 1) - \mathbf{1}_{[38/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 38% high state and 62% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_38_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 38% (Rule ID: 60038)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 38/100)}(t \pmod 1) - \mathbf{1}_{[38/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 38% high state and 62% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_38_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 39% (Rule ID: 10039)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 39/100)}(t \pmod 1) - \mathbf{1}_{[39/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 39% high state and 61% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_39_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 39% (Rule ID: 60039)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 39/100)}(t \pmod 1) - \mathbf{1}_{[39/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 39% high state and 61% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_39_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 4% (Rule ID: 10004)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 4/100)}(t \pmod 1) - \mathbf{1}_{[4/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 4% high state and 96% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_4_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 4% (Rule ID: 60004)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 4/100)}(t \pmod 1) - \mathbf{1}_{[4/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 4% high state and 96% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_4_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 40% (Rule ID: 10040)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 40/100)}(t \pmod 1) - \mathbf{1}_{[40/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 40% high state and 60% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_40_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 40% (Rule ID: 60040)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 40/100)}(t \pmod 1) - \mathbf{1}_{[40/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 40% high state and 60% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_40_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 41% (Rule ID: 10041)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 41/100)}(t \pmod 1) - \mathbf{1}_{[41/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 41% high state and 59% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_41_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 41% (Rule ID: 60041)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 41/100)}(t \pmod 1) - \mathbf{1}_{[41/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 41% high state and 59% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_41_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 42% (Rule ID: 10042)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 42/100)}(t \pmod 1) - \mathbf{1}_{[42/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 42% high state and 58% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_42_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 42% (Rule ID: 60042)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 42/100)}(t \pmod 1) - \mathbf{1}_{[42/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 42% high state and 58% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_42_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 43% (Rule ID: 10043)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 43/100)}(t \pmod 1) - \mathbf{1}_{[43/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 43% high state and 57% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_43_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 43% (Rule ID: 60043)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 43/100)}(t \pmod 1) - \mathbf{1}_{[43/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 43% high state and 57% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_43_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 44% (Rule ID: 10044)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 44/100)}(t \pmod 1) - \mathbf{1}_{[44/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 44% high state and 56% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_44_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 44% (Rule ID: 60044)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 44/100)}(t \pmod 1) - \mathbf{1}_{[44/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 44% high state and 56% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_44_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 45% (Rule ID: 10045)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 45/100)}(t \pmod 1) - \mathbf{1}_{[45/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 45% high state and 55% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_45_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 45% (Rule ID: 60045)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 45/100)}(t \pmod 1) - \mathbf{1}_{[45/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 45% high state and 55% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_45_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 46% (Rule ID: 10046)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 46/100)}(t \pmod 1) - \mathbf{1}_{[46/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 46% high state and 54% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_46_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 46% (Rule ID: 60046)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 46/100)}(t \pmod 1) - \mathbf{1}_{[46/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 46% high state and 54% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_46_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 47% (Rule ID: 10047)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 47/100)}(t \pmod 1) - \mathbf{1}_{[47/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 47% high state and 53% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_47_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 47% (Rule ID: 60047)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 47/100)}(t \pmod 1) - \mathbf{1}_{[47/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 47% high state and 53% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_47_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 48% (Rule ID: 10048)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 48/100)}(t \pmod 1) - \mathbf{1}_{[48/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 48% high state and 52% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_48_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 48% (Rule ID: 60048)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 48/100)}(t \pmod 1) - \mathbf{1}_{[48/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 48% high state and 52% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_48_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 49% (Rule ID: 10049)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 49/100)}(t \pmod 1) - \mathbf{1}_{[49/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 49% high state and 51% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_49_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 49% (Rule ID: 60049)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 49/100)}(t \pmod 1) - \mathbf{1}_{[49/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 49% high state and 51% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_49_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 5% (Rule ID: 10005)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 5/100)}(t \pmod 1) - \mathbf{1}_{[5/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 5% high state and 95% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_5_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 5% (Rule ID: 60005)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 5/100)}(t \pmod 1) - \mathbf{1}_{[5/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 5% high state and 95% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_5_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 50% (Rule ID: 10050)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 50/100)}(t \pmod 1) - \mathbf{1}_{[50/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 50% high state and 50% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_50_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 50% (Rule ID: 60050)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 50/100)}(t \pmod 1) - \mathbf{1}_{[50/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 50% high state and 50% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_50_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 51% (Rule ID: 10051)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 51/100)}(t \pmod 1) - \mathbf{1}_{[51/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 51% high state and 49% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_51_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 51% (Rule ID: 60051)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 51/100)}(t \pmod 1) - \mathbf{1}_{[51/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 51% high state and 49% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_51_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 52% (Rule ID: 10052)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 52/100)}(t \pmod 1) - \mathbf{1}_{[52/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 52% high state and 48% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_52_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 52% (Rule ID: 60052)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 52/100)}(t \pmod 1) - \mathbf{1}_{[52/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 52% high state and 48% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_52_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 53% (Rule ID: 10053)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 53/100)}(t \pmod 1) - \mathbf{1}_{[53/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 53% high state and 47% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_53_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 53% (Rule ID: 60053)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 53/100)}(t \pmod 1) - \mathbf{1}_{[53/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 53% high state and 47% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_53_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 54% (Rule ID: 10054)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 54/100)}(t \pmod 1) - \mathbf{1}_{[54/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 54% high state and 46% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_54_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 54% (Rule ID: 60054)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 54/100)}(t \pmod 1) - \mathbf{1}_{[54/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 54% high state and 46% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_54_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 55% (Rule ID: 10055)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 55/100)}(t \pmod 1) - \mathbf{1}_{[55/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 55% high state and 45% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_55_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 55% (Rule ID: 60055)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 55/100)}(t \pmod 1) - \mathbf{1}_{[55/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 55% high state and 45% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_55_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 56% (Rule ID: 10056)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 56/100)}(t \pmod 1) - \mathbf{1}_{[56/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 56% high state and 44% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_56_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 56% (Rule ID: 60056)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 56/100)}(t \pmod 1) - \mathbf{1}_{[56/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 56% high state and 44% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_56_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 57% (Rule ID: 10057)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 57/100)}(t \pmod 1) - \mathbf{1}_{[57/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 57% high state and 43% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_57_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 57% (Rule ID: 60057)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 57/100)}(t \pmod 1) - \mathbf{1}_{[57/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 57% high state and 43% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_57_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 58% (Rule ID: 10058)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 58/100)}(t \pmod 1) - \mathbf{1}_{[58/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 58% high state and 42% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_58_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 58% (Rule ID: 60058)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 58/100)}(t \pmod 1) - \mathbf{1}_{[58/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 58% high state and 42% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_58_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 59% (Rule ID: 10059)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 59/100)}(t \pmod 1) - \mathbf{1}_{[59/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 59% high state and 41% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_59_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 59% (Rule ID: 60059)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 59/100)}(t \pmod 1) - \mathbf{1}_{[59/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 59% high state and 41% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_59_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 6% (Rule ID: 10006)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 6/100)}(t \pmod 1) - \mathbf{1}_{[6/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 6% high state and 94% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_6_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 6% (Rule ID: 60006)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 6/100)}(t \pmod 1) - \mathbf{1}_{[6/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 6% high state and 94% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_6_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 60% (Rule ID: 10060)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 60/100)}(t \pmod 1) - \mathbf{1}_{[60/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 60% high state and 40% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_60_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 60% (Rule ID: 60060)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 60/100)}(t \pmod 1) - \mathbf{1}_{[60/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 60% high state and 40% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_60_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 61% (Rule ID: 10061)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 61/100)}(t \pmod 1) - \mathbf{1}_{[61/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 61% high state and 39% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_61_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 61% (Rule ID: 60061)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 61/100)}(t \pmod 1) - \mathbf{1}_{[61/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 61% high state and 39% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_61_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 62% (Rule ID: 10062)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 62/100)}(t \pmod 1) - \mathbf{1}_{[62/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 62% high state and 38% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_62_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 62% (Rule ID: 60062)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 62/100)}(t \pmod 1) - \mathbf{1}_{[62/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 62% high state and 38% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_62_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 63% (Rule ID: 10063)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 63/100)}(t \pmod 1) - \mathbf{1}_{[63/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 63% high state and 37% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_63_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 63% (Rule ID: 60063)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 63/100)}(t \pmod 1) - \mathbf{1}_{[63/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 63% high state and 37% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_63_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 64% (Rule ID: 10064)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 64/100)}(t \pmod 1) - \mathbf{1}_{[64/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 64% high state and 36% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_64_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 64% (Rule ID: 60064)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 64/100)}(t \pmod 1) - \mathbf{1}_{[64/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 64% high state and 36% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_64_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 65% (Rule ID: 10065)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 65/100)}(t \pmod 1) - \mathbf{1}_{[65/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 65% high state and 35% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_65_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 65% (Rule ID: 60065)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 65/100)}(t \pmod 1) - \mathbf{1}_{[65/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 65% high state and 35% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_65_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 66% (Rule ID: 10066)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 66/100)}(t \pmod 1) - \mathbf{1}_{[66/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 66% high state and 34% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_66_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 66% (Rule ID: 60066)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 66/100)}(t \pmod 1) - \mathbf{1}_{[66/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 66% high state and 34% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_66_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 67% (Rule ID: 10067)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 67/100)}(t \pmod 1) - \mathbf{1}_{[67/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 67% high state and 33% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_67_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 67% (Rule ID: 60067)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 67/100)}(t \pmod 1) - \mathbf{1}_{[67/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 67% high state and 33% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_67_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 68% (Rule ID: 10068)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 68/100)}(t \pmod 1) - \mathbf{1}_{[68/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 68% high state and 32% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_68_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 68% (Rule ID: 60068)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 68/100)}(t \pmod 1) - \mathbf{1}_{[68/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 68% high state and 32% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_68_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 69% (Rule ID: 10069)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 69/100)}(t \pmod 1) - \mathbf{1}_{[69/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 69% high state and 31% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_69_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 69% (Rule ID: 60069)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 69/100)}(t \pmod 1) - \mathbf{1}_{[69/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 69% high state and 31% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_69_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 7% (Rule ID: 10007)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 7/100)}(t \pmod 1) - \mathbf{1}_{[7/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 7% high state and 93% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_7_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 7% (Rule ID: 60007)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 7/100)}(t \pmod 1) - \mathbf{1}_{[7/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 7% high state and 93% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_7_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 70% (Rule ID: 10070)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 70/100)}(t \pmod 1) - \mathbf{1}_{[70/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 70% high state and 30% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_70_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 70% (Rule ID: 60070)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 70/100)}(t \pmod 1) - \mathbf{1}_{[70/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 70% high state and 30% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_70_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 71% (Rule ID: 10071)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 71/100)}(t \pmod 1) - \mathbf{1}_{[71/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 71% high state and 29% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_71_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 71% (Rule ID: 60071)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 71/100)}(t \pmod 1) - \mathbf{1}_{[71/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 71% high state and 29% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_71_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 72% (Rule ID: 10072)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 72/100)}(t \pmod 1) - \mathbf{1}_{[72/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 72% high state and 28% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_72_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 72% (Rule ID: 60072)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 72/100)}(t \pmod 1) - \mathbf{1}_{[72/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 72% high state and 28% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_72_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 73% (Rule ID: 10073)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 73/100)}(t \pmod 1) - \mathbf{1}_{[73/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 73% high state and 27% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_73_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 73% (Rule ID: 60073)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 73/100)}(t \pmod 1) - \mathbf{1}_{[73/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 73% high state and 27% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_73_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 74% (Rule ID: 10074)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 74/100)}(t \pmod 1) - \mathbf{1}_{[74/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 74% high state and 26% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_74_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 74% (Rule ID: 60074)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 74/100)}(t \pmod 1) - \mathbf{1}_{[74/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 74% high state and 26% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_74_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 75% (Rule ID: 10075)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 75/100)}(t \pmod 1) - \mathbf{1}_{[75/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 75% high state and 25% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_75_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 75% (Rule ID: 60075)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 75/100)}(t \pmod 1) - \mathbf{1}_{[75/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 75% high state and 25% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_75_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 76% (Rule ID: 10076)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 76/100)}(t \pmod 1) - \mathbf{1}_{[76/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 76% high state and 24% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_76_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 76% (Rule ID: 60076)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 76/100)}(t \pmod 1) - \mathbf{1}_{[76/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 76% high state and 24% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_76_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 77% (Rule ID: 10077)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 77/100)}(t \pmod 1) - \mathbf{1}_{[77/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 77% high state and 23% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_77_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 77% (Rule ID: 60077)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 77/100)}(t \pmod 1) - \mathbf{1}_{[77/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 77% high state and 23% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_77_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 78% (Rule ID: 10078)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 78/100)}(t \pmod 1) - \mathbf{1}_{[78/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 78% high state and 22% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_78_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 78% (Rule ID: 60078)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 78/100)}(t \pmod 1) - \mathbf{1}_{[78/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 78% high state and 22% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_78_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 79% (Rule ID: 10079)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 79/100)}(t \pmod 1) - \mathbf{1}_{[79/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 79% high state and 21% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_79_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 79% (Rule ID: 60079)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 79/100)}(t \pmod 1) - \mathbf{1}_{[79/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 79% high state and 21% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_79_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 8% (Rule ID: 10008)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 8/100)}(t \pmod 1) - \mathbf{1}_{[8/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 8% high state and 92% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_8_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 8% (Rule ID: 60008)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 8/100)}(t \pmod 1) - \mathbf{1}_{[8/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 8% high state and 92% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_8_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 80% (Rule ID: 10080)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 80/100)}(t \pmod 1) - \mathbf{1}_{[80/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 80% high state and 20% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_80_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 80% (Rule ID: 60080)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 80/100)}(t \pmod 1) - \mathbf{1}_{[80/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 80% high state and 20% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_80_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 81% (Rule ID: 10081)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 81/100)}(t \pmod 1) - \mathbf{1}_{[81/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 81% high state and 19% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_81_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 81% (Rule ID: 60081)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 81/100)}(t \pmod 1) - \mathbf{1}_{[81/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 81% high state and 19% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_81_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 82% (Rule ID: 10082)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 82/100)}(t \pmod 1) - \mathbf{1}_{[82/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 82% high state and 18% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_82_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 82% (Rule ID: 60082)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 82/100)}(t \pmod 1) - \mathbf{1}_{[82/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 82% high state and 18% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_82_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 83% (Rule ID: 10083)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 83/100)}(t \pmod 1) - \mathbf{1}_{[83/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 83% high state and 17% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_83_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 83% (Rule ID: 60083)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 83/100)}(t \pmod 1) - \mathbf{1}_{[83/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 83% high state and 17% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_83_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 84% (Rule ID: 10084)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 84/100)}(t \pmod 1) - \mathbf{1}_{[84/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 84% high state and 16% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_84_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 84% (Rule ID: 60084)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 84/100)}(t \pmod 1) - \mathbf{1}_{[84/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 84% high state and 16% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_84_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 85% (Rule ID: 10085)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 85/100)}(t \pmod 1) - \mathbf{1}_{[85/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 85% high state and 15% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_85_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 85% (Rule ID: 60085)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 85/100)}(t \pmod 1) - \mathbf{1}_{[85/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 85% high state and 15% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_85_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 86% (Rule ID: 10086)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 86/100)}(t \pmod 1) - \mathbf{1}_{[86/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 86% high state and 14% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_86_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 86% (Rule ID: 60086)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 86/100)}(t \pmod 1) - \mathbf{1}_{[86/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 86% high state and 14% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_86_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 87% (Rule ID: 10087)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 87/100)}(t \pmod 1) - \mathbf{1}_{[87/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 87% high state and 13% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_87_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 87% (Rule ID: 60087)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 87/100)}(t \pmod 1) - \mathbf{1}_{[87/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 87% high state and 13% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_87_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 88% (Rule ID: 10088)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 88/100)}(t \pmod 1) - \mathbf{1}_{[88/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 88% high state and 12% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_88_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 88% (Rule ID: 60088)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 88/100)}(t \pmod 1) - \mathbf{1}_{[88/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 88% high state and 12% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_88_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 89% (Rule ID: 10089)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 89/100)}(t \pmod 1) - \mathbf{1}_{[89/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 89% high state and 11% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_89_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 89% (Rule ID: 60089)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 89/100)}(t \pmod 1) - \mathbf{1}_{[89/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 89% high state and 11% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_89_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 9% (Rule ID: 10009)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 9/100)}(t \pmod 1) - \mathbf{1}_{[9/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 9% high state and 91% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_9_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 9% (Rule ID: 60009)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 9/100)}(t \pmod 1) - \mathbf{1}_{[9/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 9% high state and 91% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_9_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 90% (Rule ID: 10090)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 90/100)}(t \pmod 1) - \mathbf{1}_{[90/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 90% high state and 10% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_90_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 90% (Rule ID: 60090)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 90/100)}(t \pmod 1) - \mathbf{1}_{[90/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 90% high state and 10% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_90_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 91% (Rule ID: 10091)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 91/100)}(t \pmod 1) - \mathbf{1}_{[91/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 91% high state and 9% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_91_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 91% (Rule ID: 60091)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 91/100)}(t \pmod 1) - \mathbf{1}_{[91/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 91% high state and 9% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_91_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 92% (Rule ID: 10092)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 92/100)}(t \pmod 1) - \mathbf{1}_{[92/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 92% high state and 8% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_92_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 92% (Rule ID: 60092)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 92/100)}(t \pmod 1) - \mathbf{1}_{[92/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 92% high state and 8% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_92_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 93% (Rule ID: 10093)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 93/100)}(t \pmod 1) - \mathbf{1}_{[93/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 93% high state and 7% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_93_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 93% (Rule ID: 60093)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 93/100)}(t \pmod 1) - \mathbf{1}_{[93/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 93% high state and 7% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_93_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 94% (Rule ID: 10094)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 94/100)}(t \pmod 1) - \mathbf{1}_{[94/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 94% high state and 6% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_94_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 94% (Rule ID: 60094)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 94/100)}(t \pmod 1) - \mathbf{1}_{[94/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 94% high state and 6% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_94_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 95% (Rule ID: 10095)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 95/100)}(t \pmod 1) - \mathbf{1}_{[95/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 95% high state and 5% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_95_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 95% (Rule ID: 60095)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 95/100)}(t \pmod 1) - \mathbf{1}_{[95/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 95% high state and 5% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_95_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 96% (Rule ID: 10096)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 96/100)}(t \pmod 1) - \mathbf{1}_{[96/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 96% high state and 4% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_96_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 96% (Rule ID: 60096)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 96/100)}(t \pmod 1) - \mathbf{1}_{[96/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 96% high state and 4% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_96_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 97% (Rule ID: 10097)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 97/100)}(t \pmod 1) - \mathbf{1}_{[97/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 97% high state and 3% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_97_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 97% (Rule ID: 60097)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 97/100)}(t \pmod 1) - \mathbf{1}_{[97/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 97% high state and 3% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_97_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 98% (Rule ID: 10098)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 98/100)}(t \pmod 1) - \mathbf{1}_{[98/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 98% high state and 2% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_98_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 98% (Rule ID: 60098)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 98/100)}(t \pmod 1) - \mathbf{1}_{[98/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 98% high state and 2% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_98_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Pulse Wave Duty Cycle 99% (Rule ID: 10099)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 99/100)}(t \pmod 1) - \mathbf{1}_{[99/100, 1)}(t \pmod 1)
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Asymmetric rectangular pulse wave with exactly 99% high state and 1% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_99_pct(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Pulse Wave Duty Cycle 99% (Rule ID: 60099)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \mathbf{1}_{[0, 99/100)}(t \pmod 1) - \mathbf{1}_{[99/100, 1)}(t \pmod 1)
+ * Description  : Asymmetric rectangular pulse wave with exactly 99% high state and 1% low state.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_pulse_duty_99_pct_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Rossby Planetary Wave (Coriolis Beta Effect) (Rule ID: 534)
+ * Domain       : FluidMechanics
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Giant meanders in high-altitude jet streams and ocean currents driven by the meridional variation of Coriolis force.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_rossby_planetary(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Rossby Planetary Wave (Coriolis Beta Effect) (Rule ID: 50534)
+ * Domain       : FluidMechanics
+ * Description  : Giant meanders in high-altitude jet streams and ocean currents driven by the meridional variation of Coriolis force.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_rossby_planetary_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Cubic Softened Sine Wave (Rule ID: 110)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \sin(t) - \frac{1}{6}\sin^3(t)
+ * Decay Profile: 1/n^3 | Discontinuity: Smooth
+ * Description  : Sine wave softened by 3rd-order harmonic suppression.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_rounded_sine_cubic(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Cubic Softened Sine Wave (Rule ID: 50110)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \sin(t) - \frac{1}{6}\sin^3(t)
+ * Description  : Sine wave softened by 3rd-order harmonic suppression.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_rounded_sine_cubic_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hyperbolic Tangent Rounded Square Wave (Rule ID: 111)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \tanh(\beta \sin(t))
+ * Decay Profile: Exponential roll-off | Discontinuity: Smooth
+ * Description  : Infinitely differentiable smooth square wave emulated via tanh steepness parameter beta.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_rounded_square_tanh(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hyperbolic Tangent Rounded Square Wave (Rule ID: 50111)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \tanh(\beta \sin(t))
+ * Description  : Infinitely differentiable smooth square wave emulated via tanh steepness parameter beta.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_rounded_square_tanh_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Log-Cosh Rounded Triangle Wave (Rule ID: 112)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{1}{\beta}\ln(\cosh(\beta \operatorname{tri}(t)))
+ * Decay Profile: Exponential roll-off | Discontinuity: Smooth
+ * Description  : C-infinity smooth triangle wave with rounded extremum crests and troughs.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_rounded_triangle_log_cosh(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Log-Cosh Rounded Triangle Wave (Rule ID: 50112)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{1}{\beta}\ln(\cosh(\beta \operatorname{tri}(t)))
+ * Description  : C-infinity smooth triangle wave with rounded extremum crests and troughs.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_rounded_triangle_log_cosh_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: sawtooth_ramp_down (F32) (Rule ID: 50106)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: -2(t - \lfloor t + 0.5 \rfloor)
+ * Decay Profile: 1/n (-6 dB/oct, all harmonics) | Discontinuity: Jump
+ * Description  : Linearly descending sawtooth profile with periodic instantaneous upward jump.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_sawtooth_ramp_down_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: sawtooth_ramp_down (F64) (Rule ID: 106)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: -2(t - \lfloor t + 0.5 \rfloor)
+ * Decay Profile: 1/n (-6 dB/oct, all harmonics) | Discontinuity: Jump
+ * Description  : Linearly descending sawtooth profile with periodic instantaneous upward jump.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_sawtooth_ramp_down_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: sawtooth_ramp_up (F32) (Rule ID: 50105)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 2(t - \lfloor t + 0.5 \rfloor)
+ * Decay Profile: 1/n (-6 dB/oct, all harmonics) | Discontinuity: Jump
+ * Description  : Linearly rising sawtooth profile with periodic instantaneous downward jump.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_sawtooth_ramp_up_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: sawtooth_ramp_up (F64) (Rule ID: 105)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 2(t - \lfloor t + 0.5 \rfloor)
+ * Decay Profile: 1/n (-6 dB/oct, all harmonics) | Discontinuity: Jump
+ * Description  : Linearly rising sawtooth profile with periodic instantaneous downward jump.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_sawtooth_ramp_up_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Circular Secant Wave (Rule ID: 203)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \sec(t)
+ * Decay Profile: none | Discontinuity: Vertical Asymptote
+ * Description  : Reciprocal of cosine possessing local extrema at +1 and -1 and asymptotes at odd multiples of pi/2.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_sec(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Circular Secant Wave (Rule ID: 50203)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \sec(t)
+ * Description  : Reciprocal of cosine possessing local extrema at +1 and -1 and asymptotes at odd multiples of pi/2.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_sec_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hyperbolic Secant Soliton Profile (Rule ID: 209)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \operatorname{sech}(t)
+ * Decay Profile: none | Discontinuity: Smooth Exponential Decay
+ * Description  : Fundamental profile of optical solitons in Kerr nonlinear media and KdV shallow water waves.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_sech(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hyperbolic Secant Soliton Profile (Rule ID: 50209)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \operatorname{sech}(t)
+ * Description  : Fundamental profile of optical solitons in Kerr nonlinear media and KdV shallow water waves.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_sech_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Sine-Gordon Relativistic Topological Kink (Rule ID: 525)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: 4\arctan\left(e^{(x - vt)/\sqrt{1 - v^2}}\right)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Lorentz-invariant topological twist interpolating between vacuum states 0 and 2pi carrying topological charge.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_sine_gordon_kink(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Sine-Gordon Relativistic Topological Kink (Rule ID: 50525)
+ * Domain       : PartialDifferentialEq
+ * LaTeX Formula: 4\arctan\left(e^{(x - vt)/\sqrt{1 - v^2}}\right)
+ * Description  : Lorentz-invariant topological twist interpolating between vacuum states 0 and 2pi carrying topological charge.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_soliton_sine_gordon_kink_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Caputo Fractional Semi-Derivative of Sine (Rule ID: 221)
+ * Domain       : RealFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Half-order fractional derivative exhibiting exact square-root memory diffusion and pi/4 phase advance.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_frac_caputo_sine_050(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Caputo Fractional Semi-Derivative of Sine (Rule ID: 50221)
+ * Domain       : RealFunctions
+ * Description  : Half-order fractional derivative exhibiting exact square-root memory diffusion and pi/4 phase advance.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_frac_caputo_sine_050_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Caputo Fractional 1/4 Derivative of Sine (Rule ID: 220)
+ * Domain       : RealFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Quarter-order fractional derivative of sine exhibiting weak memory and pi/8 phase advance.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_frac_caputo_sine_025(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Caputo Fractional 1/4 Derivative of Sine (Rule ID: 50220)
+ * Domain       : RealFunctions
+ * Description  : Quarter-order fractional derivative of sine exhibiting weak memory and pi/8 phase advance.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_frac_caputo_sine_025_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Caputo Fractional 3/4 Derivative of Sine (Rule ID: 222)
+ * Domain       : RealFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Three-quarter order fractional derivative interpolating between semi-derivative and full cosine.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_frac_caputo_sine_075(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Caputo Fractional 3/4 Derivative of Sine (Rule ID: 50222)
+ * Domain       : RealFunctions
+ * Description  : Three-quarter order fractional derivative interpolating between semi-derivative and full cosine.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_frac_caputo_sine_075_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: harmonic_sine (F32) (Rule ID: 50101)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \sin(t)
+ * Decay Profile: Pure (no upper harmonics) | Discontinuity: Smooth
+ * Description  : Pure fundamental harmonic oscillator with zero spectral leakage.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_harmonic_sine_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: harmonic_sine (F64) (Rule ID: 101)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \sin(t)
+ * Decay Profile: Pure (no upper harmonics) | Discontinuity: Smooth
+ * Description  : Pure fundamental harmonic oscillator with zero spectral leakage.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_harmonic_sine_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hyperbolic Sine Wave (Rule ID: 206)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \sinh(t)
+ * Decay Profile: none | Discontinuity: Exponential Divergence
+ * Description  : Odd hyperbolic function representing catenary tension gradients and relativistic boost velocities.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_sinh(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hyperbolic Sine Wave (Rule ID: 50206)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \sinh(t)
+ * Description  : Odd hyperbolic function representing catenary tension gradients and relativistic boost velocities.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_sinh_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: C2 Smootherstep Quintic Interpolation Wave (Rule ID: 305)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 6t^5 - 15t^4 + 10t^3
+ * Decay Profile: Finite Polynomial | Discontinuity: Smooth
+ * Description  : Ken Perlin's quintic S-curve ensuring zero 1st and 2nd derivatives at boundaries.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_spline_smootherstep(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): C2 Smootherstep Quintic Interpolation Wave (Rule ID: 50305)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 6t^5 - 15t^4 + 10t^3
+ * Description  : Ken Perlin's quintic S-curve ensuring zero 1st and 2nd derivatives at boundaries.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_spline_smootherstep_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: C1 Smoothstep Hermite Interpolation Wave (Rule ID: 304)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 3t^2 - 2t^3
+ * Decay Profile: Finite Polynomial | Discontinuity: Smooth
+ * Description  : Classic Hermite S-curve ensuring zero 1st derivatives at boundaries t=0 and t=1.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_spline_smoothstep(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): C1 Smoothstep Hermite Interpolation Wave (Rule ID: 50304)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 3t^2 - 2t^3
+ * Description  : Classic Hermite S-curve ensuring zero 1st derivatives at boundaries t=0 and t=1.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_spline_smoothstep_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Algebraic Soft-Clipped Sine Wave (Rule ID: 115)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{\sin(t)}{\sqrt{1 + \sin^2(t)}}
+ * Decay Profile: Exponential roll-off | Discontinuity: Smooth
+ * Description  : Smooth overdrive saturation wave with continuous algebraic asymptote.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_soft_clipped_sine_algebraic(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Algebraic Soft-Clipped Sine Wave (Rule ID: 50115)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{\sin(t)}{\sqrt{1 + \sin^2(t)}}
+ * Description  : Smooth overdrive saturation wave with continuous algebraic asymptote.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_soft_clipped_sine_algebraic_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: staircase_quantized_ramp (F32) (Rule ID: 50108)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{\lfloor k t \rfloor}{k}
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Monotonically stepping staircase wave with uniform discrete riser increments.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_staircase_quantized_ramp_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: staircase_quantized_ramp (F64) (Rule ID: 108)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{\lfloor k t \rfloor}{k}
+ * Decay Profile: 1/n | Discontinuity: Jump
+ * Description  : Monotonically stepping staircase wave with uniform discrete riser increments.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_staircase_quantized_ramp_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Stokes 5th-Order Perturbation Ocean Wave (Rule ID: 531)
+ * Domain       : FluidMechanics
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : High-order perturbation theory wave profile showing steep crests and broad flat troughs.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_stokes_5th_order(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Stokes 5th-Order Perturbation Ocean Wave (Rule ID: 50531)
+ * Domain       : FluidMechanics
+ * Description  : High-order perturbation theory wave profile showing steep crests and broad flat troughs.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_hydro_stokes_5th_order_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Roland JP-8000 Style 7-Oscillator Supersaw (Rule ID: 130)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{1}{7}\sum_{k=1}^7 \operatorname{saw}(\omega_k t + \phi_k)
+ * Decay Profile: Rich Multi-Saw Ensemble | Discontinuity: Jump
+ * Description  : Dense chorus-like waveform resulting from 7 linearly detuned sawtooth oscillators.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_supersaw_7(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Roland JP-8000 Style 7-Oscillator Supersaw (Rule ID: 50130)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{1}{7}\sum_{k=1}^7 \operatorname{saw}(\omega_k t + \phi_k)
+ * Description  : Dense chorus-like waveform resulting from 7 linearly detuned sawtooth oscillators.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_supersaw_7_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symmetrically Clipped Sine Wave (Rule ID: 114)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{clamp}(\sin(t), -\theta, \theta)
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Sine wave hard-clipped symmetrically at threshold theta.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_clipped_sine_symmetric(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Symmetrically Clipped Sine Wave (Rule ID: 50114)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{clamp}(\sin(t), -\theta, \theta)
+ * Description  : Sine wave hard-clipped symmetrically at threshold theta.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_clipped_sine_symmetric_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: symmetric_square_duty50 (F32) (Rule ID: 50103)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{sgn}(\sin(t))
+ * Decay Profile: 1/n (-6 dB/oct, odd harmonics only) | Discontinuity: Jump
+ * Description  : Piecewise constant bipolar waveform with jump discontinuities at half periods.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_symmetric_square_duty50_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: symmetric_square_duty50 (F64) (Rule ID: 103)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{sgn}(\sin(t))
+ * Decay Profile: 1/n (-6 dB/oct, odd harmonics only) | Discontinuity: Jump
+ * Description  : Piecewise constant bipolar waveform with jump discontinuities at half periods.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_symmetric_square_duty50_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: symmetric_triangle (F32) (Rule ID: 50104)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{2}{\pi}\arcsin(\sin(t))
+ * Decay Profile: 1/n^2 (-12 dB/oct, odd harmonics only) | Discontinuity: Corner
+ * Description  : Continuous piecewise linear wave with alternating slopes and sharp peak corners.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_symmetric_triangle_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: symmetric_triangle (F64) (Rule ID: 104)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \frac{2}{\pi}\arcsin(\sin(t))
+ * Decay Profile: 1/n^2 (-12 dB/oct, odd harmonics only) | Discontinuity: Corner
+ * Description  : Continuous piecewise linear wave with alternating slopes and sharp peak corners.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_symmetric_triangle_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Circular Tangent Wave (Rule ID: 201)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \tan(t)
+ * Decay Profile: none | Discontinuity: Vertical Asymptote
+ * Description  : Ratio of sine to cosine producing periodic vertical asymptotes at odd multiples of pi/2.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_tan(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Circular Tangent Wave (Rule ID: 50201)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \tan(t)
+ * Description  : Ratio of sine to cosine producing periodic vertical asymptotes at odd multiples of pi/2.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trig_tan_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hyperbolic Tangent Topological Sigmoid (Rule ID: 208)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \tanh(t)
+ * Decay Profile: none | Discontinuity: Smooth Asymptotic Saturation
+ * Description  : Smooth sigmoid transition curve modeling domain walls, kinks, and neural activation profiles.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_tanh(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hyperbolic Tangent Topological Sigmoid (Rule ID: 50208)
+ * Domain       : RealFunctions
+ * LaTeX Formula: \tanh(t)
+ * Description  : Smooth sigmoid transition curve modeling domain walls, kinks, and neural activation profiles.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_hyperbolic_tanh_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: trapezoidal_linear_transition (F32) (Rule ID: 50107)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{clamp}(2\operatorname{tri}(t), -1, 1)
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Slew-rate limited square wave with finite ramp transitions avoiding infinite slope.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trapezoidal_linear_transition_f32(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: trapezoidal_linear_transition (F64) (Rule ID: 107)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \operatorname{clamp}(2\operatorname{tri}(t), -1, 1)
+ * Decay Profile: 1/n^2 | Discontinuity: Corner
+ * Description  : Slew-rate limited square wave with finite ramp transitions avoiding infinite slope.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_trapezoidal_linear_transition_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Unipolar [0, 1] Sawtooth Wave (Rule ID: 122)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: t \pmod 1
+ * Decay Profile: 1/n + DC | Discontinuity: Jump
+ * Description  : Ramp generator waveform rising from 0 to 1 with sharp reset to 0.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_unipolar_sawtooth(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Unipolar [0, 1] Sawtooth Wave (Rule ID: 50122)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: t \pmod 1
+ * Description  : Ramp generator waveform rising from 0 to 1 with sharp reset to 0.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_unipolar_sawtooth_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Unipolar [0, 1] Square Wave (Rule ID: 120)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 0.5(1 + \operatorname{sgn}(\sin(t)))
+ * Decay Profile: 1/n + DC | Discontinuity: Jump
+ * Description  : Digital logic clock profile shifting between ground (0) and Vdd (1).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_unipolar_square(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Unipolar [0, 1] Square Wave (Rule ID: 50120)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: 0.5(1 + \operatorname{sgn}(\sin(t)))
+ * Description  : Digital logic clock profile shifting between ground (0) and Vdd (1).
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_unipolar_square_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 1 (Rule ID: 14201)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 2 (Rule ID: 14202)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 3 (Rule ID: 14203)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 4 (Rule ID: 14204)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 5 (Rule ID: 14205)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 6 (Rule ID: 14206)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 7 (Rule ID: 14207)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 1st Kind T of Degree 8 (Rule ID: 14208)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_t_deg8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 1 (Rule ID: 14301)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 2 (Rule ID: 14302)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 3 (Rule ID: 14303)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 4 (Rule ID: 14304)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 5 (Rule ID: 14305)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 6 (Rule ID: 14306)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 7 (Rule ID: 14307)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Chebyshev Polynomial 2nd Kind U of Degree 8 (Rule ID: 14308)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_chebyshev_u_deg8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 1 (Rule ID: 14501)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 2 (Rule ID: 14502)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 3 (Rule ID: 14503)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 4 (Rule ID: 14504)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 5 (Rule ID: 14505)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 6 (Rule ID: 14506)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 7 (Rule ID: 14507)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Gegenbauer Polynomial C of Degree 8 (Rule ID: 14508)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_gegenbauer_c_deg8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 1 (Rule ID: 14101)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 2 (Rule ID: 14102)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 3 (Rule ID: 14103)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 4 (Rule ID: 14104)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 5 (Rule ID: 14105)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 6 (Rule ID: 14106)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 7 (Rule ID: 14107)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hermite Polynomial H of Degree 8 (Rule ID: 14108)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_hermite_h_deg8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 1 (Rule ID: 14401)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 2 (Rule ID: 14402)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 3 (Rule ID: 14403)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 4 (Rule ID: 14404)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 5 (Rule ID: 14405)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 6 (Rule ID: 14406)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 7 (Rule ID: 14407)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Laguerre Polynomial L of Degree 8 (Rule ID: 14408)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_laguerre_l_deg8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 1 (Rule ID: 14001)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 2 (Rule ID: 14002)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 3 (Rule ID: 14003)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 4 (Rule ID: 14004)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 5 (Rule ID: 14005)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 6 (Rule ID: 14006)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 7 (Rule ID: 14007)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Legendre Polynomial P of Degree 8 (Rule ID: 14008)
+ * Domain       : SpecialFunctions
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Orthogonal polynomial wave satisfying three-term Sturm-Liouville recurrence relations.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wave_poly_legendre_p_deg8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Coiflet Wavelet coif1 (Rule ID: 17001)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Wavelet with vanishing moments for both scaling and wavelet functions designed for numerical PDE schemes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_coiflet_coif1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Coiflet Wavelet coif2 (Rule ID: 17002)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Wavelet with vanishing moments for both scaling and wavelet functions designed for numerical PDE schemes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_coiflet_coif2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Coiflet Wavelet coif3 (Rule ID: 17003)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Wavelet with vanishing moments for both scaling and wavelet functions designed for numerical PDE schemes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_coiflet_coif3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Coiflet Wavelet coif4 (Rule ID: 17004)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Wavelet with vanishing moments for both scaling and wavelet functions designed for numerical PDE schemes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_coiflet_coif4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Coiflet Wavelet coif5 (Rule ID: 17005)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Wavelet with vanishing moments for both scaling and wavelet functions designed for numerical PDE schemes.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_coiflet_coif5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db1 (N=1) (Rule ID: 15001)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 1 vanishing moments and 2 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db1(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db10 (N=10) (Rule ID: 15010)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 10 vanishing moments and 20 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db11 (N=11) (Rule ID: 15011)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 11 vanishing moments and 22 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db11(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db12 (N=12) (Rule ID: 15012)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 12 vanishing moments and 24 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db12(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db13 (N=13) (Rule ID: 15013)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 13 vanishing moments and 26 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db13(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db14 (N=14) (Rule ID: 15014)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 14 vanishing moments and 28 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db14(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db15 (N=15) (Rule ID: 15015)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 15 vanishing moments and 30 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db15(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db16 (N=16) (Rule ID: 15016)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 16 vanishing moments and 32 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db16(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db17 (N=17) (Rule ID: 15017)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 17 vanishing moments and 34 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db17(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db18 (N=18) (Rule ID: 15018)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 18 vanishing moments and 36 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db18(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db19 (N=19) (Rule ID: 15019)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 19 vanishing moments and 38 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db19(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db2 (N=2) (Rule ID: 15002)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 2 vanishing moments and 4 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db20 (N=20) (Rule ID: 15020)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 20 vanishing moments and 40 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db20(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db21 (N=21) (Rule ID: 15021)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 21 vanishing moments and 42 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db21(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db22 (N=22) (Rule ID: 15022)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 22 vanishing moments and 44 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db22(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db23 (N=23) (Rule ID: 15023)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 23 vanishing moments and 46 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db23(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db24 (N=24) (Rule ID: 15024)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 24 vanishing moments and 48 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db24(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db25 (N=25) (Rule ID: 15025)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 25 vanishing moments and 50 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db25(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db26 (N=26) (Rule ID: 15026)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 26 vanishing moments and 52 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db26(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db27 (N=27) (Rule ID: 15027)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 27 vanishing moments and 54 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db27(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db28 (N=28) (Rule ID: 15028)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 28 vanishing moments and 56 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db28(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db29 (N=29) (Rule ID: 15029)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 29 vanishing moments and 58 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db29(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db3 (N=3) (Rule ID: 15003)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 3 vanishing moments and 6 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db30 (N=30) (Rule ID: 15030)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 30 vanishing moments and 60 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db30(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db31 (N=31) (Rule ID: 15031)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 31 vanishing moments and 62 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db31(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db32 (N=32) (Rule ID: 15032)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 32 vanishing moments and 64 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db32(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db33 (N=33) (Rule ID: 15033)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 33 vanishing moments and 66 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db33(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db34 (N=34) (Rule ID: 15034)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 34 vanishing moments and 68 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db34(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db35 (N=35) (Rule ID: 15035)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 35 vanishing moments and 70 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db35(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db36 (N=36) (Rule ID: 15036)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 36 vanishing moments and 72 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db36(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db37 (N=37) (Rule ID: 15037)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 37 vanishing moments and 74 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db37(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db38 (N=38) (Rule ID: 15038)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 38 vanishing moments and 76 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db38(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db39 (N=39) (Rule ID: 15039)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 39 vanishing moments and 78 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db39(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db4 (N=4) (Rule ID: 15004)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 4 vanishing moments and 8 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db40 (N=40) (Rule ID: 15040)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 40 vanishing moments and 80 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db40(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db41 (N=41) (Rule ID: 15041)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 41 vanishing moments and 82 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db41(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db42 (N=42) (Rule ID: 15042)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 42 vanishing moments and 84 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db42(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db43 (N=43) (Rule ID: 15043)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 43 vanishing moments and 86 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db43(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db44 (N=44) (Rule ID: 15044)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 44 vanishing moments and 88 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db44(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db5 (N=5) (Rule ID: 15005)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 5 vanishing moments and 10 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db6 (N=6) (Rule ID: 15006)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 6 vanishing moments and 12 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db7 (N=7) (Rule ID: 15007)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 7 vanishing moments and 14 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db8 (N=8) (Rule ID: 15008)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 8 vanishing moments and 16 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Daubechies Wavelet db9 (N=9) (Rule ID: 15009)
+ * Domain       : HarmonicAnalysis
+ * LaTeX Formula: \phi(t) = \sqrt{2}\sum_{k=0}^{2N-1} h_k \phi(2t - k)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Maximal phase orthogonal compact wavelet with 9 vanishing moments and 18 filter taps.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_daubechies_db9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym10 (Rule ID: 16010)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym10(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym11 (Rule ID: 16011)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym11(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym12 (Rule ID: 16012)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym12(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym13 (Rule ID: 16013)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym13(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym14 (Rule ID: 16014)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym14(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym15 (Rule ID: 16015)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym15(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym16 (Rule ID: 16016)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym16(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym17 (Rule ID: 16017)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym17(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym18 (Rule ID: 16018)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym18(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym19 (Rule ID: 16019)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym19(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym2 (Rule ID: 16002)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym2(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym20 (Rule ID: 16020)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym20(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym3 (Rule ID: 16003)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym3(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym4 (Rule ID: 16004)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym4(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym5 (Rule ID: 16005)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym5(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym6 (Rule ID: 16006)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym6(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym7 (Rule ID: 16007)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym7(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym8 (Rule ID: 16008)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym8(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Symlet Wavelet sym9 (Rule ID: 16009)
+ * Domain       : HarmonicAnalysis
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Least asymmetric modification of Daubechies wavelets minimizing linear phase distortion.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_wavelet_symlet_sym9(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: 4-Term Blackman-Harris High-Dynamic Window (Rule ID: 603)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: a_0 - a_1\cos + a_2\cos - a_3\cos
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Precision spectral analysis window providing extreme 92 dB dynamic range sidelobe suppression.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_blackman_harris_4term(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): 4-Term Blackman-Harris High-Dynamic Window (Rule ID: 50603)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: a_0 - a_1\cos + a_2\cos - a_3\cos
+ * Description  : Precision spectral analysis window providing extreme 92 dB dynamic range sidelobe suppression.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_blackman_harris_4term_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Flat-Top Calibration Window (Rule ID: 604)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: \sum_{k=0}^4 a_k \cos\left(\frac{2\pi k n}{N}\right)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Zero scallop loss window designed for high-accuracy harmonic amplitude calibration in spectral analyzers.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_flat_top(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Flat-Top Calibration Window (Rule ID: 50604)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: \sum_{k=0}^4 a_k \cos\left(\frac{2\pi k n}{N}\right)
+ * Description  : Zero scallop loss window designed for high-accuracy harmonic amplitude calibration in spectral analyzers.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_flat_top_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hamming Optimal Sidelobe Window (Rule ID: 602)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: 0.54 - 0.46\cos\left(\frac{2\pi n}{N}\right)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Optimized raised cosine window canceling the first sidelobe peak at the cost of slower asymptotic decay.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_hamming(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hamming Optimal Sidelobe Window (Rule ID: 50602)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: 0.54 - 0.46\cos\left(\frac{2\pi n}{N}\right)
+ * Description  : Optimized raised cosine window canceling the first sidelobe peak at the cost of slower asymptotic decay.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_hamming_f64(double* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel: Hann (Raised Cosine) Window (Rule ID: 601)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: 0.5 - 0.5\cos\left(\frac{2\pi n}{N}\right)
+ * Decay Profile: none | Discontinuity: Smooth
+ * Description  : Classic raised cosine window with smooth zero endpoints and -18 dB/octave sidelobe decay rate.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_hann(float* out, size_t count, double t, double freq, double amp);
+
+/**
+ * @brief TableGen Waveform Kernel (Double-Precision F64): Hann (Raised Cosine) Window (Rule ID: 50601)
+ * Domain       : InformationAndSignalTheory
+ * LaTeX Formula: 0.5 - 0.5\cos\left(\frac{2\pi n}{N}\right)
+ * Description  : Classic raised cosine window with smooth zero endpoints and -18 dB/octave sidelobe decay rate.
+ * @param out   Pointer to output buffer (must be 64-byte aligned for AVX-512)
+ * @param count Number of samples to generate
+ * @param t     Starting time offset / phase
+ * @param freq  Angular frequency (rad/sample)
+ * @param amp   Peak amplitude
+ */
+MSIMD_API void msimd_window_hann_f64(double* out, size_t count, double t, double freq, double amp);
+
 
 #ifdef __cplusplus
 } /* extern "C" */

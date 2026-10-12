@@ -1,0 +1,48 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "x64-Debug",
+      "displayName": "x64-Debug (LLVM Clang-CL)",
+      "description": "Visual Studio x64-Debug profile configured with LLVM Clang-CL 22.1.5",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/clang-cl.exe",
+        "CMAKE_LINKER": "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/lld-link.exe"
+      }
+    },
+    {
+      "name": "x64-Release",
+      "displayName": "x64-Release (LLVM Clang-CL)",
+      "description": "Visual Studio x64-Release profile configured with LLVM Clang-CL 22.1.5",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/clang-cl.exe",
+        "CMAKE_LINKER": "C:/Program Files/LLVM/clang+llvm-22.1.5-x86_64-pc-windows-msvc/bin/lld-link.exe"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x64-Debug",
+      "configurePreset": "x64-Debug"
+    },
+    {
+      "name": "x64-Release",
+      "configurePreset": "x64-Release"
+    }
+  ]
+}
