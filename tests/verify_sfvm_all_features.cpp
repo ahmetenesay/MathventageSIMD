@@ -631,6 +631,50 @@ bool test_cli_fuzzy_and_synonyms() {
     int init_conflict = SF_custominiVm_init_with_flags("-#SF|GC_Operation_Facility:SIMD -#SF|Use_Critical_SIMDly_Operations:Deny");
     ASSERT_EQ(init_conflict, (int)MSIMD_ERROR_FLAG_CONFLICT, "Conflicting flags must return MSIMD_ERROR_FLAG_CONFLICT");
 
+    // Test conflict detection: No_sfGC with Always_Focus_Compactizing
+    int init_nosfgc_compact_conflict = SF_custominiVm_init_with_flags("-#SF|No_sfGC -#SF|Always_Focus_Compactizing");
+    ASSERT_EQ(init_nosfgc_compact_conflict, (int)MSIMD_ERROR_FLAG_CONFLICT, "No_sfGC with Always_Focus_Compactizing must return MSIMD_ERROR_FLAG_CONFLICT");
+
+    // Test conflict detection: No_sfGC with GC_Mode:SIMD
+    int init_nosfgc_simd_conflict = SF_custominiVm_init_with_flags("-#SF|No_sfGC -#SF|GC_Mode:SIMD");
+    ASSERT_EQ(init_nosfgc_simd_conflict, (int)MSIMD_ERROR_FLAG_CONFLICT, "No_sfGC with GC_Mode:SIMD must return MSIMD_ERROR_FLAG_CONFLICT");
+
+    // Test conflict detection: Entangle_Execution without Experimental
+    int init_entangle_conflict = SF_custominiVm_init_with_flags("-#SF|Entangle_Execution:true");
+    ASSERT_EQ(init_entangle_conflict, (int)MSIMD_ERROR_FLAG_CONFLICT, "Entangle_Execution without Experimental must return MSIMD_ERROR_FLAG_CONFLICT");
+
+    // Test conflict detection: UseMLTCSolver without Experimental
+    int init_mltc_conflict = SF_custominiVm_init_with_flags("-#SF|UseMLTCSolver:true");
+    ASSERT_EQ(init_mltc_conflict, (int)MSIMD_ERROR_FLAG_CONFLICT, "UseMLTCSolver without Experimental must return MSIMD_ERROR_FLAG_CONFLICT");
+
+    // Test slash-prefixed flags and bare boolean synonyms
+    char out_flag_slash[64] = {0};
+    char out_val_slash[64] = {0};
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("/boost", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "Intent '/boost' must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "Upclocker") == 0, "'/boost' must map to Upclocker");
+
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("/sram", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "Intent '/sram' must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "Global_Volatility_Method") == 0, "'/sram' must map to Global_Volatility_Method");
+    ASSERT_TRUE(strcmp(out_val_slash, "SRAM") == 0, "'/sram' value must be SRAM");
+
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("/trim", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "Intent '/trim' must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "Reduce_Memory_Resident_Propagation") == 0, "'/trim' must map to RMRP");
+
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("AlwaysPreTouch", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "AlwaysPreTouch must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "AlwaysPreTouch") == 0, "AlwaysPreTouch must resolve as known flag");
+
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("Forbid_Runtime_Heap", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "Forbid_Runtime_Heap must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "Forbid_Runtime_Heap") == 0, "Forbid_Runtime_Heap must resolve as known flag");
+
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("FreeList_Recycle_Policy:FIFO", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "FreeList_Recycle_Policy:FIFO must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "FreeList_Recycle_Policy") == 0, "Flag must be FreeList_Recycle_Policy");
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("mltc_solver", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "Intent 'mltc_solver' must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "UseMLTCSolver") == 0, "'mltc_solver' must map to UseMLTCSolver");
+
+    ASSERT_EQ(SF_custominiVm_cli_resolve_intent("Code_Arena_Bytes:128MB", out_flag_slash, sizeof(out_flag_slash), out_val_slash, sizeof(out_val_slash)), 1, "Code_Arena_Bytes must resolve");
+    ASSERT_TRUE(strcmp(out_flag_slash, "Code_Arena_Bytes") == 0, "Flag must be Code_Arena_Bytes");
+    ASSERT_TRUE(strcmp(out_val_slash, "128MB") == 0, "Value must be 128MB");
+
     // Test English technical intent resolution API (C API)
     char out_flag[64] = {0};
     char out_val[64] = {0};
@@ -1734,6 +1778,13 @@ int main() {
 
     std::cout << "\n[SHUTDOWN] Terminating VM execution engine..." << std::endl;
     SF_custominiVm_shutdown();
+
+    // Verify clean shutdown & emergency OS sweep leaves 0 leaked OS blocks
+    size_t swept_post = SF_custominiVm_emergency_os_sweep();
+    if (swept_post != 0) {
+        std::cerr << "[FAIL] Post-shutdown emergency OS sweep found " << swept_post << " leaked bytes!" << std::endl;
+        return 23;
+    }
 
     std::cout << "\n=================================================================" << std::endl;
     std::cout << "   ALL 22 ARCHITECTURAL VERIFICATION SUITES PASSED CLEANLY!       " << std::endl;

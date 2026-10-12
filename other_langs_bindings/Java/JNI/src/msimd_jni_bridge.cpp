@@ -31,6 +31,10 @@ JNIEXPORT void JNICALL Java_net_chiretallyn_mathventagesimd_SacculusForge_SF_1cu
     SF_custominiVm_shutdown();
 }
 
+JNIEXPORT jlong JNICALL Java_net_chiretallyn_mathventagesimd_SacculusForge_SF_1custominiVm_1emergency_1os_1sweep(JNIEnv* env, jclass clazz) {
+    return static_cast<jlong>(SF_custominiVm_emergency_os_sweep());
+}
+
 JNIEXPORT jlong JNICALL Java_net_chiretallyn_mathventagesimd_SacculusForge_SF_1custominiVm_1tensor_1from(JNIEnv* env, jclass clazz, jlong data, jlong shape, jint ndim, jint dtype) {
     auto _res = SF_custominiVm_tensor_from(reinterpret_cast<void*>(data), reinterpret_cast<const int32_t*>(shape), static_cast<int>(ndim), static_cast<int>(dtype));
     return static_cast<jlong>(reinterpret_cast<uintptr_t>(new SF_custominiVm_tensor_t(_res)));

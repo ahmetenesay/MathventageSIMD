@@ -1988,13 +1988,14 @@ struct sf_os_allocation_entry_t {
 
 struct sf_os_allocation_registry_t {
     static constexpr size_t MAX_TRACKED_OS_BLOCKS = 4096;
-    std::mutex lock;
+    std::recursive_mutex lock;
     sf_os_allocation_entry_t entries[MAX_TRACKED_OS_BLOCKS]{};
+    std::vector<sf_os_allocation_entry_t> overflow_entries;
     std::atomic<size_t> active_count{0};
 
     void register_block(void* addr, size_t bytes, uint32_t tag = 0) {
         if (!addr || bytes == 0) return;
-        std::lock_guard<std::mutex> g(lock);
+        std::lock_guard<std::recursive_mutex> g(lock);
         for (size_t i = 0; i < MAX_TRACKED_OS_BLOCKS; ++i) {
             if (entries[i].addr == nullptr) {
                 entries[i].addr  = addr;
@@ -2004,11 +2005,13 @@ struct sf_os_allocation_registry_t {
                 return;
             }
         }
+        overflow_entries.push_back({addr, bytes, tag});
+        active_count.fetch_add(1, std::memory_order_relaxed);
     }
 
     void unregister_block(void* addr) {
         if (!addr) return;
-        std::lock_guard<std::mutex> g(lock);
+        std::lock_guard<std::recursive_mutex> g(lock);
         for (size_t i = 0; i < MAX_TRACKED_OS_BLOCKS; ++i) {
             if (entries[i].addr == addr) {
                 entries[i].addr  = nullptr;
@@ -2019,11 +2022,41 @@ struct sf_os_allocation_registry_t {
                 return;
             }
         }
+        for (size_t i = 0; i < overflow_entries.size(); ++i) {
+            if (overflow_entries[i].addr == addr) {
+                overflow_entries.erase(overflow_entries.begin() + i);
+                size_t c = active_count.load(std::memory_order_relaxed);
+                if (c > 0) active_count.store(c - 1, std::memory_order_relaxed);
+                return;
+            }
+        }
     }
 
     size_t sweep_all(void) {
-        std::lock_guard<std::mutex> g(lock);
+        std::lock_guard<std::recursive_mutex> g(lock);
         size_t swept_bytes = 0;
+        auto sweep_entry = [&](void* a, size_t b, uint32_t t) {
+            if (!a) return;
+            if (t == 1) { // MMIO
+#if !defined(_WIN32)
+                munmap(a, b);
+#endif
+            } else if (t == 2) { // File mapping
+#ifdef _WIN32
+                UnmapViewOfFile(a);
+#else
+                munmap(a, b);
+#endif
+            } else { // Virtual memory
+#ifdef _WIN32
+                VirtualFree(a, 0, MEM_RELEASE);
+#else
+                munmap(a, b);
+#endif
+            }
+            swept_bytes += b;
+        };
+
         for (size_t i = 0; i < MAX_TRACKED_OS_BLOCKS; ++i) {
             if (entries[i].addr != nullptr) {
                 void*  a = entries[i].addr;
@@ -2032,26 +2065,15 @@ struct sf_os_allocation_registry_t {
                 entries[i].addr  = nullptr;
                 entries[i].bytes = 0;
                 entries[i].tag   = 0;
-                if (t == 1) { // MMIO
-#if !defined(_WIN32)
-                    munmap(a, b);
-#endif
-                } else if (t == 2) { // File mapping
-#ifdef _WIN32
-                    UnmapViewOfFile(a);
-#else
-                    munmap(a, b);
-#endif
-                } else { // Virtual memory
-#ifdef _WIN32
-                    VirtualFree(a, 0, MEM_RELEASE);
-#else
-                    munmap(a, b);
-#endif
-                }
-                swept_bytes += b;
+                sweep_entry(a, b, t);
             }
         }
+        for (auto& oe : overflow_entries) {
+            if (oe.addr != nullptr) {
+                sweep_entry(oe.addr, oe.bytes, oe.tag);
+            }
+        }
+        overflow_entries.clear();
         active_count.store(0, std::memory_order_relaxed);
         return swept_bytes;
     }
@@ -2686,13 +2708,16 @@ static const char* const SF_KNOWN_FLAGS[] = {
     "GC_Mode", "GC_Mod", "GCMode", "GCMod", "GC_MODE", "GC_MOD",
     "GC_Operation_Facility", "GC_OPERATION_FACILITY",
     "Use_Critical_SIMDly_Operations", "USE_CRITICAL_SIMDLY_OPERATIONS",
-    "Snatch_and_Rebate_Mode", "SNATCH_AND_REBATE_MODE",
+    "Snatch_and_Rebate_Mode", "SNATCH_AND_REBATE_MODE", "SnatchAndRebateMode", "Snatch_And_Rebate_Mode",
     "GC_Heuristic", "GC_HEURISTIC", "FreeList_Recycle_Policy", "FREELIST_RECYCLE_POLICY",
+    "FreeListRecyclePolicy", "Freelist_Policy", "FreelistRecyclePolicy",
     "Enable_Huge_Pages", "ENABLE_HUGE_PAGES", "Advance_Payment", "ADVANCE_PAYMENT",
-    "Upclocker", "UPCLOCKER", "Always_Focus_Compactizing", "ALWAYS_FOCUS_COMPACTIZING",
+    "AlwaysPreTouch", "Always_PreTouch", "Pretouch", "PreTouch",
+    "Upclocker", "UPCLOCKER", "Boost", "Turbo", "Upclock",
+    "Always_Focus_Compactizing", "ALWAYS_FOCUS_COMPACTIZING",
     "No_sfGC", "NO_SFGC", "SCGC_Type", "SCGC_TYPE", "Profile", "PROFILE",
-    "Forbid_Dynamic_Growth", "FORBID_DYNAMIC_GROWTH",
-    "Max_Bounded_Iterations", "MAX_BOUNDED_ITERATIONS",
+    "Forbid_Dynamic_Growth", "FORBID_DYNAMIC_GROWTH", "Forbid_Runtime_Heap", "ForbidRuntimeHeap",
+    "Max_Bounded_Iterations", "MAX_BOUNDED_ITERATIONS", "Max_Iterations", "MaxIterations",
     "Allow_Operation_Dispatchings", "AllowOperationDispatchings", "ALLOW_OPERATION_DISPATCHINGS", "Operation_Dispatchings",
     "Reduce_Memory_Resident_Propagation", "ReduceMemoryResidentPropagation", "REDUCE_MEMORY_RESIDENT_PROPAGATION", "RMRP",
     "RMRP_Method", "RMRPMethod", "RMRP_METHOD", "Global_Volatility_Method", "GlobalVolatilityMethod", "GLOBAL_VOLATILITY_METHOD",
@@ -2708,7 +2733,11 @@ static const char* const SF_KNOWN_FLAGS[] = {
     "VFS_Panic_Dialog", "VFSPanicDialog", "VFS_PANIC_DIALOG", "Panic_Dialog", "PANIC_DIALOG",
     "InlineASM_Threshold", "IASM_Threshold", "InlineAsmThreshold", "INLINEASM_THRESHOLD", "IASM_THRESHOLD",
     "Strict_Ring3_Only", "StrictRing3Only", "Strict_Ring3", "StrictRing3", "STRICT_RING3_ONLY",
-    "Strict_Flags", "StrictFlags", "Strict_Flag_Validation", "StrictFlagValidation", "STRICT_FLAGS"
+    "Strict_Flags", "StrictFlags", "Strict_Flag_Validation", "StrictFlagValidation", "STRICT_FLAGS",
+    "UseMLTCSolver", "Use_MLTC_Solver", "MLTCSolver", "MLTC_Solver", "USE_MLTC_SOLVER",
+    "Code_Arena_Bytes", "CodeArenaBytes", "Code_Arena_Size", "Code_Heap_Size", "CODE_ARENA_BYTES",
+    "Heat_Decay_Factor", "HeatDecayFactor", "HEAT_DECAY_FACTOR",
+    "Heat_Gain_Weight", "HeatGainWeight", "HEAT_GAIN_WEIGHT"
 };
 
 /* ------------------------------------------------------------------------- */
@@ -2837,7 +2866,11 @@ static const sf_cli_intent_entry_t SF_CLI_INTENT_REGISTRY[] = {
     {"iasm_safe",        "InlineASM_Threshold",          "10",   "High safety threshold for inline assembly"},
     {"strict_ring3",     "Strict_Ring3_Only",            "true", "Forbid inline assembly and lock execution to safe Ring 3 APIs"},
     {"ring3_only",       "Strict_Ring3_Only",            "true", "Forbid inline assembly and lock execution to safe Ring 3 APIs"},
-    {"strict_flags",     "Strict_Flags",                 "true", "Fail-fast on unknown flags, unreferenced params, or conflicts"}
+    {"strict_flags",     "Strict_Flags",                 "true", "Fail-fast on unknown flags, unreferenced params, or conflicts"},
+
+    // 12. MLTC Diagnostic & Emergency Solver
+    {"mltc_solver",      "UseMLTCSolver",                "true", "Engage MLTC continuous upward trend and congestion solver"},
+    {"mltc",             "UseMLTCSolver",                "true", "Engage MLTC continuous upward trend and congestion solver"}
 };
 
 
@@ -3207,13 +3240,18 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "Always_PreTouch") == 0 ||
                _stricmp(key, "PreTouch") == 0 ||
                _stricmp(key, "Pretouch") == 0) {
-        cfg.strings.Advance_Payment = (_stricmp(val, "1") == 0 ||
+        cfg.strings.Advance_Payment = (!val[0] ||
+                                       _stricmp(val, "1") == 0 ||
                                        _stricmp(val, "true") == 0 ||
                                        _stricmp(val, "yes") == 0 ||
                                        _stricmp(val, "enable") == 0 ||
                                        _stricmp(val, "enabled") == 0);
-    } else if (_stricmp(key, "Upclocker") == 0 || _stricmp(key, "Upclock") == 0) {
-        if (_stricmp(val, "Allow") == 0 || _stricmp(val, "Max") == 0 || _stricmp(val, "Boost") == 0 || _stricmp(val, "1") == 0 || _stricmp(val, "True") == 0) {
+    } else if (_stricmp(key, "Upclocker") == 0 || _stricmp(key, "Upclock") == 0 ||
+               _stricmp(key, "Boost") == 0 || _stricmp(key, "Turbo") == 0) {
+        if (!val[0] || _stricmp(val, "Allow") == 0 || _stricmp(val, "Max") == 0 ||
+            _stricmp(val, "Boost") == 0 || _stricmp(val, "1") == 0 ||
+            _stricmp(val, "True") == 0 || _stricmp(val, "yes") == 0 ||
+            _stricmp(val, "enable") == 0 || _stricmp(val, "enabled") == 0) {
             sf_upclocker_set_boost(1);
         } else {
             sf_upclocker_set_boost(0);
@@ -3222,7 +3260,8 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "AlwaysFocusCompactizing") == 0 ||
                _stricmp(key, "Always_Compactize") == 0 ||
                _stricmp(key, "Always_Compact") == 0) {
-        cfg.strings.always_focus_compactizing = (_stricmp(val, "1") == 0 ||
+        cfg.strings.always_focus_compactizing = (!val[0] ||
+                                                 _stricmp(val, "1") == 0 ||
                                                  _stricmp(val, "true") == 0 ||
                                                  _stricmp(val, "yes") == 0 ||
                                                  _stricmp(val, "enable") == 0 ||
@@ -3232,7 +3271,8 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "Zero_GC") == 0 ||
                _stricmp(key, "Overwrite_Heap") == 0 ||
                _stricmp(key, "OverwriteHeap") == 0) {
-        bool en = (_stricmp(val, "1") == 0 ||
+        bool en = (!val[0] ||
+                   _stricmp(val, "1") == 0 ||
                    _stricmp(val, "true") == 0 ||
                    _stricmp(val, "yes") == 0 ||
                    _stricmp(val, "enable") == 0 ||
@@ -3287,6 +3327,17 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
         cfg.floats.landfill_critical_ratio = (float)std::strtod(val, nullptr);
     } else if (_stricmp(key, "Falline_Compact_Ratio") == 0) {
         cfg.floats.falline_compact_ratio = (float)std::strtod(val, nullptr);
+    } else if (_stricmp(key, "Heat_Decay_Factor") == 0 ||
+               _stricmp(key, "HeatDecayFactor") == 0) {
+        cfg.floats.heat_decay_factor = (float)std::strtod(val, nullptr);
+    } else if (_stricmp(key, "Heat_Gain_Weight") == 0 ||
+               _stricmp(key, "HeatGainWeight") == 0) {
+        cfg.floats.heat_gain_weight = (float)std::strtod(val, nullptr);
+    } else if (_stricmp(key, "Code_Arena_Bytes") == 0 ||
+               _stricmp(key, "CodeArenaBytes") == 0 ||
+               _stricmp(key, "Code_Arena_Size") == 0 ||
+               _stricmp(key, "Code_Heap_Size") == 0) {
+        cfg.integers.code_arena_bytes = (size_t)parse_size_with_unit(val);
     }
 
     else if (_stricmp(key, "Profile") == 0 || _stricmp(key, "Mode") == 0 || _stricmp(key, "Profile_Mode") == 0) {
@@ -3300,23 +3351,29 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
             cfg.profile = MSIMD_PROFILE_STANDARD;
             cfg.is_safety_critical = false;
         }
-    } else if (_stricmp(key, "Forbid_Dynamic_Growth") == 0 || _stricmp(key, "ForbidDynamicGrowth") == 0) {
-        cfg.Forbid_Dynamic_Growth = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 || _stricmp(val, "yes") == 0);
-    } else if (_stricmp(key, "Max_Bounded_Iterations") == 0 || _stricmp(key, "MaxLoopIterations") == 0) {
+    } else if (_stricmp(key, "Forbid_Dynamic_Growth") == 0 ||
+               _stricmp(key, "ForbidDynamicGrowth") == 0 ||
+               _stricmp(key, "Forbid_Runtime_Heap") == 0 ||
+               _stricmp(key, "ForbidRuntimeHeap") == 0) {
+        cfg.Forbid_Dynamic_Growth = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 || _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 || _stricmp(val, "enabled") == 0);
+    } else if (_stricmp(key, "Max_Bounded_Iterations") == 0 ||
+               _stricmp(key, "MaxLoopIterations") == 0 ||
+               _stricmp(key, "Max_Iterations") == 0 ||
+               _stricmp(key, "MaxIterations") == 0) {
         cfg.max_loop_iterations = (uint32_t)std::strtoul(val, nullptr, 10);
     } else if (_stricmp(key, "Allow_Operation_Dispatchings") == 0 ||
                _stricmp(key, "AllowOperationDispatchings") == 0 ||
                _stricmp(key, "Allow_Dispatching") == 0 ||
                _stricmp(key, "Operation_Dispatchings") == 0) {
-        bool allow = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+        bool allow = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
                       _stricmp(val, "yes") == 0 || _stricmp(val, "allow") == 0 ||
-                      _stricmp(val, "enabled") == 0);
+                      _stricmp(val, "enable") == 0 || _stricmp(val, "enabled") == 0);
         cfg.strings.allow_operation_dispatchings = allow;
         g_sf_allow_operation_dispatchings.store(allow, std::memory_order_relaxed);
     } else if (_stricmp(key, "Reduce_Memory_Resident_Propagation") == 0 ||
                _stricmp(key, "ReduceMemoryResidentPropagation") == 0 ||
                _stricmp(key, "RMRP") == 0) {
-        bool en = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+        bool en = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
                    _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
                    _stricmp(val, "enabled") == 0);
         cfg.strings.reduce_memory_resident_propagation = en;
@@ -3353,17 +3410,25 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
         }
         g_sf_puzzler_morph_method.store(static_cast<uint8_t>(cfg.strings.puzzler_morph), std::memory_order_relaxed);
     } else if (_stricmp(key, "Experimental") == 0 ||
-
                _stricmp(key, "Experimental_Features") == 0 ||
                _stricmp(key, "UnlockExperimentalVMOptions") == 0) {
-        cfg.strings.experimental_options = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
-                                            _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0);
+        cfg.strings.experimental_options = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+                                            _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
+                                            _stricmp(val, "enabled") == 0);
         cfg.UnlockExperimentalVMOptions = cfg.strings.experimental_options;
+    } else if (_stricmp(key, "UseMLTCSolver") == 0 ||
+               _stricmp(key, "Use_MLTC_Solver") == 0 ||
+               _stricmp(key, "MLTCSolver") == 0 ||
+               _stricmp(key, "MLTC_Solver") == 0) {
+        cfg.UseMLTCSolver = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+                             _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
+                             _stricmp(val, "enabled") == 0);
     } else if (_stricmp(key, "Entangle_Execution") == 0 ||
                _stricmp(key, "Batch_Register_Entangle") == 0 ||
                _stricmp(key, "Entangled_Execution") == 0) {
-        bool en = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
-                   _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0);
+        bool en = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+                   _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
+                   _stricmp(val, "enabled") == 0);
         cfg.strings.entangle_execution = en;
         g_sf_entangle_execution.store(en, std::memory_order_relaxed);
     } else if (_stricmp(key, "Execution_Focus") == 0 ||
@@ -3406,7 +3471,7 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "VFS_Strict") == 0 ||
                _stricmp(key, "VFSStrict") == 0 ||
                _stricmp(key, "Strict_VFS_Validation") == 0) {
-        bool en = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+        bool en = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
                    _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
                    _stricmp(val, "enabled") == 0);
         cfg.strings.strict_vfs_branch_validation = en;
@@ -3416,7 +3481,7 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "VFS_PANIC_DIALOG") == 0 ||
                _stricmp(key, "Panic_Dialog") == 0 ||
                _stricmp(key, "PANIC_DIALOG") == 0) {
-        bool en = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+        bool en = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
                    _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
                    _stricmp(val, "enabled") == 0);
         cfg.strings.vfs_panic_dialog = en;
@@ -3431,7 +3496,7 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "StrictRing3Only") == 0 ||
                _stricmp(key, "Strict_Ring3") == 0 ||
                _stricmp(key, "StrictRing3") == 0) {
-        bool en = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+        bool en = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
                    _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
                    _stricmp(val, "enabled") == 0);
         SF_custominiVm_set_strict_ring3(en ? 1 : 0);
@@ -3439,7 +3504,7 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
                _stricmp(key, "StrictFlags") == 0 ||
                _stricmp(key, "Strict_Flag_Validation") == 0 ||
                _stricmp(key, "StrictFlagValidation") == 0) {
-        bool en = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+        bool en = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
                    _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
                    _stricmp(val, "enabled") == 0);
         SF_custominiVm_set_strict_flags(en ? 1 : 0);
@@ -3550,6 +3615,15 @@ static inline bool validate_and_reconcile_sf_flags(sf_vm_config_t& cfg) {
         snprintf(cfg.conflict_msg, sizeof(cfg.conflict_msg),
                  "SFVM Flag Conflict Error: 'Entangle_Execution' argument is incompatible with 'Experimental' parameter or 'LOCKED' code! Requires '+#SF|Experimental:true' to be enabled!");
         fprintf(stderr, "[SFVM Flag Conflict Error] %s\n", cfg.conflict_msg);
+        return false;
+    }
+
+    if (cfg.UseMLTCSolver && !cfg.UnlockExperimentalVMOptions) {
+        cfg.has_flag_conflict = true;
+        snprintf(cfg.conflict_msg, sizeof(cfg.conflict_msg),
+                 "SFVM Flag Conflict Error: 'UseMLTCSolver' argument requires '+#SF|Experimental:true' to be enabled!");
+        fprintf(stderr, "[SFVM Flag Conflict Error] %s\n", cfg.conflict_msg);
+        return false;
     }
 
     if (cfg.is_safety_critical || cfg.profile == MSIMD_PROFILE_SAFETY_CRITICAL) {
@@ -5981,6 +6055,20 @@ struct sacculus_falline_t {
         uint64_t total = hits + misses;
         return total > 0 ? (float)hits / (float)total : 0.0f;
     }
+
+    void destroy(void) {
+        sf_ticket_guard_t g(lock);
+        head = nullptr;
+        count = 0;
+        total_bytes.store(0, std::memory_order_relaxed);
+        for (size_t b = 0; b < NUM_EMPTYBOX_BINS; ++b) {
+            sf_ticket_guard_t gb(bin_locks[b]);
+            bin_heads[b] = nullptr;
+            bin_counts[b] = 0;
+        }
+        emptybox_count.store(0, std::memory_order_relaxed);
+        is_compacting.store(false, std::memory_order_relaxed);
+    }
 };
 
 using sfFalline = sacculus_falline_t;
@@ -6386,6 +6474,7 @@ struct sacculus_runway_t {
     void destroy(void) {
         pitstop.destroy();
         motherline.destroy();
+        falline.destroy();
         allocator.destroy();
     }
 };
@@ -7018,6 +7107,9 @@ struct sf_pagefile_t {
         if (file_handle == INVALID_HANDLE_VALUE) {
             if (!memory_fallback) {
                 memory_fallback = VirtualAlloc(NULL, capacity_bytes, MEM_RESERVE, PAGE_READWRITE);
+                if (memory_fallback) {
+                    g_sf_os_registry.register_block(memory_fallback, capacity_bytes, 0);
+                }
             }
         }
 #else
@@ -7035,6 +7127,9 @@ struct sf_pagefile_t {
         }
         if (file_fd < 0 && !memory_fallback) {
             memory_fallback = mmap(NULL, capacity_bytes, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (memory_fallback && memory_fallback != MAP_FAILED) {
+                g_sf_os_registry.register_block(memory_fallback, capacity_bytes, 0);
+            }
         }
 #endif
 #ifdef _WIN32
@@ -7052,6 +7147,7 @@ struct sf_pagefile_t {
             file_handle = INVALID_HANDLE_VALUE;
         }
         if (memory_fallback) {
+            g_sf_os_registry.unregister_block(memory_fallback);
             VirtualFree(memory_fallback, 0, MEM_RELEASE);
             memory_fallback = nullptr;
         }
@@ -7061,6 +7157,7 @@ struct sf_pagefile_t {
             file_fd = -1;
         }
         if (memory_fallback) {
+            g_sf_os_registry.unregister_block(memory_fallback);
             munmap(memory_fallback, capacity_bytes);
             memory_fallback = nullptr;
         }
@@ -10892,6 +10989,9 @@ struct sf_numa_uma_engine_t {
         if (ptr) sf_os_commit_memory(ptr, bytes);
 #endif
         if (ptr) {
+#if defined(_WIN32)
+            g_sf_os_registry.register_block(ptr, bytes, 0);
+#endif
             nodes[n].allocated_bytes.fetch_add(bytes, std::memory_order_relaxed);
         }
         return ptr;
@@ -10902,6 +11002,7 @@ struct sf_numa_uma_engine_t {
         uint8_t n = (node < 8) ? node : 0;
         nodes[n].allocated_bytes.fetch_sub(bytes, std::memory_order_relaxed);
 #if defined(_WIN32)
+        g_sf_os_registry.unregister_block(ptr);
         VirtualFree(ptr, 0, MEM_RELEASE);
 #else
         sf_os_release_memory(ptr, bytes);
@@ -11768,6 +11869,16 @@ static void sf_ensure_hardware_nexus_initialized(void) {
         std::atexit([]() {
             SF_custominiVm_emergency_os_sweep();
         });
+        std::set_terminate([]() {
+            SF_custominiVm_emergency_os_sweep();
+            std::abort();
+        });
+#ifdef _WIN32
+        SetUnhandledExceptionFilter([](EXCEPTION_POINTERS*) -> LONG {
+            SF_custominiVm_emergency_os_sweep();
+            return EXCEPTION_CONTINUE_SEARCH;
+        });
+#endif
     });
     if (g_sf_hardware_nexus.initialized.load(std::memory_order_acquire)) return;
     sf_cpu_isa_inventory_t::discover();
@@ -11891,6 +12002,7 @@ static void sf_kernel_signal_handler(int sig) {
         siglongjmp(sf_kernel_jmpbuf, 1);
     }
 
+    SF_custominiVm_emergency_os_sweep();
     signal(sig, SIG_DFL);
     raise(sig);
 }
@@ -12935,12 +13047,11 @@ struct sacculus_rawcode_cell_t {
 
     bool init(size_t cap = 32UL * 1024 * 1024) {
         capacity = (cap + 4095ULL) & ~4095ULL;
-#ifdef _WIN32
-        base = (uint8_t*)VirtualAlloc(nullptr, capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-#else
-        base = (uint8_t*)mmap(nullptr, capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (base == MAP_FAILED) base = nullptr;
-#endif
+        base = (uint8_t*)sf_os_reserve_memory(capacity);
+        if (base && !sf_os_commit_memory(base, capacity)) {
+            sf_os_release_memory(base, capacity);
+            base = nullptr;
+        }
         return base != nullptr;
     }
 
@@ -12971,11 +13082,7 @@ struct sacculus_rawcode_cell_t {
 
     void destroy(void) {
         if (!base) return;
-#ifdef _WIN32
-        VirtualFree(base, 0, MEM_RELEASE);
-#else
-        munmap(base, capacity);
-#endif
+        sf_os_release_memory(base, capacity);
         base = nullptr;
         capacity = 0;
         decompressed_size = 0;
@@ -12993,17 +13100,16 @@ struct sacculus_processed_chunk_t {
 
     bool init(size_t cap = 64UL * 1024 * 1024) {
         capacity = (cap + 4095ULL) & ~4095ULL;
-#ifdef _WIN32
-
-        exec_base    = (uint8_t*)VirtualAlloc(nullptr, capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-        staging_base = (uint8_t*)VirtualAlloc(nullptr, capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-#else
-
-        exec_base    = (uint8_t*)mmap(nullptr, capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (exec_base == MAP_FAILED) exec_base = nullptr;
-        staging_base = (uint8_t*)mmap(nullptr, capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (staging_base == MAP_FAILED) staging_base = nullptr;
-#endif
+        exec_base    = (uint8_t*)sf_os_reserve_memory(capacity);
+        if (exec_base && !sf_os_commit_memory(exec_base, capacity)) {
+            sf_os_release_memory(exec_base, capacity);
+            exec_base = nullptr;
+        }
+        staging_base = (uint8_t*)sf_os_reserve_memory(capacity);
+        if (staging_base && !sf_os_commit_memory(staging_base, capacity)) {
+            sf_os_release_memory(staging_base, capacity);
+            staging_base = nullptr;
+        }
         return (exec_base != nullptr && staging_base != nullptr);
     }
 
@@ -14234,6 +14340,7 @@ MSIMD_API size_t SF_custominiVm_emergency_os_sweep(void) {
         g_forge.shutdown();
     }
     if (g_sf_gpio_desc.is_fast_mmio_active && g_sf_gpio_desc.mmio_virtual_base) {
+        g_sf_os_registry.unregister_block(g_sf_gpio_desc.mmio_virtual_base);
 #if !defined(_WIN32)
         munmap(g_sf_gpio_desc.mmio_virtual_base, 4096);
 #endif
@@ -16037,6 +16144,7 @@ MSIMD_API int SF_custominiVm_gpio_init(SF_custominiVm_gpio_desc_t* desc) {
         if (map != MAP_FAILED) {
             desc->mmio_virtual_base = map;
             desc->is_fast_mmio_active = 1;
+            g_sf_os_registry.register_block(map, 4096, 1);
         }
     }
 #endif
@@ -16576,6 +16684,9 @@ MSIMD_API void* sf_numa_alloc(size_t size, uint32_t numa_node) {
         PAGE_READWRITE,
         (DWORD)numa_node
     );
+    if (ptr) {
+        g_sf_os_registry.register_block(ptr, size, 0);
+    }
     return ptr;
 #else
     (void)numa_node;
@@ -16586,6 +16697,7 @@ MSIMD_API void* sf_numa_alloc(size_t size, uint32_t numa_node) {
 MSIMD_API void sf_numa_free(void* ptr, size_t size) {
     if (!ptr) return;
 #ifdef _WIN32
+    g_sf_os_registry.unregister_block(ptr);
     VirtualFreeEx(GetCurrentProcess(), ptr, 0, MEM_RELEASE);
     (void)size;
 #else
