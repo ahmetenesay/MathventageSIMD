@@ -179,6 +179,21 @@ try {
     const msimd_cull_distance_lod_f32 = nativeLib.func('void msimd_cull_distance_lod_f32(const float *obj_pos, const float *cam_pos, float near_d, float far_d, float hysteresis, size_t count, uint8_t *lod_out)');
     const msimd_wave_supersaw_7 = nativeLib.func('float msimd_wave_supersaw_7(float t, float freq)');
 
+    // Bind Tensor Allocator and GC lifecycle
+    const SF_Tensor = koffi.struct('SF_custominiVm_tensor_t', {
+      data: 'void *',
+      shape: koffi.array('int32', 8),
+      ndim: 'int32',
+      dtype: 'uint8',
+      flags: 'uint8',
+      status: 'uint8',
+      _reserved: 'uint8',
+      byte_size: 'size_t'
+    });
+    const SF_custominiVm_tensor_alloc = nativeLib.func('SF_custominiVm_tensor_t SF_custominiVm_tensor_alloc(const int32 *shape, int ndim, int dtype)');
+    const SF_custominiVm_tensor_free = nativeLib.func('void SF_custominiVm_tensor_free(SF_custominiVm_tensor_t *tensor)');
+    const SF_custominiVm_gc_collect = nativeLib.func('void SF_custominiVm_gc_collect()');
+
     // Bind raw log stream listener for IDE/CLI log capture
     const rawLogStreamCb = koffi.proto('void rawLogStreamCb(const char *raw_ansi_text, size_t text_length, void *user_data)');
     const SF_custominiVm_register_raw_log_stream = nativeLib.func('void SF_custominiVm_register_raw_log_stream(rawLogStreamCb *stream_fn, void *user_data)');
@@ -196,6 +211,9 @@ try {
       SF_custominiVm_run_rmrp,
       SF_custominiVm_point_telemetry_query,
       SF_custominiVm_get_pausepoint_gate,
+      SF_custominiVm_tensor_alloc,
+      SF_custominiVm_tensor_free,
+      SF_custominiVm_gc_collect,
       SF_custominiVm_register_raw_log_stream,
       SF_custominiVm_set_console_mirroring,
       msimd_mat4f_mul,
@@ -250,12 +268,27 @@ function runNativeBenchmarkPass(kernelName, count = 65536) {
   const t0 = process.hrtime.bigint();
 
   if (kernelName === 'msimd_mat4f_mul') {
+    // Allocate real tensor in Motherline via Koffi if available
+    let tensorHandle = null;
+    if (nativeFunctions.SF_custominiVm_tensor_alloc) {
+      try {
+        const shape = [16, 1, 0, 0, 0, 0, 0, 0];
+        tensorHandle = nativeFunctions.SF_custominiVm_tensor_alloc(shape, 1, 4); // dtype 4 = FP32
+      } catch {}
+    }
+
     const a = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7]);
     const b = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
     const c = new Float32Array(16);
     const iterations = Math.max(100, Math.floor(count / 16));
     for (let i = 0; i < iterations; ++i) {
       nativeFunctions.msimd_mat4f_mul(a, b, c);
+    }
+
+    if (tensorHandle && nativeFunctions.SF_custominiVm_tensor_free) {
+      try {
+        nativeFunctions.SF_custominiVm_tensor_free(tensorHandle);
+      } catch {}
     }
   } else if (kernelName === 'msimd_wave_supersaw_7') {
     const iterations = Math.max(1000, count);
@@ -290,16 +323,22 @@ function buildTelemetryFrame() {
     try {
       const eOut = [0], fOut = [0], pOut = [0];
       nativeFunctions.SF_custominiVm_runway_query_zones(eOut, fOut, pOut);
-      if (eOut[0] > 0 || fOut[0] > 0) {
+      if (eOut[0] > 0 || fOut[0] > 0 || pOut[0] > 0) {
         eggCount = eOut[0];
         fledglingCount = fOut[0];
         pitstopCount = pOut[0];
       }
     } catch {}
   } else {
-    if (frameIndex % 6 === 0 && eggCount > 5) {
-      eggCount--;
-      fledglingCount++;
+    // Dynamic lifecycle: Newborn objects arrive periodically, get validated and promoted
+    if (frameIndex % 8 === 0) {
+      if (eggCount > 12) {
+        eggCount -= 2;
+        fledglingCount += 2;
+      } else {
+        // Replenish new unoptimized workload bursts
+        eggCount += 16;
+      }
     }
   }
 

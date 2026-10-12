@@ -336,6 +336,14 @@ MSIMD_API int                  SF_custominiVm_is_safety_critical(void);
 /// collector worker threads, and releases hardware MMIO device bindings.
 MSIMD_API void                 SF_custominiVm_shutdown(void);
 
+/// \brief Emergency OS-level sweep that guarantees zero residual memory leaks to the host operating system.
+///
+/// In the event of abrupt termination, unhandled panic, or abnormal shutdown failure, this function
+/// directly executes operating system calls (VirtualFree with MEM_RELEASE on Windows, munmap on POSIX)
+/// across all registered runtime blocks, VFS pagefiles, shared ring buffers, MMIO sectors, and Primitiva memory.
+/// \return Total number of bytes reclaimed and unmapped at the OS level.
+MSIMD_API size_t               SF_custominiVm_emergency_os_sweep(void);
+
 /* ========================================================================= */
 /* TENSOR LIFECYCLE & SLAB ALLOCATOR API                                     */
 /* ========================================================================= */

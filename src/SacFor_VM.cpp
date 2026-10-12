@@ -1980,13 +1980,96 @@ static inline void sf_critical_clear_memory(void* dst, size_t bytes) {
 }
 SF_DISABLE_OPT_END
 
+struct sf_os_allocation_entry_t {
+    void*    addr = nullptr;
+    size_t   bytes = 0;
+    uint32_t tag = 0; // 0 = Virtual (VirtualAlloc/mmap), 1 = MMIO, 2 = FileMap
+};
+
+struct sf_os_allocation_registry_t {
+    static constexpr size_t MAX_TRACKED_OS_BLOCKS = 4096;
+    std::mutex lock;
+    sf_os_allocation_entry_t entries[MAX_TRACKED_OS_BLOCKS]{};
+    std::atomic<size_t> active_count{0};
+
+    void register_block(void* addr, size_t bytes, uint32_t tag = 0) {
+        if (!addr || bytes == 0) return;
+        std::lock_guard<std::mutex> g(lock);
+        for (size_t i = 0; i < MAX_TRACKED_OS_BLOCKS; ++i) {
+            if (entries[i].addr == nullptr) {
+                entries[i].addr  = addr;
+                entries[i].bytes = bytes;
+                entries[i].tag   = tag;
+                active_count.fetch_add(1, std::memory_order_relaxed);
+                return;
+            }
+        }
+    }
+
+    void unregister_block(void* addr) {
+        if (!addr) return;
+        std::lock_guard<std::mutex> g(lock);
+        for (size_t i = 0; i < MAX_TRACKED_OS_BLOCKS; ++i) {
+            if (entries[i].addr == addr) {
+                entries[i].addr  = nullptr;
+                entries[i].bytes = 0;
+                entries[i].tag   = 0;
+                size_t c = active_count.load(std::memory_order_relaxed);
+                if (c > 0) active_count.store(c - 1, std::memory_order_relaxed);
+                return;
+            }
+        }
+    }
+
+    size_t sweep_all(void) {
+        std::lock_guard<std::mutex> g(lock);
+        size_t swept_bytes = 0;
+        for (size_t i = 0; i < MAX_TRACKED_OS_BLOCKS; ++i) {
+            if (entries[i].addr != nullptr) {
+                void*  a = entries[i].addr;
+                size_t b = entries[i].bytes;
+                uint32_t t = entries[i].tag;
+                entries[i].addr  = nullptr;
+                entries[i].bytes = 0;
+                entries[i].tag   = 0;
+                if (t == 1) { // MMIO
+#if !defined(_WIN32)
+                    munmap(a, b);
+#endif
+                } else if (t == 2) { // File mapping
+#ifdef _WIN32
+                    UnmapViewOfFile(a);
+#else
+                    munmap(a, b);
+#endif
+                } else { // Virtual memory
+#ifdef _WIN32
+                    VirtualFree(a, 0, MEM_RELEASE);
+#else
+                    munmap(a, b);
+#endif
+                }
+                swept_bytes += b;
+            }
+        }
+        active_count.store(0, std::memory_order_relaxed);
+        return swept_bytes;
+    }
+};
+
+static sf_os_allocation_registry_t g_sf_os_registry;
+
 static inline void* sf_os_reserve_memory(size_t bytes) {
 #ifdef _WIN32
-    return VirtualAlloc(nullptr, bytes, MEM_RESERVE, PAGE_READWRITE);
+    void* p = VirtualAlloc(nullptr, bytes, MEM_RESERVE, PAGE_READWRITE);
 #else
     void* p = mmap(nullptr, bytes, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    return (p == MAP_FAILED) ? nullptr : p;
+    if (p == MAP_FAILED) p = nullptr;
 #endif
+    if (p) {
+        g_sf_os_registry.register_block(p, bytes, 0);
+    }
+    return p;
 }
 
 static inline bool sf_os_commit_memory(void* addr, size_t bytes) {
@@ -2011,6 +2094,7 @@ static inline void sf_os_decommit_memory(void* addr, size_t bytes) {
 
 static inline void sf_os_release_memory(void* addr, size_t bytes = 0) {
     if (!addr) return;
+    g_sf_os_registry.unregister_block(addr);
 #ifdef _WIN32
     (void)bytes;
     VirtualFree(addr, 0, MEM_RELEASE);
@@ -2038,16 +2122,24 @@ struct sf_anonymous_pagefile_t {
             CloseHandle(hMap);
             hMap = NULL;
         }
+        if (mapped_base) {
+            g_sf_os_registry.register_block(mapped_base, mapped_capacity, 2);
+        }
         return mapped_base != nullptr;
 #else
         mapped_base = mmap(nullptr, mapped_capacity, PROT_READ | PROT_WRITE,
                            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        return (mapped_base != MAP_FAILED) && (mapped_base != nullptr);
+        bool ok = (mapped_base != MAP_FAILED) && (mapped_base != nullptr);
+        if (ok) {
+            g_sf_os_registry.register_block(mapped_base, mapped_capacity, 2);
+        }
+        return ok;
 #endif
     }
 
     void destroy() {
         if (!mapped_base) return;
+        g_sf_os_registry.unregister_block(mapped_base);
 #ifdef _WIN32
         UnmapViewOfFile(mapped_base);
         if (hMap) CloseHandle(hMap);
@@ -2866,7 +2958,9 @@ static void sf_cli_strip_prefix_and_split(const char* raw_token, const char* raw
         p += 2;
     } else if (p[0] == '+' && p[1] == '+') {
         p += 2;
-    } else if (p[0] == '-' || p[0] == '+') {
+    } else if (p[0] == '/' && p[1] == '/') {
+        p += 2;
+    } else if (p[0] == '-' || p[0] == '+' || p[0] == '/') {
         p += 1;
     }
 
@@ -3087,16 +3181,32 @@ static bool parse_single_sf_flag_internal(sf_vm_config_t& cfg, const char* key, 
         } else {
             cfg.strings.gc_heuristic = sf_gc_heuristic_e::ADAPTIVE;
         }
-    } else if (_stricmp(key, "FreeList_Recycle_Policy") == 0) {
+    } else if (_stricmp(key, "FreeList_Recycle_Policy") == 0 ||
+               _stricmp(key, "FreeListRecyclePolicy") == 0 ||
+               _stricmp(key, "Freelist_Recycle_Policy") == 0 ||
+               _stricmp(key, "Freelist_Policy") == 0 ||
+               _stricmp(key, "FreelistRecyclePolicy") == 0) {
         strncpy(cfg.strings.freelist_policy_raw, val, sizeof(cfg.strings.freelist_policy_raw) - 1);
-        cfg.integers.freelist_recycle_policy = (uint32_t)std::strtoul(val, nullptr, 10);
-    } else if (_stricmp(key, "Enable_Huge_Pages") == 0) {
-        cfg.strings.enable_huge_pages = (_stricmp(val, "1") == 0 || _stricmp(val, "true") == 0);
+        if (_stricmp(val, "FIFO") == 0) {
+            cfg.integers.freelist_recycle_policy = 1;
+        } else if (_stricmp(val, "LIFO") == 0) {
+            cfg.integers.freelist_recycle_policy = 0;
+        } else {
+            cfg.integers.freelist_recycle_policy = (uint32_t)std::strtoul(val, nullptr, 10);
+        }
+    } else if (_stricmp(key, "Enable_Huge_Pages") == 0 ||
+               _stricmp(key, "EnableHugePages") == 0 ||
+               _stricmp(key, "Huge_Pages") == 0 ||
+               _stricmp(key, "HugePages") == 0) {
+        cfg.strings.enable_huge_pages = (!val[0] || _stricmp(val, "1") == 0 || _stricmp(val, "true") == 0 ||
+                                         _stricmp(val, "yes") == 0 || _stricmp(val, "enable") == 0 ||
+                                         _stricmp(val, "enabled") == 0);
     } else if (_stricmp(key, "Advance_Payment") == 0 ||
-               _stricmp(key, "Advance_Payment") == 0 ||
-               _stricmp(key, "Advance_Payment") == 0 ||
-               _stricmp(key, "Advance_Payment") == 0 ||
-               _stricmp(key, "Advance_Payment") == 0) {
+               _stricmp(key, "AdvancePayment") == 0 ||
+               _stricmp(key, "AlwaysPreTouch") == 0 ||
+               _stricmp(key, "Always_PreTouch") == 0 ||
+               _stricmp(key, "PreTouch") == 0 ||
+               _stricmp(key, "Pretouch") == 0) {
         cfg.strings.Advance_Payment = (_stricmp(val, "1") == 0 ||
                                        _stricmp(val, "true") == 0 ||
                                        _stricmp(val, "yes") == 0 ||
@@ -3383,6 +3493,7 @@ static void parse_single_sf_flag(sf_vm_config_t& cfg, const char* flag_str) {
                 fprintf(stderr, "   Fail-Safe Action  : Immediate fail-fast termination initiated.\n");
                 fprintf(stderr, "=================================================================\n\n");
                 std::fflush(stderr);
+                SF_custominiVm_emergency_os_sweep();
                 std::abort();
             }
         }
@@ -3418,6 +3529,16 @@ static inline bool validate_and_reconcile_sf_flags(sf_vm_config_t& cfg) {
         return false;
     }
 
+    if (cfg.strings.no_sfgc_overwrite_mode) {
+        if (cfg.strings.always_focus_compactizing || cfg.strings.gc_operation_facility == sf_gc_operation_facility_e::SIMD) {
+            cfg.has_flag_conflict = true;
+            snprintf(cfg.conflict_msg, sizeof(cfg.conflict_msg),
+                     "FATAL FLAG CONFLICT: No_sfGC / PrimitiveRW disables sfGC collector! Incompatible with Always_Focus_Compactizing or GC_Mode:SIMD.");
+            fprintf(stderr, "[SFVM Flag Conflict Error] %s\n", cfg.conflict_msg);
+            return false;
+        }
+    }
+
     if (cfg.strings.allow_operation_dispatchings) {
         snprintf(cfg.conflict_msg, sizeof(cfg.conflict_msg),
                  "SFVM Operational Notice: 'priority' has conflicts to 'Allow_Operation_Dispatchings'! +#SF|Allow_Operation_Dispatchings:true is restricted for High Priority (8-10) operations to protect execution locality.");
@@ -3446,6 +3567,7 @@ static inline bool validate_and_reconcile_sf_flags(sf_vm_config_t& cfg) {
         fprintf(stderr, "   Fail-Safe Action  : Immediate fail-fast termination initiated.\n");
         fprintf(stderr, "=================================================================\n\n");
         std::fflush(stderr);
+        SF_custominiVm_emergency_os_sweep();
         std::abort();
     }
     return true;
@@ -3742,6 +3864,20 @@ static void sacculus_hotlog_write(
         e.msg[len] = '\0';
     }
     log->push(e);
+
+    // Forward raw formatted ANSI log directly to registered stream listeners & console
+    char log_buf[256];
+    const char* col = sf_severity_ansi_color(e.severity);
+    const char* rst = "\033[0m";
+    const char* sev_str = sf_severity_str(e.severity);
+    const char* cat_str = sf_event_category_name(e.event);
+    snprintf(log_buf, sizeof(log_buf),
+             "\033[1;36m[0x%04X]\033[0m %s[%-5s]%s [%-18s] core=%-2u fn=%-4u msg=\"%s\"",
+             (unsigned int)e.event,
+             col, sev_str, rst, cat_str,
+             (unsigned int)e.current_core, (unsigned int)e.fn_id,
+             e.msg[0] ? e.msg : "");
+    sf_broadcast_raw_log_line(log_buf, e.severity >= 3);
 }
 
 static void sacculus_coldlog_write(
@@ -3761,6 +3897,20 @@ static void sacculus_coldlog_write(
         e.msg[len] = '\0';
     }
     log->push(e);
+
+    // Forward coldlog event to stream listeners
+    char log_buf[256];
+    const char* col = sf_severity_ansi_color(e.severity);
+    const char* rst = "\033[0m";
+    const char* sev_str = sf_severity_str(e.severity);
+    const char* cat_str = sf_event_category_name(e.event);
+    snprintf(log_buf, sizeof(log_buf),
+             "\033[1;35m[0x%04X]\033[0m %s[%-5s]%s [%-18s] fn=%-4u msg=\"%s\"",
+             (unsigned int)e.event,
+             col, sev_str, rst, cat_str,
+             (unsigned int)e.fn_id,
+             e.msg[0] ? e.msg : "");
+    sf_broadcast_raw_log_line(log_buf, e.severity >= 3);
 }
 
 static inline void sf_hotlog_emit(sacculus_event_t ev, sacculus_severity_t sev,
@@ -4642,6 +4792,17 @@ struct sf_arena_storage_t {
     }
 
     void flush(void) {
+        sf_ticket_guard_t g(grow_lock);
+        for (auto& old : old_bases) {
+            sf_os_release_memory(old.first, old.second);
+        }
+        old_bases.clear();
+        uint8_t* b = base.load(std::memory_order_acquire);
+        size_t cap = capacity.load(std::memory_order_relaxed);
+        if (b && cap > 0) {
+            sf_os_decommit_memory(b, cap);
+            sf_os_commit_memory(b, 4096); // Keep initial page mapped for fast re-use
+        }
         used.store(0, std::memory_order_release);
     }
 
@@ -5196,14 +5357,27 @@ struct sf_motherline_t {
     void destroy(void) {
         for (int r = 0; r < SACFOR_ROOM_COUNT; ++r) {
             for (int reg = 0; reg < SACFOR_REGION_COUNT; ++reg) {
-                auto* cur = rooms[r].regions[reg].get_head();
+                auto& region = rooms[r].regions[reg];
+                sf_ticket_guard_t g(region.get_lock());
+                auto* cur = region.get_head();
                 while (cur) {
                     auto* nxt = cur->next;
                     cur->~SF_custominiVm_live_header_t();
                     cur = nxt;
                 }
+                if (region.id == SF_REGION_HOTFIELD) {
+                    region.hot_order.head = nullptr;
+                    region.hot_order.count = 0;
+                } else {
+                    region.bucket.head = nullptr;
+                    region.bucket.count = 0;
+                }
+                region.count.store(0, std::memory_order_relaxed);
+                region.total_bytes.store(0, std::memory_order_relaxed);
             }
         }
+        egg_count.store(0, std::memory_order_relaxed);
+        fledgling_count.store(0, std::memory_order_relaxed);
     }
 };
 
@@ -6320,6 +6494,7 @@ static void sf_vfs_trigger_panic(const char* missing_path, const char* operation
         return;
     }
 
+    SF_custominiVm_emergency_os_sweep();
     std::abort();
 }
 
@@ -9253,6 +9428,8 @@ struct sacculus_gc_t {
 #ifdef USE_TBB
         tbb_engine.destroy();
 #endif
+        drain_falline();
+        landfill.evacuate(hotlog, sweep_count.load(std::memory_order_relaxed));
         pagefile.destroy();
     }
 
@@ -11586,6 +11763,12 @@ static bool sf_bind_current_thread(SF_custominiVm_core_tier_t tier) {
 }
 
 static void sf_ensure_hardware_nexus_initialized(void) {
+    static std::once_flag s_exit_sweep_once;
+    std::call_once(s_exit_sweep_once, []() {
+        std::atexit([]() {
+            SF_custominiVm_emergency_os_sweep();
+        });
+    });
     if (g_sf_hardware_nexus.initialized.load(std::memory_order_acquire)) return;
     sf_cpu_isa_inventory_t::discover();
 }
@@ -13544,6 +13727,9 @@ struct sacculus_forge_t {
         uint8_t cur_st = vm_state.load(std::memory_order_relaxed);
         if (cur_st == SF_VM_STATE_UNINITIALIZED || cur_st == SF_VM_STATE_SHUTDOWN) return;
 
+        sacculus_hotlog_write(hotlog, SF_Ebin0_SAFEPOINT, SF_Ebin1_INFO, 0, 0, 0, 0, 0, 0, 0, "sf_forge_shutdown");
+        drain_hotlog_to_coldlog(hotlog, coldlog);
+
         gc.stop();
         sandbox.destroy();
         folder_tree.evict_folder("/", &gc.runway);
@@ -13553,8 +13739,6 @@ struct sacculus_forge_t {
         gc.runway.destroy();
         gc.landfill.destroy();
 
-        sacculus_hotlog_write(hotlog, SF_Ebin0_SAFEPOINT, SF_Ebin1_INFO, 0, 0, 0, 0, 0, 0, 0, "sf_forge_shutdown");
-        drain_hotlog_to_coldlog(hotlog, coldlog);
         vm_state.store(SF_VM_STATE_SHUTDOWN, std::memory_order_release);
 
         g_sf_active_hotlog.store(nullptr, std::memory_order_release);
@@ -14035,8 +14219,36 @@ MSIMD_API int SF_custominiVm_is_safety_critical(void) {
     return g_forge.config.is_safety_critical ? 1 : 0;
 }
 
+struct alignas(64) sf_sensor_attached_entry_t {
+    SF_custominiVm_tensor_t        stream_tensor{};
+    SF_custominiVm_sensor_config_t config{};
+    std::atomic<size_t>            write_cursor{0};
+    std::atomic<bool>              active{false};
+};
+static SF_custominiVm_gpio_desc_t g_sf_gpio_desc{};
+alignas(64) static sf_sensor_attached_entry_t g_sf_sensor_slots[8];
+
+MSIMD_API size_t SF_custominiVm_emergency_os_sweep(void) {
+    if (g_forge.vm_state.load(std::memory_order_relaxed) == SF_VM_STATE_RUNNING ||
+        g_forge.vm_state.load(std::memory_order_relaxed) == SF_VM_STATE_SETUP_READY) {
+        g_forge.shutdown();
+    }
+    if (g_sf_gpio_desc.is_fast_mmio_active && g_sf_gpio_desc.mmio_virtual_base) {
+#if !defined(_WIN32)
+        munmap(g_sf_gpio_desc.mmio_virtual_base, 4096);
+#endif
+        g_sf_gpio_desc.mmio_virtual_base = nullptr;
+        g_sf_gpio_desc.is_fast_mmio_active = 0;
+    }
+    for (int i = 0; i < 8; ++i) {
+        g_sf_sensor_slots[i].active.store(false, std::memory_order_relaxed);
+    }
+    return g_sf_os_registry.sweep_all();
+}
+
 MSIMD_API void SF_custominiVm_shutdown(void) {
     g_forge.shutdown();
+    SF_custominiVm_emergency_os_sweep();
 }
 
 MSIMD_API SF_custominiVm_tensor_t SF_custominiVm_tensor_from(void* data, const int32_t* shape,
@@ -15742,7 +15954,6 @@ MSIMD_API size_t SF_custominiVm_pacing_stalls(void) {
     return g_forge.gc.runway.pacing_stalls.load(std::memory_order_relaxed);
 }
 
-static SF_custominiVm_gpio_desc_t g_sf_gpio_desc{};
 static std::atomic<bool>          g_sf_gpio_ready{false};
 static std::atomic<uint64_t>      g_sf_gpio_simulated_pins{0};
 
@@ -15872,13 +16083,6 @@ MSIMD_API uint8_t SF_custominiVm_gpio_fast_read(uint32_t pin) {
     return (g_sf_gpio_simulated_pins.load(std::memory_order_relaxed) & bit) ? 1 : 0;
 }
 
-struct alignas(64) sf_sensor_attached_entry_t {
-    SF_custominiVm_tensor_t        stream_tensor{};
-    SF_custominiVm_sensor_config_t config{};
-    std::atomic<size_t>            write_cursor{0};
-    std::atomic<bool>              active{false};
-};
-alignas(64) static sf_sensor_attached_entry_t g_sf_sensor_slots[8];
 static std::mutex                 g_sf_sensor_lock;
 
 MSIMD_API int SF_custominiVm_sensor_attach_stream(const SF_custominiVm_sensor_config_t* cfg, SF_custominiVm_tensor_t* out_stream_tensor) {
