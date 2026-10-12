@@ -1,10 +1,9 @@
 import {
   LiveTelemetryFrame,
   BenchmarkConfig,
-  HardwareCeilings,
-  RooflineKernelPoint,
-  LatencySample
+  HardwareCeilings
 } from '../types/telemetry';
+import { TS_BenchmarkRunner, TS_BenchmarkResult } from './native-api';
 
 export type FrameCallback = (frame: LiveTelemetryFrame) => void;
 export type ConnectionStatus = 'CONNECTED_NATIVE' | 'CONNECTING' | 'SIMULATION_MODE' | 'DISCONNECTED';
@@ -22,19 +21,20 @@ export class NativeBridgeService {
 
   // Active Simulated State for realistic fallback
   private simFrameIndex = 0;
-  private simEggCount = 42;
-  private simFledglingCount = 180;
-  private simPitstopCount = 3;
+  private simEggCount = 38;
+  private simFledglingCount = 172;
+  private simPitstopCount = 2;
   private simFallineBoxes = 64;
   private simTankBytes = 64 * 1024 * 1024;
-  private simLandfillBytes = 12 * 1024 * 1024;
+  private simLandfillBytes = 16 * 1024 * 1024;
   private simTotalAlloc = 128 * 1024 * 1024;
-  private simRmrpReclaimed = 8 * 1024 * 1024;
+  private simRmrpReclaimed = 12 * 1024 * 1024;
   private activeConfig: BenchmarkConfig = {
-    kernel: 'dense_gemm_f32',
+    kernel: 'msimd_mat4f_mul',
     workloadSize: 65536,
     targetIsa: 'AVX2',
     profile: 'NORMAX',
+    executionFocus: 'AUTO',
     allowAluDispatch: true,
     rmrpMethod: 'PLUMP',
     runMode: 'CONTINUOUS'
@@ -87,7 +87,6 @@ export class NativeBridgeService {
       };
 
       this.ws.onerror = () => {
-        // WebSocket connection failed; immediately attempt HTTP polling fallback
         this.startHttpPolling();
       };
 
@@ -99,38 +98,42 @@ export class NativeBridgeService {
       };
     } catch {
       this.startHttpPolling();
-      this.scheduleReconnect();
     }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.autoReconnectTimer !== null) return;
+    this.autoReconnectTimer = window.setTimeout(() => {
+      this.autoReconnectTimer = null;
+      if (this.status !== 'CONNECTED_NATIVE') {
+        this.connect();
+      }
+    }, 4000);
   }
 
   private startHttpPolling(): void {
     if (this.httpPollingInterval !== null) return;
 
-    this.httpPollingInterval = window.setInterval(async () => {
-      // If WebSocket reconnected in the meantime, stop polling
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.stopHttpPolling();
-        return;
-      }
-
+    const poll = async () => {
       try {
-        const res = await fetch(this.httpUrl, { cache: 'no-store' });
-        if (res.ok) {
-          const frame: LiveTelemetryFrame = await res.json();
+        const resp = await fetch(this.httpUrl, { cache: 'no-store' });
+        if (resp.ok) {
+          const frame: LiveTelemetryFrame = await resp.json();
           this.setStatus('CONNECTED_NATIVE');
           this.stopSimulation();
           this.notifyFrame(frame);
           return;
         }
-      } catch {
-        // Bridge daemon not running at all
-      }
+      } catch {}
 
-      // If HTTP polling also failed, drop to high-fidelity simulation
       if (this.status !== 'SIMULATION_MODE') {
+        this.setStatus('SIMULATION_MODE');
         this.startSimulation();
       }
-    }, 150);
+    };
+
+    poll();
+    this.httpPollingInterval = window.setInterval(poll, 150);
   }
 
   private stopHttpPolling(): void {
@@ -140,134 +143,121 @@ export class NativeBridgeService {
     }
   }
 
-  private scheduleReconnect(): void {
-    if (this.autoReconnectTimer !== null) return;
-    this.autoReconnectTimer = window.setTimeout(() => {
-      this.autoReconnectTimer = null;
-      if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
-        this.connect();
-      }
-    }, 3000);
-  }
-
-  public setStatus(newStatus: ConnectionStatus): void {
-    if (this.status === newStatus) return;
-    this.status = newStatus;
-    for (const cb of this.statusCallbacks) {
-      cb(newStatus);
-    }
-  }
-
-  public getStatus(): ConnectionStatus {
-    return this.status;
-  }
-
-  public onFrame(callback: FrameCallback): () => void {
-    this.frameCallbacks.add(callback);
-    return () => this.frameCallbacks.delete(callback);
-  }
-
-  public onStatusChange(callback: (status: ConnectionStatus) => void): () => void {
-    this.statusCallbacks.add(callback);
-    callback(this.status);
-    return () => this.statusCallbacks.delete(callback);
-  }
-
-  public async sendConfig(config: BenchmarkConfig): Promise<void> {
-    this.activeConfig = { ...config };
-    const payload = JSON.stringify({ type: 'CONFIGURE', config });
-
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(payload);
-    } else {
-      try {
-        await fetch('http://localhost:9099', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-      } catch {
-        // Simulation mode active
-      }
-    }
-  }
-
-  public async triggerRMRP(method: 'PLUMP' | 'SEQUENTIAL'): Promise<void> {
-    const payload = JSON.stringify({ type: 'TRIGGER_RMRP', method });
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(payload);
-    } else {
-      try {
-        await fetch('http://localhost:9099', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-      } catch {
-        // Fallback simulated RMRP effect
-        const reclaimed = Math.floor(Math.random() * 4 + 2) * 1024 * 1024;
-        this.simRmrpReclaimed += reclaimed;
-        this.simFallineBoxes = Math.max(8, this.simFallineBoxes - 20);
-        this.simTotalAlloc = Math.max(16 * 1024 * 1024, this.simTotalAlloc - reclaimed);
-      }
-    }
-  }
-
-  public async triggerPitstopExcise(): Promise<void> {
-    const payload = JSON.stringify({ type: 'TRIGGER_PITSTOP' });
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(payload);
-    } else {
-      try {
-        await fetch('http://localhost:9099', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-      } catch {
-        if (this.simEggCount > 0) {
-          this.simEggCount--;
-          this.simPitstopCount++;
-          setTimeout(() => {
-            this.simPitstopCount = Math.max(0, this.simPitstopCount - 1);
-            this.simFledglingCount++;
-          }, 1200);
-        }
-      }
-    }
-  }
-
-  public async triggerSelfHealCheck(): Promise<void> {
-    const payload = JSON.stringify({ type: 'TRIGGER_SELF_HEAL' });
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(payload);
-    } else {
-      try {
-        await fetch('http://localhost:9099', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-      } catch {
-        // Simulation mode active
-      }
-    }
-  }
-
-  private notifyFrame(frame: LiveTelemetryFrame): void {
-    for (const cb of this.frameCallbacks) {
-      cb(frame);
-    }
-  }
-
-  // --- High-Fidelity Realistic Simulation Engine ---
   private startSimulation(): void {
-    this.setStatus('SIMULATION_MODE');
     if (this.simulationInterval !== null) return;
 
     this.simulationInterval = window.setInterval(() => {
-      this.generateSimulatedFrame();
-    }, 100); // 10 updates per second (100ms)
+      this.simFrameIndex++;
+
+      if (this.simFrameIndex % 6 === 0 && this.simEggCount > 5) {
+        this.simEggCount--;
+        this.simFledglingCount++;
+      }
+
+      let baseGflops = 890.4;
+      let arithmeticIntensity = 18.5;
+      if (this.activeConfig.targetIsa === 'AVX512') baseGflops = 1520.0;
+      if (this.activeConfig.targetIsa === 'SSE4_2') baseGflops = 240.0;
+      if (this.activeConfig.targetIsa === 'SCALAR') baseGflops = 54.0;
+      if (this.activeConfig.targetIsa === 'WASM_SIMD128') baseGflops = 180.0;
+
+      if (this.activeConfig.kernel === 'msimd_wave_supersaw_7') {
+        arithmeticIntensity = 6.2;
+        baseGflops = (this.activeConfig.targetIsa === 'AVX512' ? 520.0 : 380.0);
+      } else if (this.activeConfig.kernel === 'msimd_cull_distance_lod_f32') {
+        arithmeticIntensity = 1.8;
+        baseGflops = 140.0;
+      }
+
+      const jitter = Math.sin(this.simFrameIndex * 0.25) * 0.05;
+      const currentGflops = Math.max(10, Math.round((baseGflops * (1 + jitter)) * 10) / 10);
+      const throughputGBs = Math.round((currentGflops / arithmeticIntensity) * 10) / 10;
+      const ipc = Math.min(3.8, Math.round(((currentGflops / (4200 * 0.001 * 16)) * 2.1) * 100) / 100);
+
+      const frame: LiveTelemetryFrame = {
+        timestamp: Date.now(),
+        frameIndex: this.simFrameIndex,
+        cpuMhz: 4200 + Math.floor(Math.sin(this.simFrameIndex * 0.2) * 120),
+        topography: {
+          eggCount: this.simEggCount,
+          fledglingCount: this.simFledglingCount,
+          pitstopCount: this.simPitstopCount,
+          fallineEmptyBoxes: this.simFallineBoxes,
+          tankRegionsBytes: this.simTankBytes,
+          landfillEvacuatedBytes: this.simLandfillBytes,
+          puzzleArenaActiveTests: 2,
+          totalAllocatedBytes: this.simTotalAlloc,
+          rmrpReclaimedBytes: this.simRmrpReclaimed
+        },
+        metrics: {
+          currentGflops,
+          peakGflops: Math.round(baseGflops * 1.35 * 10) / 10,
+          currentThroughputGBs: throughputGBs,
+          estimatedIPC: ipc,
+          totalOperations: this.simFrameIndex * this.activeConfig.workloadSize,
+          dispatchedAluCount: Math.floor(this.simFrameIndex * 3.8),
+          speedupVsScalar: Math.round((currentGflops / 54.0) * 10) / 10,
+          speedupVsWasm: Math.round((currentGflops / 180.0) * 10) / 10,
+          activeKernel: this.activeConfig.kernel,
+          activeProfile: this.activeConfig.profile,
+          activeIsa: this.activeConfig.targetIsa
+        },
+        recentLatencies: [
+          {
+            timestamp: Date.now(),
+            cycles: 1420 + Math.floor(Math.random() * 80),
+            nanoseconds: 338 + Math.floor(Math.random() * 20),
+            kernelName: this.activeConfig.kernel,
+            isa: this.activeConfig.targetIsa
+          }
+        ],
+        rooflinePoints: [
+          {
+            id: 'msimd_mat4f_mul',
+            name: 'Dense Mat4x4 Multiply',
+            arithmeticIntensity: 18.5,
+            performanceGflops: this.activeConfig.targetIsa === 'AVX512' ? 1520.0 : 890.4,
+            isa: this.activeConfig.targetIsa,
+            boundType: 'compute_bound',
+            timestamp: Date.now()
+          },
+          {
+            id: 'msimd_cull_distance_lod_f32',
+            name: 'Visibility Distance LOD',
+            arithmeticIntensity: 1.8,
+            performanceGflops: 120.0,
+            isa: this.activeConfig.targetIsa,
+            boundType: 'memory_bound',
+            timestamp: Date.now()
+          },
+          {
+            id: 'msimd_wave_supersaw_7',
+            name: 'Wave Supersaw-7',
+            arithmeticIntensity: 6.2,
+            performanceGflops: 380.0,
+            isa: this.activeConfig.targetIsa,
+            boundType: 'compute_bound',
+            timestamp: Date.now()
+          }
+        ],
+        selfHealStats: {
+          corruptionsHealed: 22,
+          brooksCyclesBroken: 6,
+          codeErrorsCaptured: 2,
+          bitcodeExceptionsShielded: 4
+        },
+        fourPointStatus: {
+          safepointPolls: this.simFrameIndex * 24,
+          controlpointChecks: this.simFrameIndex * 12,
+          hookpointEnters: this.simFrameIndex * 6,
+          hookpointExits: this.simFrameIndex * 6,
+          pausepointPolls: this.simFrameIndex * 3,
+          pausepointArmed: false
+        }
+      };
+
+      this.notifyFrame(frame);
+    }, 100);
   }
 
   private stopSimulation(): void {
@@ -277,186 +267,109 @@ export class NativeBridgeService {
     }
   }
 
-  private generateSimulatedFrame(): void {
-    this.simFrameIndex++;
-    const now = performance.now();
-
-    // Workload-dependent math calculations
-    let baseGflops = 240;
-    let arithmeticIntensity = 4.0; // FLOPs/Byte default
-
-    switch (this.activeConfig.targetIsa) {
-      case 'AVX512':
-        baseGflops = 1420;
-        break;
-      case 'AVX2':
-        baseGflops = 720;
-        break;
-      case 'SSE4_2':
-        baseGflops = 210;
-        break;
-      case 'SCALAR':
-        baseGflops = 48;
-        break;
-      case 'OPENVINO_NPU':
-        baseGflops = 2650;
-        break;
-      case 'WASM_SIMD128':
-        baseGflops = 160;
-        break;
-    }
-
-    if (this.activeConfig.kernel === 'dense_gemm_f32') {
-      arithmeticIntensity = 16.0; // Highly compute-bound
-      baseGflops *= 1.25;
-    } else if (this.activeConfig.kernel === 'vector_fma') {
-      arithmeticIntensity = 2.0; // Memory bandwidth bound
-      baseGflops *= 0.65;
-    } else if (this.activeConfig.kernel === 'lattice_fdtd_3d') {
-      arithmeticIntensity = 3.5;
-      baseGflops *= 0.85;
-    } else if (this.activeConfig.kernel === 'cordic_sin_cos') {
-      arithmeticIntensity = 8.0;
-      baseGflops *= 0.95;
-    } else if (this.activeConfig.kernel === 'neumaier_sum') {
-      arithmeticIntensity = 1.0;
-      baseGflops *= 0.55;
-    }
-
-    // Dynamic jitter / variation simulating CPU cache noise and frequency boost
-    const jitter = (Math.sin(this.simFrameIndex * 0.25) * 0.08) + ((Math.random() - 0.5) * 0.04);
-    const currentGflops = Math.max(10, baseGflops * (1 + jitter));
-    const throughputGBs = (currentGflops / arithmeticIntensity);
-    const estimatedIPC = Math.min(3.8, (currentGflops / (this.hardwareCeilings.mhz * 0.001 * 16)) * 2.2);
-
-    // Evolve memory topography
-    if (this.simFrameIndex % 6 === 0) {
-      if (Math.random() > 0.4) {
-        this.simEggCount += Math.floor(Math.random() * 4);
-      }
-      if (this.simEggCount > 10 && Math.random() > 0.5) {
-        const moved = Math.min(this.simEggCount, Math.floor(Math.random() * 3 + 1));
-        this.simEggCount -= moved;
-        this.simFledglingCount += moved;
-      }
-      if (Math.random() > 0.8) {
-        this.simFallineBoxes += Math.floor(Math.random() * 5);
+  private setStatus(newStatus: ConnectionStatus): void {
+    if (this.status !== newStatus) {
+      this.status = newStatus;
+      for (const cb of this.statusCallbacks) {
+        cb(this.status);
       }
     }
+  }
 
-    // Generate recent latency samples with micro-jitter
-    const recentLatencies: LatencySample[] = [];
-    const baseLatencyNs = (this.activeConfig.workloadSize / (currentGflops * 1e9)) * 1e9 * 1000;
-    const cpuCyclesPerNs = this.hardwareCeilings.mhz / 1000.0;
+  public getStatus(): ConnectionStatus {
+    return this.status;
+  }
 
-    for (let i = 0; i < 8; ++i) {
-      const latNoise = (Math.random() - 0.48) * 0.15;
-      const ns = Math.max(12, baseLatencyNs * (1 + latNoise));
-      recentLatencies.push({
-        timestamp: now - (8 - i) * 12,
-        cycles: Math.floor(ns * cpuCyclesPerNs),
-        nanoseconds: Math.round(ns),
-        kernelName: this.activeConfig.kernel,
-        isa: this.activeConfig.targetIsa
-      });
+  public onFrame(cb: FrameCallback): () => void {
+    this.frameCallbacks.add(cb);
+    return () => this.frameCallbacks.delete(cb);
+  }
+
+  public onStatusChange(cb: (status: ConnectionStatus) => void): () => void {
+    this.statusCallbacks.add(cb);
+    cb(this.status);
+    return () => this.statusCallbacks.delete(cb);
+  }
+
+  private notifyFrame(frame: LiveTelemetryFrame): void {
+    for (const cb of this.frameCallbacks) {
+      cb(frame);
     }
+  }
 
-    // Roofline points
-    const rooflinePoints: RooflineKernelPoint[] = [
-      {
-        id: 'dense_gemm_f32',
-        name: 'Dense GEMM FP32',
-        arithmeticIntensity: 18.5,
-        performanceGflops: this.activeConfig.targetIsa === 'AVX512' ? 1680 : 890,
-        isa: this.activeConfig.targetIsa,
-        boundType: 'compute_bound',
-        timestamp: now
-      },
-      {
-        id: 'lattice_fdtd_3d',
-        name: 'Lattice FDTD 3D',
-        arithmeticIntensity: 3.2,
-        performanceGflops: 340,
-        isa: 'AVX2',
-        boundType: 'memory_bound',
-        timestamp: now
-      },
-      {
-        id: 'vector_fma',
-        name: 'Vector FMA (Stream)',
-        arithmeticIntensity: 1.5,
-        performanceGflops: 115,
-        isa: 'AVX2',
-        boundType: 'memory_bound',
-        timestamp: now
-      },
-      {
-        id: 'cordic_sin_cos',
-        name: 'CORDIC Fixed Q31',
-        arithmeticIntensity: 7.8,
-        performanceGflops: 620,
-        isa: 'AVX2',
-        boundType: 'compute_bound',
-        timestamp: now
-      },
-      {
-        id: 'neumaier_sum',
-        name: 'Neumaier Sum f32',
-        arithmeticIntensity: 0.8,
-        performanceGflops: 65,
-        isa: 'AVX2',
-        boundType: 'memory_bound',
-        timestamp: now
+  public sendConfig(config: BenchmarkConfig): void {
+    this.activeConfig = { ...config };
+    const payload = JSON.stringify({ type: 'CONFIGURE', config });
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(payload);
+    } else {
+      fetch(this.httpUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      }).catch(() => {});
+    }
+  }
+
+  public triggerNativeBenchmark(kernel?: string, count?: number): void {
+    const payload = JSON.stringify({
+      type: 'TRIGGER_BENCHMARK',
+      kernel: kernel || this.activeConfig.kernel,
+      count: count || this.activeConfig.workloadSize
+    });
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(payload);
+    } else {
+      fetch(this.httpUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      }).catch(() => {});
+    }
+  }
+
+  public runTsBenchmark(kernel?: string, count?: number): TS_BenchmarkResult {
+    const k = kernel || this.activeConfig.kernel;
+    const c = count || this.activeConfig.workloadSize;
+    const result = TS_BenchmarkRunner.runBenchmark(k, c);
+    
+    // Also trigger native bridge pass for comparison
+    this.triggerNativeBenchmark(k, c);
+    return result;
+  }
+
+  public triggerPitstopExcise(): void {
+    const payload = JSON.stringify({ type: 'TRIGGER_PITSTOP' });
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(payload);
+    } else {
+      if (this.simEggCount > 0) {
+        this.simEggCount--;
+        this.simPitstopCount++;
+        setTimeout(() => {
+          this.simPitstopCount = Math.max(0, this.simPitstopCount - 1);
+          this.simFledglingCount++;
+        }, 700);
       }
-    ];
+    }
+  }
 
-    const frame: LiveTelemetryFrame = {
-      timestamp: now,
-      frameIndex: this.simFrameIndex,
-      cpuMhz: this.hardwareCeilings.mhz + Math.floor(Math.sin(this.simFrameIndex * 0.1) * 150),
-      topography: {
-        eggCount: this.simEggCount,
-        fledglingCount: this.simFledglingCount,
-        pitstopCount: this.simPitstopCount,
-        fallineEmptyBoxes: this.simFallineBoxes,
-        tankRegionsBytes: this.simTankBytes,
-        landfillEvacuatedBytes: this.simLandfillBytes,
-        puzzleArenaActiveTests: 2,
-        totalAllocatedBytes: this.simTotalAlloc,
-        rmrpReclaimedBytes: this.simRmrpReclaimed
-      },
-      metrics: {
-        currentGflops: Math.round(currentGflops * 10) / 10,
-        peakGflops: Math.round(baseGflops * 1.35 * 10) / 10,
-        currentThroughputGBs: Math.round(throughputGBs * 10) / 10,
-        estimatedIPC: Math.round(estimatedIPC * 100) / 100,
-        totalOperations: this.simFrameIndex * this.activeConfig.workloadSize,
-        dispatchedAluCount: Math.floor(this.simFrameIndex * 3.4),
-        speedupVsScalar: Math.round((currentGflops / 48) * 10) / 10,
-        speedupVsWasm: Math.round((currentGflops / 160) * 10) / 10,
-        activeKernel: this.activeConfig.kernel,
-        activeProfile: this.activeConfig.profile,
-        activeIsa: this.activeConfig.targetIsa
-      },
-      recentLatencies,
-      rooflinePoints,
-      selfHealStats: {
-        corruptionsHealed: 14,
-        brooksCyclesBroken: 4,
-        codeErrorsCaptured: 2,
-        bitcodeExceptionsShielded: 3
-      },
-      fourPointStatus: {
-        safepointPolls: this.simFrameIndex * 24,
-        controlpointChecks: this.simFrameIndex * 12,
-        hookpointEnters: this.simFrameIndex * 8,
-        hookpointExits: this.simFrameIndex * 8,
-        pausepointPolls: this.simFrameIndex * 4,
-        pausepointArmed: false
-      }
-    };
+  public triggerRmrpCompaction(): void {
+    const payload = JSON.stringify({ type: 'TRIGGER_RMRP' });
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(payload);
+    } else {
+      this.simRmrpReclaimed += 4 * 1024 * 1024;
+    }
+  }
 
-    this.notifyFrame(frame);
+  public triggerSelfHeal(): void {
+    const payload = JSON.stringify({ type: 'TRIGGER_SELF_HEAL' });
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(payload);
+    }
   }
 }
 

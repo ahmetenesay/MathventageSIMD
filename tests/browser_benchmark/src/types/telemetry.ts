@@ -4,7 +4,7 @@
 
 export type HardwareTier = 'ALT' | 'ORTA_ALT' | 'ORTA_ORTA' | 'ORTA_UST' | 'SUR';
 export type VMProfile = 'NORMAX' | 'SSIOLSC';
-export type SIMDTarget = 'SCALAR' | 'SSE4_2' | 'AVX2' | 'AVX512' | 'OPENVINO_NPU' | 'WASM_SIMD128';
+export type SIMDTarget = 'SCALAR' | 'SSE4_2' | 'AVX2' | 'AVX512' | 'AVX10_2' | 'AMX' | 'SVE2' | 'RVV' | 'OPENVINO_NPU' | 'WASM_SIMD128';
 
 export interface MemoryTopographyState {
   eggCount: number;
@@ -86,6 +86,11 @@ export interface LiveTelemetryFrame {
   timestamp: number;
   frameIndex: number;
   cpuMhz: number;
+  nativeBackend?: {
+    isNative: boolean;
+    libraryPath: string;
+    abiInterface: string;
+  };
   topography: MemoryTopographyState;
   metrics: BenchmarkMetrics;
   recentLatencies: LatencySample[];
@@ -107,10 +112,11 @@ export interface LiveTelemetryFrame {
 }
 
 export interface BenchmarkConfig {
-  kernel: 'lattice_fdtd_3d' | 'dense_gemm_f32' | 'complex_vector_mul' | 'vector_fma' | 'cordic_sin_cos' | 'neumaier_sum';
+  kernel: string;
   workloadSize: number; // e.g. 1024, 65536, 1048576
   targetIsa: SIMDTarget;
   profile: VMProfile;
+  executionFocus?: 'AUTO' | 'SCP' | 'MCP' | 'HYBRID_DUAL';
   allowAluDispatch: boolean;
   rmrpMethod: 'PLUMP' | 'SEQUENTIAL' | 'OFF';
   runMode: 'CONTINUOUS' | 'BURST_1000' | 'SINGLE_STEP';

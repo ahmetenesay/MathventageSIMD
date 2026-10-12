@@ -32,7 +32,7 @@ export class LatencyHistogramComponent {
     if (rect) {
       const dpr = window.devicePixelRatio || 1;
       this.canvas.width = rect.width * dpr;
-      this.canvas.height = (rect.height || 260) * dpr;
+      this.canvas.height = (rect.height || 250) * dpr;
       this.ctx.scale(dpr, dpr);
       this.render();
     }
@@ -70,7 +70,6 @@ export class LatencyHistogramComponent {
     const stdDevNs = Math.sqrt(variance);
     const jitterNs = maxNs - minNs;
 
-    // Build 24 histogram bins
     const numBins = 24;
     const binWidth = Math.max(1, (maxNs - minNs) / numBins);
     const bins: { binStartNs: number; binEndNs: number; count: number }[] = [];
@@ -86,19 +85,20 @@ export class LatencyHistogramComponent {
     for (const v of values) {
       let bIdx = Math.floor((v - minNs) / binWidth);
       if (bIdx >= numBins) bIdx = numBins - 1;
+      if (bIdx < 0) bIdx = 0;
       bins[bIdx].count++;
     }
 
     this.stats = {
       minNs,
       maxNs,
-      avgNs,
+      avgNs: Math.round(avgNs * 10) / 10,
       p50Ns,
       p90Ns,
       p95Ns,
       p99Ns,
       p999Ns,
-      stdDevNs,
+      stdDevNs: Math.round(stdDevNs * 10) / 10,
       jitterNs,
       sampleCount: n,
       bins
@@ -108,11 +108,12 @@ export class LatencyHistogramComponent {
   private updateStatsOverlay(): void {
     if (!this.stats) return;
     this.statsOverlay.innerHTML = `
-      <div class="stat-badge"><span class="lbl">p50</span><span class="val cyan">${this.stats.p50Ns.toLocaleString()} ns</span></div>
-      <div class="stat-badge"><span class="lbl">p95</span><span class="val yellow">${this.stats.p95Ns.toLocaleString()} ns</span></div>
-      <div class="stat-badge"><span class="lbl">p99</span><span class="val red">${this.stats.p99Ns.toLocaleString()} ns</span></div>
-      <div class="stat-badge"><span class="lbl">Avg</span><span class="val green">${Math.round(this.stats.avgNs).toLocaleString()} ns</span></div>
-      <div class="stat-badge"><span class="lbl">Jitter</span><span class="val dim">±${Math.round(this.stats.jitterNs / 2).toLocaleString()} ns</span></div>
+      <span>p50: <strong style="color: #88d49e">${this.stats.p50Ns} ns</strong></span>
+      <span>p95: <strong style="color: #f6d585">${this.stats.p95Ns} ns</strong></span>
+      <span>p99: <strong style="color: #e5989b">${this.stats.p99Ns} ns</strong></span>
+      <span>Avg: <strong>${this.stats.avgNs} ns</strong></span>
+      <span>Jitter: <strong>${this.stats.jitterNs} ns</strong></span>
+      <span>Samples: <strong>${this.stats.sampleCount}</strong></span>
     `;
   }
 
@@ -124,37 +125,37 @@ export class LatencyHistogramComponent {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, width, height);
 
-    ctx.fillStyle = '#0a0e17';
+    // Charcoal Dark Slate Canvas
+    ctx.fillStyle = '#1d222b';
     ctx.fillRect(0, 0, width, height);
 
-    const padding = { left: 45, right: 25, top: 40, bottom: 35 };
+    const padding = { left: 45, right: 25, top: 35, bottom: 32 };
     const plotW = width - padding.left - padding.right;
     const plotH = height - padding.top - padding.bottom;
 
     const maxCount = Math.max(...this.stats.bins.map(b => b.count), 1);
     const barW = plotW / this.stats.bins.length;
 
-    // Draw Histogram Bars
+    // Draw Histogram Bars in Soft Pastel Sky
     for (let i = 0; i < this.stats.bins.length; ++i) {
       const b = this.stats.bins[i];
       const barH = (b.count / maxCount) * plotH;
       const x = padding.left + i * barW;
       const y = height - padding.bottom - barH;
 
-      // Gradient color based on latency
       const grad = ctx.createLinearGradient(0, y, 0, height - padding.bottom);
-      grad.addColorStop(0, '#00f3ff');
-      grad.addColorStop(1, 'rgba(0, 243, 255, 0.15)');
+      grad.addColorStop(0, '#7eb0d5');
+      grad.addColorStop(1, 'rgba(126, 176, 213, 0.15)');
 
       ctx.fillStyle = grad;
       ctx.fillRect(x + 1, y, barW - 2, barH);
 
-      ctx.strokeStyle = '#00f3ff';
+      ctx.strokeStyle = '#9dc3e6';
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 1, y, barW - 2, barH);
     }
 
-    // Draw Percentile Lines
+    // Draw Percentile Lines with Pastel Indicators
     const drawPercentileLine = (ns: number, label: string, color: string) => {
       if (!this.stats) return;
       const ratio = (ns - this.stats.minNs) / (this.stats.maxNs - this.stats.minNs || 1);
@@ -175,12 +176,12 @@ export class LatencyHistogramComponent {
       ctx.fillText(label, x, padding.top - 6);
     };
 
-    drawPercentileLine(this.stats.p50Ns, 'p50', '#00f3ff');
-    drawPercentileLine(this.stats.p95Ns, 'p95', '#ffb800');
-    drawPercentileLine(this.stats.p99Ns, 'p99', '#ff0055');
+    drawPercentileLine(this.stats.p50Ns, 'p50', '#88d49e');
+    drawPercentileLine(this.stats.p95Ns, 'p95', '#f6d585');
+    drawPercentileLine(this.stats.p99Ns, 'p99', '#e5989b');
 
     // Axes
-    ctx.strokeStyle = '#334155';
+    ctx.strokeStyle = '#2b3240';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padding.left, height - padding.bottom);
@@ -189,14 +190,12 @@ export class LatencyHistogramComponent {
     ctx.lineTo(padding.left, height - padding.bottom);
     ctx.stroke();
 
-    // X-axis min / max labels
+    // Axis Labels
     ctx.fillStyle = '#64748b';
-    ctx.font = '10px "JetBrains Mono", monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`${this.stats.minNs.toLocaleString()} ns`, padding.left, height - padding.bottom + 18);
-    ctx.textAlign = 'right';
-    ctx.fillText(`${this.stats.maxNs.toLocaleString()} ns`, width - padding.right, height - padding.bottom + 18);
+    ctx.font = '9px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('RDTSC Hardware Execution Latency', width / 2, height - 10);
+    ctx.fillText(`${Math.round(this.stats.minNs)} ns`, padding.left, height - 12);
+    ctx.fillText(`${Math.round(this.stats.maxNs)} ns`, width - padding.right, height - 12);
+    ctx.fillText('Execution Latency Distribution', width / 2, height - 12);
   }
 }

@@ -21,7 +21,7 @@ export class RooflineChartComponent {
     if (rect) {
       const dpr = window.devicePixelRatio || 1;
       this.canvas.width = rect.width * dpr;
-      this.canvas.height = (rect.height || 320) * dpr;
+      this.canvas.height = (rect.height || 290) * dpr;
       this.ctx.scale(dpr, dpr);
       this.render();
     }
@@ -33,7 +33,6 @@ export class RooflineChartComponent {
   }
 
   private xToCanvas(ai: number, width: number, padding: number): number {
-    // Log scale for Arithmetic Intensity: 0.05 to 100 FLOP/Byte
     const minLog = Math.log10(0.05);
     const maxLog = Math.log10(100);
     const logVal = Math.log10(Math.max(0.05, Math.min(100, ai)));
@@ -42,7 +41,6 @@ export class RooflineChartComponent {
   }
 
   private yToCanvas(gflops: number, height: number, padding: number): number {
-    // Log scale for GFLOPS: 1 to 5000 GFLOPS
     const minLog = Math.log10(1);
     const maxLog = Math.log10(5000);
     const logVal = Math.log10(Math.max(1, Math.min(5000, gflops)));
@@ -58,14 +56,14 @@ export class RooflineChartComponent {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, width, height);
 
-    const padding = 55;
+    const padding = 50;
 
-    // Background Grid & axes
-    ctx.fillStyle = '#0a0e17';
+    // Charcoal Dark Slate Background
+    ctx.fillStyle = '#1d222b';
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle grid lines
-    ctx.strokeStyle = '#1e293b';
+    // Grid lines (subtle slate)
+    ctx.strokeStyle = '#2b3240';
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 4]);
 
@@ -80,7 +78,7 @@ export class RooflineChartComponent {
       ctx.moveTo(x, padding);
       ctx.lineTo(x, height - padding);
       ctx.stroke();
-      ctx.fillText(`${tick}`, x, height - padding + 16);
+      ctx.fillText(`${tick}`, x, height - padding + 15);
     }
 
     const gflopsTicks = [10, 50, 100, 500, 1000, 2000, 4000];
@@ -97,21 +95,21 @@ export class RooflineChartComponent {
     ctx.setLineDash([]);
 
     // Axis Labels
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = '#8e9bb0';
     ctx.font = '11px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('Arithmetic Intensity [FLOPs / Byte]', width / 2, height - 12);
 
     ctx.save();
-    ctx.translate(15, height / 2);
+    ctx.translate(14, height / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('Attainable Performance [GFLOPS]', 0, 0);
     ctx.restore();
 
-    // 1. Plot Memory Bandwidth Slopes (Attainable GFLOPS = Bandwidth_GBs * Arithmetic_Intensity)
+    // 1. Plot Memory Bandwidth Slopes with Pastel Colors
     const drawBandwidthCeiling = (bwGBs: number, color: string, label: string, peakGflops: number) => {
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
 
       const aiStart = 0.05;
@@ -131,17 +129,17 @@ export class RooflineChartComponent {
       ctx.fillStyle = color;
       ctx.font = '9px "JetBrains Mono", monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`${label} (${bwGBs} GB/s)`, x0 + 10, y0 - 6);
+      ctx.fillText(`${label} (${bwGBs} GB/s)`, x0 + 8, y0 - 6);
     };
 
-    // DRAM Bandwidth
-    drawBandwidthCeiling(this.ceilings.dramBandwidthGBs, '#38bdf8', 'DRAM BW', this.ceilings.avx2PeakGflops);
-    // L3 Bandwidth
-    drawBandwidthCeiling(this.ceilings.l3BandwidthGBs, '#a855f7', 'L3 Cache BW', this.ceilings.avx512PeakGflops);
-    // L1 Bandwidth
-    drawBandwidthCeiling(this.ceilings.l1dBandwidthGBs, '#ec4899', 'L1d Cache BW', this.ceilings.avx512PeakGflops);
+    // DRAM Bandwidth (Pastel Coral #e5989b)
+    drawBandwidthCeiling(this.ceilings.dramBandwidthGBs, '#e5989b', 'DRAM BW', this.ceilings.avx2PeakGflops);
+    // L3 Bandwidth (Pastel Lavender #b8a9c9)
+    drawBandwidthCeiling(this.ceilings.l3BandwidthGBs, '#b8a9c9', 'L3 Cache BW', this.ceilings.avx512PeakGflops);
+    // L1 Bandwidth (Pastel Mint #88d49e)
+    drawBandwidthCeiling(this.ceilings.l1dBandwidthGBs, '#88d49e', 'L1d Cache BW', this.ceilings.avx512PeakGflops);
 
-    // 2. Draw Compute Ceilings (Horizontal flat lines)
+    // 2. Draw Compute Ceilings (Horizontal flat lines in Pastel Sky & Gold)
     const drawComputeCeiling = (gflops: number, color: string, label: string) => {
       const y = this.yToCanvas(gflops, height, padding);
       ctx.strokeStyle = color;
@@ -154,48 +152,40 @@ export class RooflineChartComponent {
       ctx.setLineDash([]);
 
       ctx.fillStyle = color;
-      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.font = '9px "JetBrains Mono", monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(`── ${label} [${gflops} GFLOPS]`, width - padding - 8, y - 6);
+      ctx.fillText(`${label} [${gflops} GF]`, width - padding - 6, y - 5);
     };
 
-    drawComputeCeiling(this.ceilings.scalarPeakGflops, '#94a3b8', 'Scalar FP32');
-    drawComputeCeiling(this.ceilings.avx2PeakGflops, '#00ff9d', 'AVX2 256-bit FMA');
-    drawComputeCeiling(this.ceilings.avx512PeakGflops, '#00f3ff', 'AVX-512 512-bit FMA');
-    if (this.ceilings.npuPeakGflops > 0) {
-      drawComputeCeiling(this.ceilings.npuPeakGflops, '#ffb800', 'OpenVINO / NPU Peak');
-    }
+    drawComputeCeiling(this.ceilings.scalarPeakGflops, '#64748b', 'Scalar Peak');
+    drawComputeCeiling(this.ceilings.avx2PeakGflops, '#d4a373', 'AVX2 Peak');
+    drawComputeCeiling(this.ceilings.avx512PeakGflops, '#88d49e', 'AVX-512 Peak');
 
-    // 3. Plot Active Benchmark Points
+    // 3. Render Active Kernel Operating Points
     for (const pt of this.points) {
-      const x = this.xToCanvas(pt.arithmeticIntensity, width, padding);
-      const y = this.yToCanvas(pt.performanceGflops, height, padding);
+      const cx = this.xToCanvas(pt.arithmeticIntensity, width, padding);
+      const cy = this.yToCanvas(pt.performanceGflops, height, padding);
 
-      const color = pt.boundType === 'compute_bound' ? '#00ff9d' : '#00f3ff';
-
-      // Halo glow
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = color;
-
-      ctx.fillStyle = color;
+      // Pastel outer halo
+      ctx.fillStyle = 'rgba(212, 163, 115, 0.2)';
       ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 9, 0, 2 * Math.PI);
       ctx.fill();
 
-      ctx.shadowBlur = 0;
+      // Inner point
+      ctx.fillStyle = pt.boundType === 'compute_bound' ? '#88d49e' : '#e5989b';
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+      ctx.fill();
       ctx.stroke();
 
-      // Tooltip / label next to point
-      ctx.font = 'bold 11px "JetBrains Mono", monospace';
-      ctx.fillStyle = '#ffffff';
+      // Label
+      ctx.fillStyle = '#f1f5f9';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`${pt.name} [${pt.performanceGflops} GF]`, x + 10, y + 4);
-
-      ctx.font = '9px "JetBrains Mono", monospace';
-      ctx.fillStyle = pt.boundType === 'compute_bound' ? '#00ff9d' : '#38bdf8';
-      ctx.fillText(`• ${pt.boundType.toUpperCase()} (AI: ${pt.arithmeticIntensity})`, x + 10, y + 16);
+      ctx.fillText(`${pt.name} (${pt.performanceGflops} GF)`, cx + 12, cy + 3);
     }
   }
 }

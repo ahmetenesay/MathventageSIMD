@@ -34,24 +34,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const histogramComponent = new LatencyHistogramComponent(containerHistogram);
   const topographyComponent = new MemoryTopographyComponent(containerTopography);
   const telemetryComponent = new TelemetryStreamComponent(containerTelemetry);
-  const controllerComponent = new BenchmarkControllerComponent(containerController);
+  new BenchmarkControllerComponent(containerController);
 
   // Status updates (Connected Native vs Simulation)
   nativeBridge.onStatusChange((status) => {
     telemetryComponent.updateStatus(status);
   });
 
-  // Handle in-browser Wasm benchmark result
-  controllerComponent.onWasmResult((res) => {
-    telemetryComponent.appendLog(
-      `[WASM-BENCH] ${res.kernelName} -> ${res.gflops} GFLOPS, ${res.bandwidthGBs} GB/s in ${res.elapsedMs.toFixed(2)} ms (${res.simdType})`
-    );
-  });
-
   // Wire live telemetry frames
   nativeBridge.onFrame((frame: LiveTelemetryFrame) => {
     // 1. Throughput & tensor meters
-    metersComponent.update(frame.metrics);
+    metersComponent.update(
+      frame.metrics,
+      frame.topography?.eggCount || 0,
+      frame.topography?.fledglingCount || 0,
+      frame.topography?.pitstopCount || 0
+    );
 
     // 2. Roofline points
     if (frame.rooflinePoints && frame.rooflinePoints.length > 0) {

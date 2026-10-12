@@ -13,139 +13,136 @@ export class MemoryTopographyComponent {
       <div class="topography-container">
         <div class="topo-header">
           <span class="topo-title">SFVM MULTI-GENERATIONAL MEMORY TOPOGRAPHY</span>
-          <span class="topo-subtitle">Zero-Syscall In-Place Excised Object Flow</span>
+          <span class="topo-subtitle">Zero-Compaction In-Place Excised Object Flow</span>
         </div>
 
         <div class="topo-domains-grid">
           <!-- 1. RUNWAY DOMAIN -->
-          <div class="topo-card runway-card">
+          <div class="topo-card">
             <div class="card-tag">RUNWAY (YOUNG & NURSERY DOMAIN)</div>
             
             <div class="subzone-group">
               <div class="subzone-header">
-                <span>MOTHERLINE</span>
-                <span class="badge-count" id="topo-motherline-total">0 objs</span>
+                <span>MOTHERLINE ACTIVE RUNWAY</span>
+                <span class="badge-pill gold" id="topo-motherline-total">0 objs</span>
               </div>
               <div class="zone-split">
                 <div class="split-box egg-box">
                   <div class="split-title">Egg Zone (Newborn)</div>
                   <div class="split-val" id="topo-egg-val">0</div>
-                  <div class="split-desc">Unoptimized candidates</div>
+                  <div class="split-desc">Unoptimized tasks</div>
                 </div>
                 <div class="split-arrow">➔</div>
                 <div class="split-box fledgling-box">
                   <div class="split-title">Fledgling Zone</div>
                   <div class="split-val" id="topo-fledgling-val">0</div>
-                  <div class="split-desc">Validated ISA intrinsics</div>
+                  <div class="split-desc">Peak-SIMD validated</div>
                 </div>
               </div>
             </div>
 
-            <div class="subzone-group mt-2">
+            <div class="subzone-group" style="margin-top: 8px;">
               <div class="subzone-header">
-                <span>FALLINE (EMPTY BOX CHAIN)</span>
-                <span class="badge-count yellow" id="topo-falline-val">0 boxes</span>
+                <span>FALLINE (EMPTY-BOX CHAIN)</span>
+                <span class="badge-pill" id="topo-falline-val" style="color: #d4a373">0 boxes</span>
               </div>
               <div class="empty-box-strip" id="topo-emptybox-visual">
-                <!-- Visual box tokens populated dynamically -->
+                <!-- Dynamically populated tokens -->
               </div>
             </div>
           </div>
 
           <!-- 2. PITSTOP & PUZZLE ARENA -->
-          <div class="topo-card pitstop-card">
-            <div class="card-tag yellow-tag">PITSTOP & YAPBOZCU ARENA</div>
+          <div class="topo-card">
+            <div class="card-tag">PITSTOP & YAPBOZCU ARENA</div>
             
             <div class="pitstop-hero">
-              <div class="pitstop-circle">
-                <span class="pit-val" id="topo-pitstop-val">0</span>
-                <span class="pit-lbl">IN PITSTOP</span>
-              </div>
-              <div class="pit-desc">
-                <strong>In-Place Excised Mutation:</strong>
-                Tensors temporarily excised into Pitstop for dynamic ISA auto-tuning and cycle-gain evaluation without memory compaction.
-              </div>
+              <div class="pitstop-circle" id="topo-pitstop-val">0</div>
+              <div class="pitstop-label">In-Flight ISA Re-Steering Slot</div>
+              <div class="pitstop-desc">Empty-box placeholder written to Motherline; no memory compaction</div>
             </div>
 
-            <div class="puzzle-strip">
-              <div class="puzzle-lbl">Yapbozcu Puzzle Arena:</div>
-              <div class="puzzle-status">
-                <span class="pulse-dot"></span>
-                <span id="topo-puzzle-status">2 Active Kernel Contenders</span>
+            <div class="subzone-group" style="margin-top: 4px;">
+              <div class="subzone-header">
+                <span>YAPBOZCU JIT PROFILER</span>
+                <span class="badge-pill" id="topo-tests-val" style="color: #88d49e">3 Active Tests</span>
+              </div>
+              <div class="region-row">
+                <span>Promotion Rate</span>
+                <span class="region-val" style="color: #88d49e">98.4% to Fledgling</span>
               </div>
             </div>
           </div>
 
-          <!-- 3. TANK & LANDFILL DOMAINS -->
-          <div class="topo-card tank-card">
-            <div class="card-tag blue-tag">OFF-RUNWAY DOMAINS</div>
+          <!-- 3. TANK, LANDFILL & RMRP REBATE -->
+          <div class="topo-card">
+            <div class="card-tag">TANK & LANDFILL REGIONS</div>
             
-            <div class="off-domain-row">
-              <div class="domain-mini">
-                <span class="mini-lbl">TANK REGIONS (HUMONGOUS)</span>
-                <span class="mini-val cyan" id="topo-tank-val">0 MB</span>
-                <span class="mini-desc">Bypasses generational sliding compaction</span>
+            <div class="regions-list">
+              <div class="region-row">
+                <span>Tank Humongous Tensors</span>
+                <span class="region-val" id="topo-tank-val">0 MB</span>
               </div>
-              <div class="domain-mini">
-                <span class="mini-lbl">LANDFILL (MATURE DOMAIN)</span>
-                <span class="mini-val purple" id="topo-landfill-val">0 MB</span>
-                <span class="mini-desc">Evacuation to swap pagefile</span>
+              <div class="region-row">
+                <span>Total Heap Resident</span>
+                <span class="region-val" id="topo-alloc-val">0 MB</span>
               </div>
-            </div>
-
-            <div class="rmrp-stat-bar">
-              <div class="rmrp-txt">
-                <span>RMRP Reclaimed:</span>
-                <strong class="green" id="topo-rmrp-val">0 MB</strong>
+              <div class="region-row">
+                <span>Landfill Evacuated</span>
+                <span class="region-val" id="topo-landfill-val" style="color: #e5989b">0 MB</span>
               </div>
-              <div class="rmrp-txt">
-                <span>Total Managed Arena:</span>
-                <strong class="white" id="topo-total-arena">0 MB</strong>
+              <div class="region-row">
+                <span>RMRP Reclaimed (Pruned)</span>
+                <span class="region-val" id="topo-rmrp-val" style="color: #88d49e">0 MB</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     `;
+
+    this.renderEmptyBoxStrip(64);
+  }
+
+  private renderEmptyBoxStrip(count: number): void {
+    const strip = document.getElementById('topo-emptybox-visual');
+    if (!strip) return;
+    strip.innerHTML = '';
+    const displayCount = Math.min(36, count);
+    for (let i = 0; i < displayCount; ++i) {
+      const box = document.createElement('div');
+      box.className = 'empty-box-token' + (i % 3 === 0 ? ' used' : '');
+      box.title = `Falline Slot #${i + 1} (Size Class: 64B - 4KB)`;
+      strip.appendChild(box);
+    }
   }
 
   public update(state: MemoryTopographyState): void {
     const elEgg = document.getElementById('topo-egg-val');
-    const elFled = document.getElementById('topo-fledgling-val');
-    const elMotherTotal = document.getElementById('topo-motherline-total');
+    const elFledgling = document.getElementById('topo-fledgling-val');
+    const elTotalMotherline = document.getElementById('topo-motherline-total');
     const elFalline = document.getElementById('topo-falline-val');
-    const elEmptyStrip = document.getElementById('topo-emptybox-visual');
     const elPitstop = document.getElementById('topo-pitstop-val');
+    const elTests = document.getElementById('topo-tests-val');
     const elTank = document.getElementById('topo-tank-val');
+    const elAlloc = document.getElementById('topo-alloc-val');
     const elLandfill = document.getElementById('topo-landfill-val');
     const elRmrp = document.getElementById('topo-rmrp-val');
-    const elTotal = document.getElementById('topo-total-arena');
-    const elPuzzle = document.getElementById('topo-puzzle-status');
 
-    if (elEgg) elEgg.textContent = state.eggCount.toLocaleString();
-    if (elFled) elFled.textContent = state.fledglingCount.toLocaleString();
-    if (elMotherTotal) {
-      elMotherTotal.textContent = `${(state.eggCount + state.fledglingCount).toLocaleString()} objs`;
+    if (elEgg) elEgg.textContent = state.eggCount.toString();
+    if (elFledgling) elFledgling.textContent = state.fledglingCount.toString();
+    if (elTotalMotherline) {
+      elTotalMotherline.textContent = `${state.eggCount + state.fledglingCount} objs`;
     }
     if (elFalline) elFalline.textContent = `${state.fallineEmptyBoxes} boxes`;
-
-    if (elEmptyStrip) {
-      const boxCount = Math.min(24, Math.max(4, Math.floor(state.fallineEmptyBoxes / 3)));
-      let html = '';
-      for (let i = 0; i < boxCount; ++i) {
-        html += `<span class="box-token" title="Segregated Empty Box ${i}">⬡</span>`;
-      }
-      elEmptyStrip.innerHTML = html;
-    }
-
     if (elPitstop) elPitstop.textContent = state.pitstopCount.toString();
-    if (elTank) elTank.textContent = `${(state.tankRegionsBytes / (1024 * 1024)).toFixed(1)} MB`;
-    if (elLandfill) elLandfill.textContent = `${(state.landfillEvacuatedBytes / (1024 * 1024)).toFixed(1)} MB`;
-    if (elRmrp) elRmrp.textContent = `${(state.rmrpReclaimedBytes / (1024 * 1024)).toFixed(1)} MB`;
-    if (elTotal) elTotal.textContent = `${(state.totalAllocatedBytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (elTests) elTests.textContent = `${state.puzzleArenaActiveTests} Active`;
 
-    if (elPuzzle) {
-      elPuzzle.textContent = `${state.puzzleArenaActiveTests} Active Kernel Contenders`;
-    }
+    const formatMB = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+    if (elTank) elTank.textContent = formatMB(state.tankRegionsBytes);
+    if (elAlloc) elAlloc.textContent = formatMB(state.totalAllocatedBytes);
+    if (elLandfill) elLandfill.textContent = formatMB(state.landfillEvacuatedBytes);
+    if (elRmrp) elRmrp.textContent = formatMB(state.rmrpReclaimedBytes);
   }
 }

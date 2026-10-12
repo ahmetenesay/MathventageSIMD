@@ -11,104 +11,137 @@ export class ThroughputMeterComponent {
   private renderInitialSkeleton(): void {
     this.container.innerHTML = `
       <div class="meter-grid">
-        <div class="meter-card neon-card-cyan">
+        <!-- 1. Compute Throughput -->
+        <div class="meter-card">
           <div class="meter-header">
             <span class="meter-title">COMPUTE THROUGHPUT</span>
             <span class="meter-badge" id="meter-isa-badge">AVX2</span>
           </div>
           <div class="meter-main-val">
-            <span class="big-num" id="val-gflops">0.0</span>
+            <span class="big-num mint" id="val-gflops">0.0</span>
             <span class="unit">GFLOPS</span>
           </div>
           <div class="meter-sub-bar">
-            <div class="bar-fill" id="bar-gflops" style="width: 0%"></div>
+            <div class="bar-fill mint" id="bar-gflops" style="width: 0%"></div>
           </div>
           <div class="meter-footer">
-            <span>Peak: <strong id="val-peak-gflops">0.0</strong> GF</span>
+            <span>Peak: <strong id="val-peak-gflops" style="color: #cbd5e1">0.0</strong> GF</span>
             <span class="speedup-tag" id="val-speedup-scalar">1.0x vs Scalar</span>
           </div>
         </div>
 
-        <div class="meter-card neon-card-blue">
+        <!-- 2. Memory Bandwidth -->
+        <div class="meter-card">
           <div class="meter-header">
             <span class="meter-title">MEMORY BANDWIDTH</span>
             <span class="meter-badge">DRAM / LLC</span>
           </div>
           <div class="meter-main-val">
-            <span class="big-num" id="val-bandwidth">0.0</span>
+            <span class="big-num sky" id="val-bandwidth">0.0</span>
             <span class="unit">GB/s</span>
           </div>
           <div class="meter-sub-bar">
-            <div class="bar-fill blue" id="bar-bandwidth" style="width: 0%"></div>
+            <div class="bar-fill sky" id="bar-bandwidth" style="width: 0%"></div>
           </div>
           <div class="meter-footer">
-            <span>Utilization: <strong id="val-bw-util">0%</strong></span>
-            <span class="speedup-tag wasm-tag" id="val-speedup-wasm">3.8x vs Wasm</span>
+            <span>Utilization: <strong id="val-bw-util" style="color: #cbd5e1">0%</strong></span>
+            <span class="speedup-tag" id="val-speedup-wasm">3.8x vs Wasm</span>
           </div>
         </div>
 
-        <div class="meter-card neon-card-green">
+        <!-- 3. Estimated IPC -->
+        <div class="meter-card">
           <div class="meter-header">
             <span class="meter-title">ESTIMATED IPC</span>
-            <span class="meter-badge">PIPELINE</span>
+            <span class="meter-badge">UOPS PIPELINE</span>
           </div>
           <div class="meter-main-val">
-            <span class="big-num green" id="val-ipc">0.00</span>
+            <span class="big-num gold" id="val-ipc">0.00</span>
             <span class="unit">IPC</span>
           </div>
           <div class="meter-sub-bar">
-            <div class="bar-fill green" id="bar-ipc" style="width: 0%"></div>
+            <div class="bar-fill gold" id="bar-ipc" style="width: 0%"></div>
           </div>
           <div class="meter-footer">
-            <span>ALU Dispatches: <strong id="val-alu-disp">0</strong></span>
-            <span class="status-tag active">STALL-FREE</span>
+            <span>Dispatched ALUs: <strong id="val-alu-count" style="color: #cbd5e1">0</strong></span>
+            <span style="color: #88d49e; font-weight: 600">Port Contention Balanced</span>
+          </div>
+        </div>
+
+        <!-- 4. Runway Active Tensors -->
+        <div class="meter-card">
+          <div class="meter-header">
+            <span class="meter-title">RUNWAY TOPOLOGY</span>
+            <span class="meter-badge">SFVM RUNWAY</span>
+          </div>
+          <div class="meter-main-val">
+            <span class="big-num lavender" id="val-tensors-total">0</span>
+            <span class="unit">OBJS</span>
+          </div>
+          <div class="meter-sub-bar">
+            <div class="bar-fill lavender" id="bar-tensors" style="width: 0%"></div>
+          </div>
+          <div class="meter-footer">
+            <span>Egg: <strong id="val-egg-ratio" style="color: #f6d585">0</strong> | Fledgling: <strong id="val-fled-ratio" style="color: #88d49e">0</strong></span>
+            <span id="val-pitstop-active" style="color: #e0a96d; font-weight: 600">0 in Pitstop</span>
           </div>
         </div>
       </div>
     `;
   }
 
-  public update(metrics: BenchmarkMetrics): void {
+  public update(metrics: BenchmarkMetrics, eggCount = 0, fledCount = 0, pitCount = 0): void {
     const elGflops = document.getElementById('val-gflops');
     const elPeak = document.getElementById('val-peak-gflops');
-    const elBarGflops = document.getElementById('bar-gflops');
-    const elSpeedScalar = document.getElementById('val-speedup-scalar');
-    const elIsaBadge = document.getElementById('meter-isa-badge');
-
+    const barGflops = document.getElementById('bar-gflops');
     const elBw = document.getElementById('val-bandwidth');
-    const elBarBw = document.getElementById('bar-bandwidth');
+    const barBw = document.getElementById('bar-bandwidth');
     const elBwUtil = document.getElementById('val-bw-util');
-    const elSpeedWasm = document.getElementById('val-speedup-wasm');
-
     const elIpc = document.getElementById('val-ipc');
-    const elBarIpc = document.getElementById('bar-ipc');
-    const elAluDisp = document.getElementById('val-alu-disp');
+    const barIpc = document.getElementById('bar-ipc');
+    const elAlu = document.getElementById('val-alu-count');
+    const elSpeedupScalar = document.getElementById('val-speedup-scalar');
+    const elSpeedupWasm = document.getElementById('val-speedup-wasm');
+    const elIsaBadge = document.getElementById('meter-isa-badge');
+    const elTensors = document.getElementById('val-tensors-total');
+    const elEggRatio = document.getElementById('val-egg-ratio');
+    const elFledRatio = document.getElementById('val-fled-ratio');
+    const elPitActive = document.getElementById('val-pitstop-active');
+    const barTensors = document.getElementById('bar-tensors');
 
-    if (elGflops) elGflops.textContent = metrics.currentGflops.toLocaleString();
-    if (elPeak) elPeak.textContent = metrics.peakGflops.toLocaleString();
-    if (elBarGflops) {
-      const pct = Math.min(100, (metrics.currentGflops / (metrics.peakGflops || 1000)) * 100);
-      elBarGflops.style.width = `${pct}%`;
+    if (elGflops) elGflops.textContent = metrics.currentGflops.toFixed(1);
+    if (elPeak) elPeak.textContent = metrics.peakGflops.toFixed(1);
+    if (barGflops) {
+      const pct = Math.min(100, Math.round((metrics.currentGflops / Math.max(1, metrics.peakGflops)) * 100));
+      barGflops.style.width = `${pct}%`;
     }
-    if (elSpeedScalar) elSpeedScalar.textContent = `${metrics.speedupVsScalar}x vs Scalar`;
-    if (elIsaBadge) elIsaBadge.textContent = metrics.activeIsa;
 
-    if (elBw) elBw.textContent = metrics.currentThroughputGBs.toLocaleString();
-    if (elBarBw) {
-      const pct = Math.min(100, (metrics.currentThroughputGBs / 76.8) * 100);
-      elBarBw.style.width = `${pct}%`;
+    if (elBw) elBw.textContent = metrics.currentThroughputGBs.toFixed(1);
+    if (barBw) {
+      const pct = Math.min(100, Math.round((metrics.currentThroughputGBs / 76.8) * 100));
+      barBw.style.width = `${pct}%`;
+      if (elBwUtil) elBwUtil.textContent = `${pct}%`;
     }
-    if (elBwUtil) {
-      const pct = Math.round(Math.min(100, (metrics.currentThroughputGBs / 76.8) * 100));
-      elBwUtil.textContent = `${pct}%`;
-    }
-    if (elSpeedWasm) elSpeedWasm.textContent = `${metrics.speedupVsWasm}x vs Wasm SIMD`;
 
     if (elIpc) elIpc.textContent = metrics.estimatedIPC.toFixed(2);
-    if (elBarIpc) {
-      const pct = Math.min(100, (metrics.estimatedIPC / 4.0) * 100);
-      elBarIpc.style.width = `${pct}%`;
+    if (barIpc) {
+      const pct = Math.min(100, Math.round((metrics.estimatedIPC / 4.0) * 100));
+      barIpc.style.width = `${pct}%`;
     }
-    if (elAluDisp) elAluDisp.textContent = metrics.dispatchedAluCount.toLocaleString();
+
+    if (elAlu) elAlu.textContent = metrics.dispatchedAluCount.toLocaleString();
+    if (elSpeedupScalar) elSpeedupScalar.textContent = `${metrics.speedupVsScalar.toFixed(1)}x vs Scalar`;
+    if (elSpeedupWasm) elSpeedupWasm.textContent = `${metrics.speedupVsWasm.toFixed(1)}x vs Wasm`;
+    if (elIsaBadge) elIsaBadge.textContent = metrics.activeIsa;
+
+    const totalObjs = eggCount + fledCount + pitCount;
+    if (elTensors) elTensors.textContent = totalObjs.toString();
+    if (elEggRatio) elEggRatio.textContent = eggCount.toString();
+    if (elFledRatio) elFledRatio.textContent = fledCount.toString();
+    if (elPitActive) elPitActive.textContent = `${pitCount} in Pitstop`;
+    if (barTensors) {
+      const pct = Math.min(100, Math.round((fledCount / Math.max(1, totalObjs)) * 100));
+      barTensors.style.width = `${pct}%`;
+    }
   }
 }
